@@ -55,9 +55,18 @@ export default defineConfig(({ mode }) => {
         'fs',
         'path',
         'os'
+      ],
+      include: [
+        'react',
+        'react-dom',
+        'lucide-react',
+        'dompurify',
+        'diff',
+        'uuid'
       ]
     },
     build: {
+      sourcemap: false,
       rollupOptions: {
         external: [
           'fs',

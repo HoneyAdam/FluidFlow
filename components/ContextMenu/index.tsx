@@ -4,7 +4,7 @@
  * Reusable right-click context menu for the entire application
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
 import { Copy, Trash2, RotateCcw, Download, Code, Image } from 'lucide-react';
 
 export type ContextMenuType = 'chat' | 'file' | 'code' | 'image' | 'default';
@@ -96,7 +96,7 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
   };
 
   // Adjust position if menu would go off screen
-  const adjustedPosition = useCallback(() => {
+  const adjustedPosition = useMemo(() => {
     const menuWidth = 200;
     const menuHeight = state.items.length * 36 + 8; // Approximate
 
@@ -114,11 +114,11 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
     return { x, y };
   }, [state.x, state.y, state.items.length]);
 
-  const value: ContextMenuContextValue = {
+  const value = useMemo<ContextMenuContextValue>(() => ({
     state,
     showContextMenu,
     hideContextMenu,
-  };
+  }), [state, showContextMenu, hideContextMenu]);
 
   return (
     <ContextMenuContext.Provider value={value}>
@@ -131,8 +131,8 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
           <div
             className="absolute rounded-lg shadow-2xl overflow-hidden min-w-[180px] py-1"
             style={{
-              left: adjustedPosition().x,
-              top: adjustedPosition().y,
+              left: adjustedPosition.x,
+              top: adjustedPosition.y,
               backgroundColor: 'var(--theme-surface)',
               border: '1px solid var(--theme-border)'
             }}

@@ -7,6 +7,7 @@ import { githubRouter } from './api/github.js';
 import { settingsRouter } from './api/settings.js';
 import { runnerRouter, cleanupAllRunningProjects, getRunnerHealth } from './api/runner.js';
 import { aiRouter } from './api/ai.js';
+import compression from 'compression';
 import { apiLimiter, aiLimiter, requestLogger, securityHeaders, validateRequest } from './middleware/security.js';
 import path from 'path';
 import fs from 'fs';
@@ -27,6 +28,9 @@ if (!fs.existsSync(PROJECTS_DIR)) {
 
 // Security headers (helmet)
 app.use(securityHeaders);
+
+// Compress API responses (gzip/brotli)
+app.use(compression());
 
 // Middleware
 app.use(cors({
