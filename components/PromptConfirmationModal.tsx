@@ -64,7 +64,7 @@ export const PromptConfirmationModal: React.FC = () => {
   const { details } = pendingRequest;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm p-4" style={{ backgroundColor: 'var(--theme-modal-overlay)' }}>
+    <div role="dialog" aria-modal="true" aria-label="Confirm prompt" className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm p-4" style={{ backgroundColor: 'var(--theme-modal-overlay)' }}>
       <div className="w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh]" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--theme-border)', backgroundColor: 'var(--theme-background)' }}>

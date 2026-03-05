@@ -131,6 +131,9 @@ export const DiffModal: React.FC<DiffModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Review changes"
       className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm p-4 animate-in fade-in duration-200"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
     >

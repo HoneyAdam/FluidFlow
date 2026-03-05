@@ -217,6 +217,9 @@ export const MegaSettingsModal: React.FC<MegaSettingsModalProps> = ({
 
   const modalContent = (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Settings"
       className="fixed inset-0 z-100 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
       style={{ backgroundColor: 'color-mix(in srgb, var(--theme-background) 80%, transparent)' }}
     >

@@ -29,6 +29,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   const modalContent = (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       className="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
       onClick={onClose}

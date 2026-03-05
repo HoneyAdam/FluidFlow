@@ -26,6 +26,7 @@ import { usePanelResize } from './hooks/usePanelResize';
 import { useAppContext } from './contexts/AppContext';
 import { useUI } from './contexts/UIContext';
 import { useAutoCommit } from './hooks/useAutoCommit';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { githubApi } from './services/api/github';
 import { settingsApi } from './services/api/settings';
 import { activityLogger } from './services/activityLogger';
@@ -63,6 +64,9 @@ export default function App() {
   // Centralized modal state management
   const modals = useModalManager();
   const [megaSettingsInitialCategory, setMegaSettingsInitialCategory] = useState<SettingsCategory>('ai-providers');
+
+  // Global keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+S)
+  useKeyboardShortcuts();
 
   // Resizable panel divider (drag to resize, double-click to reset)
   const { panelWidth, isDragging, dividerProps } = usePanelResize();

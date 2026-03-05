@@ -129,6 +129,7 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
           style={{ left: 0, top: 0, width: '100vw', height: '100vh' }}
         >
           <div
+            role="menu"
             className="absolute rounded-lg shadow-2xl overflow-hidden min-w-[180px] py-1"
             style={{
               left: adjustedPosition.x,
@@ -142,6 +143,7 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
               <React.Fragment key={item.id}>
                 {item.separator && <div className="my-1" style={{ borderTop: '1px solid var(--theme-border)' }} />}
                 <button
+                  role="menuitem"
                   onClick={() => handleItemClick(item)}
                   disabled={item.disabled}
                   className={`w-full px-3 py-2 flex items-center gap-2 text-sm transition-colors pointer-events-auto ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
