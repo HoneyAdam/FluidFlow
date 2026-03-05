@@ -207,7 +207,7 @@ ${appCode}`,
       setAccessibilityReport({ score: 100, issues: [] });
       setTimeout(() => setShowAccessReport(false), 2000);
     } catch (e) {
-      console.error(e);
+      console.error('[usePreviewAI] Accessibility fix failed:', e);
     } finally {
       setIsFixingAccessibility(false);
     }
@@ -235,7 +235,7 @@ ${appCode}`,
       const fixedCode = cleanGeneratedCode(response.text || '');
       reviewChange('Fixed Responsiveness', { ...files, 'src/App.tsx': fixedCode });
     } catch (e) {
-      console.error(e);
+      console.error('[usePreviewAI] Responsiveness fix failed:', e);
     } finally {
       setIsFixingResponsiveness(false);
     }
@@ -263,7 +263,7 @@ ${appCode}`,
       const sql = cleanGeneratedCode(response.text || '');
       setFiles({ ...files, 'db/schema.sql': sql });
     } catch (e) {
-      console.error(e);
+      console.error('[usePreviewAI] Database schema generation failed:', e);
     } finally {
       setIsGeneratingDB(false);
     }

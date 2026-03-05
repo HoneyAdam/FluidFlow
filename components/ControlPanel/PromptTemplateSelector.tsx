@@ -165,7 +165,9 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({
     return result.slice(0, 10); // Limit to 10 in dropdown
   }, [templates, searchQuery, showFavoritesOnly]);
 
-  const favorites = useMemo(() => getFavoriteTemplates().slice(0, 5), []);
+  // Recompute when templates list changes (getFavoriteTemplates reads from storage)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const favorites = useMemo(() => getFavoriteTemplates().slice(0, 5), [templates.length]);
 
   const handleSelect = (template: PromptTemplate) => {
     if (template.variables.length > 0) {

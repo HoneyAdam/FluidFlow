@@ -61,6 +61,7 @@ const DEFAULT_CAPABILITIES: ModelCapabilities = {
  */
 const MODEL_CAPABILITIES: Record<string, Partial<ModelCapabilities>> = {
   // Gemini models
+  'gemini-3.1': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 1000000, maxOutputTokens: 65536 },
   'gemini-3': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 1000000, maxOutputTokens: 65536 },
   'gemini-2.5-pro': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 1048576, maxOutputTokens: 65536 },
   'gemini-2.5-flash': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 1048576, maxOutputTokens: 65536 },

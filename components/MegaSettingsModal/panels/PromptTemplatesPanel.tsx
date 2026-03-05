@@ -204,7 +204,9 @@ export const PromptTemplatesPanel: React.FC = () => {
   }, [templates, searchQuery, filterCategory, showFavoritesOnly]);
 
   // Stats
-  const stats = useMemo(() => getPromptTemplateStats(), []);
+  // Recompute when templates list changes (getPromptTemplateStats reads from storage)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stats = useMemo(() => getPromptTemplateStats(), [templates.length]);
 
   // Handlers
   const handleCreate = (template: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'usageCount' | 'isBuiltIn'>) => {

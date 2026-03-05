@@ -202,8 +202,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                 Completed Files ({completedFiles.length})
               </h4>
               <div className="space-y-1">
-                {completedFiles.map((file, index) => (
-                  <div key={index} className="text-xs font-mono flex items-center gap-2" style={{ color: 'var(--theme-text-secondary)' }}>
+                {completedFiles.map((file) => (
+                  <div key={file} className="text-xs font-mono flex items-center gap-2" style={{ color: 'var(--theme-text-secondary)' }}>
                     <FileCode className="w-3 h-3" style={{ color: 'var(--color-success)' }} />
                     {file}
                   </div>

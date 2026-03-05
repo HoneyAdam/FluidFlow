@@ -169,8 +169,8 @@ const FileChangesSummary = memo(function FileChangesSummary({ changes }: { chang
         </div>
       </div>
       <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
-        {changes.map((change, idx) => (
-          <div key={idx} className="flex items-center justify-between text-xs py-1 px-2 rounded" style={{ backgroundColor: 'var(--theme-glass-100)' }}>
+        {changes.map((change) => (
+          <div key={change.path} className="flex items-center justify-between text-xs py-1 px-2 rounded" style={{ backgroundColor: 'var(--theme-glass-100)' }}>
             <div className="flex items-center gap-2 min-w-0">
               <FileCode className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--theme-text-muted)' }} />
               <span

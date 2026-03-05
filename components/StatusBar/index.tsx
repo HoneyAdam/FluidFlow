@@ -126,10 +126,12 @@ export const StatusBar = memo(function StatusBar({
       const parts = modelId.split('/');
       const name = parts[parts.length - 1];
       // Shorten common model names
-      if (name.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
-      if (name.includes('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
+      if (name.includes('gemini-3.1-pro')) return 'Gemini 3.1 Pro';
+      if (name.includes('gemini-3.1-flash-lite')) return 'Gemini 3.1 Flash Lite';
       if (name.includes('gemini-3-pro')) return 'Gemini 3 Pro';
       if (name.includes('gemini-3-flash')) return 'Gemini 3 Flash';
+      if (name.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
+      if (name.includes('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
       if (name.includes('gpt-4o')) return 'GPT-4o';
       if (name.includes('gpt-4')) return 'GPT-4';
       if (name.includes('claude-3')) return 'Claude 3';
