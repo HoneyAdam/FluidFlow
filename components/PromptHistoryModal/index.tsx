@@ -187,7 +187,7 @@ export const PromptHistoryModal: React.FC<PromptHistoryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm" style={{ backgroundColor: 'var(--theme-backdrop)' }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm" style={{ backgroundColor: 'var(--theme-backdrop)' }} role="dialog" aria-modal="true" aria-label="Prompt history">
       <div className="w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--theme-border-light)' }}>
         {/* Header */}
         <div className="p-6" style={{ borderBottom: '1px solid var(--theme-border-subtle)', background: 'linear-gradient(to right, var(--color-feature-subtle), var(--color-info-subtle))' }}>

@@ -15,7 +15,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = (props) => {
   const testResult = settings.selectedProviderId ? settings.testResults[settings.selectedProviderId] : null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 backdrop-blur-sm animate-in fade-in duration-200" style={{ backgroundColor: 'var(--theme-overlay)' }}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 backdrop-blur-sm animate-in fade-in duration-200" style={{ backgroundColor: 'var(--theme-overlay)' }} role="dialog" aria-modal="true" aria-label="AI settings">
       <div className="w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto animate-in slide-in-from-bottom-4 duration-300" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}>
         {/* Header */}
         <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--theme-border-light)', background: 'linear-gradient(90deg, var(--color-info-subtle), var(--color-feature-subtle))' }}>

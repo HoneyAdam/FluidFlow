@@ -24,6 +24,9 @@ export const SyncConfirmationDialog: React.FC<SyncConfirmationDialogProps> = ({
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Sync confirmation"
     >
       <div
         className="w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"

@@ -120,7 +120,7 @@ function DefaultErrorFallback({
   const categoryStyle = getCategoryStyle();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--theme-modal-overlay)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--theme-modal-overlay)' }} role="dialog" aria-modal="true" aria-label="Application error">
       <div className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in duration-300" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--color-error-border)' }}>
         {/* Header */}
         <div className="p-6" style={{ borderBottom: '1px solid var(--color-error-border)', background: 'linear-gradient(to right, var(--color-error-subtle), var(--color-warning-subtle))' }}>

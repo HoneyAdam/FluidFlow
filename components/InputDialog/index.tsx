@@ -84,6 +84,9 @@ export const InputDialog: React.FC<InputDialogProps> = ({
       className="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
       onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Input dialog"
     >
       <div
         className="w-full max-w-md rounded-xl shadow-2xl overflow-hidden mx-4 animate-in zoom-in-95 duration-150"

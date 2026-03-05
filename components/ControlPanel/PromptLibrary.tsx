@@ -68,6 +68,9 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, o
       className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-150"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Prompt library"
     >
       <div
         className="w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col"

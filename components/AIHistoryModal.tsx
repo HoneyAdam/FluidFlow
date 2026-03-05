@@ -324,6 +324,9 @@ export const AIHistoryModal: React.FC<AIHistoryModalProps> = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm"
       style={{ backgroundColor: 'var(--theme-overlay)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="AI history"
     >
       <div
         className="w-[90vw] max-w-7xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"

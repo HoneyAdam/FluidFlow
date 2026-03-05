@@ -45,7 +45,7 @@ export const TechStackModal: React.FC<TechStackModalProps> = ({ isOpen, onClose 
   const currentSelection = techStack[selectedCategory];
 
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 p-4" style={{ backgroundColor: 'var(--theme-overlay)' }}>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 p-4" style={{ backgroundColor: 'var(--theme-overlay)' }} role="dialog" aria-modal="true" aria-label="Tech stack">
       <div className="w-full max-w-5xl backdrop-blur-xl rounded-2xl animate-in zoom-in-95 duration-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--theme-border)' }}>

@@ -82,6 +82,9 @@ export const PromptLevelModal: React.FC<PromptLevelModalProps> = ({
       className="fixed inset-0 z-[10000] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-150"
       style={{ backgroundColor: 'var(--theme-overlay)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Prompt level"
     >
       <div
         className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"

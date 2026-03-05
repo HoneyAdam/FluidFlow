@@ -319,6 +319,9 @@ export const ComponentTree: React.FC<ComponentTreeProps> = ({
       className="fixed inset-0 z-[150] flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-150"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Component tree"
     >
       <div
         className="w-full max-w-lg h-[70vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"

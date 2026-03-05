@@ -188,6 +188,9 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose, sho
     <div
       className={`fixed inset-0 backdrop-blur-md flex items-center justify-center z-[9999] p-4 transition-all duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Credits"
     >
       <div className={`relative max-w-7xl w-full transform transition-all duration-500 ${isAnimating ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}>
         {/* Animated background effects */}

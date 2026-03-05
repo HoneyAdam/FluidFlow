@@ -42,7 +42,7 @@ export const AutoFixModal: React.FC<AutoFixModalProps> = ({
   const stageInfo = getStageInfo();
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4" style={{ backgroundColor: 'var(--theme-overlay)' }}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm p-4" style={{ backgroundColor: 'var(--theme-overlay)' }} role="dialog" aria-modal="true" aria-label="Auto fix">
       <div className="w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh]" style={{ backgroundColor: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--theme-border)', backgroundColor: 'var(--theme-glass-100)' }}>

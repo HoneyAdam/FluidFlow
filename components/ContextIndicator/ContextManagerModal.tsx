@@ -141,6 +141,9 @@ export const ContextManagerModal: React.FC<ContextManagerModalProps> = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm"
       style={{ backgroundColor: 'var(--theme-modal-overlay)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Context manager"
     >
       <div
         className="w-[90vw] max-w-2xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"

@@ -40,7 +40,7 @@ export const CompactionPreviewModal: React.FC<CompactionPreviewModalProps> = ({
   const percentSaved = ((tokensSaved / stats.beforeTokens) * 100).toFixed(0);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" style={{ backgroundColor: 'var(--theme-modal-overlay)' }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" style={{ backgroundColor: 'var(--theme-modal-overlay)' }} role="dialog" aria-modal="true" aria-label="Context compaction">
       <div className="w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ backgroundColor: 'var(--theme-modal-bg)', border: '1px solid var(--theme-border)' }}>
         {/* Header */}
         <div className="p-6" style={{ borderBottom: '1px solid var(--theme-border)', background: 'linear-gradient(to right, var(--theme-accent-subtle), var(--theme-tertiary-subtle))' }}>
