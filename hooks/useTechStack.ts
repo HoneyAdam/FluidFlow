@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TechStackConfig, DEFAULT_TECH_STACK, TECH_STACK_OPTIONS } from '../types';
 import { getFluidFlowConfig } from '../services/fluidflowConfig';
-
-const TECH_STACK_KEY = 'fluidflow-tech-stack';
+import { STORAGE_KEYS } from '../constants/storage';
 
 // Helper to get option info from TECH_STACK_OPTIONS
 const getOptionInfo = (category: keyof TechStackConfig, value: string) => {
@@ -16,7 +15,7 @@ export const useTechStack = () => {
   // Load tech stack from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(TECH_STACK_KEY);
+      const saved = localStorage.getItem(STORAGE_KEYS.TECH_STACK);
       if (saved) {
         const parsedTechStack = JSON.parse(saved);
         // Merge with default to ensure all fields exist
@@ -46,7 +45,7 @@ export const useTechStack = () => {
   // Save to localStorage whenever tech stack changes
   useEffect(() => {
     try {
-      localStorage.setItem(TECH_STACK_KEY, JSON.stringify(techStack));
+      localStorage.setItem(STORAGE_KEYS.TECH_STACK, JSON.stringify(techStack));
     } catch (error) {
       console.error('Error saving tech stack:', error);
     }

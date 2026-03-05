@@ -123,7 +123,7 @@ export function useScreenshot({
     const timer = setTimeout(() => {
       capture().then(() => {
         lastAutoCaptureRef.current = Date.now();
-      }).catch(() => {});
+      }).catch((err) => console.debug('[useScreenshot] Auto-capture failed:', err));
     }, autoCaptureDelay);
 
     return () => clearTimeout(timer);

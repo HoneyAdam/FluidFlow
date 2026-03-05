@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { CREDITS_MODAL_DELAY_MS } from '@/constants';
+import { CREDITS_MODAL_DELAY_MS, STORAGE_KEYS } from '@/constants';
 import { ControlPanel, ControlPanelRef } from './components/ControlPanel';
 import { PreviewPanel } from './components/PreviewPanel';
 import { SnippetsPanel } from './components/SnippetsPanel';
@@ -197,9 +197,9 @@ export default function App() {
 
   // Check if first visit and show credits
   useEffect(() => {
-    const hasVisited = localStorage.getItem('fluidflow-visited');
+    const hasVisited = localStorage.getItem(STORAGE_KEYS.HAS_VISITED);
     if (!hasVisited) {
-      localStorage.setItem('fluidflow-visited', 'true');
+      localStorage.setItem(STORAGE_KEYS.HAS_VISITED, 'true');
       // FIX-16: Store timeout for cleanup
       const creditsTimeout = setTimeout(() => {
         modals.open('credits');

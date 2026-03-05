@@ -319,7 +319,7 @@ const DEVTOOLS_SCRIPT = `
         }).join(' '),
         timestamp: Date.now()
       }, '*');
-    } catch {}
+    } catch { /* postMessage may fail if iframe is detached */ }
   };
 
   console.log = (...args) => { originalConsole.log(...args); notify('log', args); };

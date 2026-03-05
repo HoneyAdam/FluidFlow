@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Check, Info } from 'lucide-react';
 import { TechStackConfig, TECH_STACK_OPTIONS, DEFAULT_TECH_STACK } from '../../../types';
-
-const STORAGE_KEY = 'fluidflow-tech-stack';
+import { STORAGE_KEYS } from '../../../constants/storage';
 
 type TechCategory = keyof TechStackConfig;
 
@@ -26,7 +25,7 @@ export const TechStackPanel: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<TechCategory>('styling');
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEYS.TECH_STACK);
     if (saved) {
       try {
         setTechStack({ ...DEFAULT_TECH_STACK, ...JSON.parse(saved) });
@@ -42,7 +41,7 @@ export const TechStackPanel: React.FC = () => {
       [category]: { library, version: 'latest' }
     };
     setTechStack(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(STORAGE_KEYS.TECH_STACK, JSON.stringify(updated));
   };
 
   const options = TECH_STACK_OPTIONS[selectedCategory] || [];

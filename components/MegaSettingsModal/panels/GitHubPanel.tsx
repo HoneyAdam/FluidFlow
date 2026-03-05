@@ -5,8 +5,7 @@ import { SettingsSection } from '../shared';
 import { SettingsToggle } from '../shared/SettingsToggle';
 import { settingsApi } from '../../../services/api/settings';
 import type { GitHubBackupSettings, GitHubPushSettings } from '../../../services/api/types';
-
-const GITHUB_PUSH_SETTINGS_KEY = 'fluidflow_github_push_settings';
+import { STORAGE_KEYS } from '../../../constants/storage';
 
 const DEFAULT_PUSH_SETTINGS: GitHubPushSettings = {
   includeProjectMetadata: true,
@@ -42,7 +41,7 @@ export const GitHubPanel: React.FC = () => {
 
     // Load push settings from localStorage
     try {
-      const saved = localStorage.getItem(GITHUB_PUSH_SETTINGS_KEY);
+      const saved = localStorage.getItem(STORAGE_KEYS.GITHUB_PUSH_SETTINGS);
       if (saved) {
         setPushSettings({ ...DEFAULT_PUSH_SETTINGS, ...JSON.parse(saved) });
       }
@@ -99,7 +98,7 @@ export const GitHubPanel: React.FC = () => {
   const handlePushSettingChange = (key: keyof GitHubPushSettings, value: boolean) => {
     const newSettings = { ...pushSettings, [key]: value };
     setPushSettings(newSettings);
-    localStorage.setItem(GITHUB_PUSH_SETTINGS_KEY, JSON.stringify(newSettings));
+    localStorage.setItem(STORAGE_KEYS.GITHUB_PUSH_SETTINGS, JSON.stringify(newSettings));
   };
 
   return (

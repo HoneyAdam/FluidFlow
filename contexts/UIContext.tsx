@@ -15,6 +15,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { TabType } from '../types';
 import { getProviderManager } from '../services/ai';
+import { STORAGE_KEYS } from '../constants/storage';
 
 // ============ Types ============
 
@@ -98,10 +99,10 @@ export function UIProvider({ children }: UIProviderProps) {
   // Preferences - persisted to localStorage
   const [autoAcceptChanges, setAutoAcceptChanges] = useState(false);
   const [diffModeEnabled, setDiffModeEnabled] = useState(() => {
-    return localStorage.getItem('diffModeEnabled') === 'true';
+    return localStorage.getItem(STORAGE_KEYS.DIFF_MODE_ENABLED) === 'true';
   });
   const [autoCommitEnabled, setAutoCommitEnabled] = useState(() => {
-    return localStorage.getItem('autoCommitEnabled') === 'true';
+    return localStorage.getItem(STORAGE_KEYS.AUTO_COMMIT_ENABLED) === 'true';
   });
 
   // Reset counter - increments on each reset, components can listen to this
@@ -115,12 +116,12 @@ export function UIProvider({ children }: UIProviderProps) {
 
   // Persist diffModeEnabled to localStorage
   useEffect(() => {
-    localStorage.setItem('diffModeEnabled', String(diffModeEnabled));
+    localStorage.setItem(STORAGE_KEYS.DIFF_MODE_ENABLED, String(diffModeEnabled));
   }, [diffModeEnabled]);
 
   // Persist autoCommitEnabled to localStorage
   useEffect(() => {
-    localStorage.setItem('autoCommitEnabled', String(autoCommitEnabled));
+    localStorage.setItem(STORAGE_KEYS.AUTO_COMMIT_ENABLED, String(autoCommitEnabled));
   }, [autoCommitEnabled]);
 
   // Auto-open left panel when generation starts (only once, not continuously)

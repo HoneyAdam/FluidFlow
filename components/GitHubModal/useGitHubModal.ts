@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { githubApi } from '@/services/api/github';
 import { settingsApi } from '@/services/api/settings';
 import type { GitHubRepo, OperationResult, ModalStep, GitHubModalProps } from './types';
+import { STORAGE_KEYS } from '@/constants/storage';
 
 export function useGitHubModal({
   isOpen,
@@ -85,7 +86,7 @@ export function useGitHubModal({
   useEffect(() => {
     if (mode === 'push') {
       try {
-        const savedSettings = localStorage.getItem('fluidflow_github_push_settings');
+        const savedSettings = localStorage.getItem(STORAGE_KEYS.GITHUB_PUSH_SETTINGS);
         if (savedSettings) {
           const settings = JSON.parse(savedSettings);
           if (typeof settings.includeConversationHistory === 'boolean') {

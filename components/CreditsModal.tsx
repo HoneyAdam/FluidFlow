@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X as XIcon, Github, Mail, Star, ExternalLink, Heart, Sparkles, Code, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { APP_VERSION } from '../services/version';
+import { STORAGE_KEYS } from '../constants/storage';
 
 interface Project {
   id: string;
@@ -131,7 +132,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose, sho
 
   useEffect(() => {
     // Check if user has seen credits before
-    const seen = localStorage.getItem('fluidflow-credits-seen');
+    const seen = localStorage.getItem(STORAGE_KEYS.CREDITS_SEEN);
     if (seen) {
       setHasSeenCredits(true);
     }
@@ -152,7 +153,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose, sho
   const handleClose = () => {
     setIsAnimating(false);
     if (!hasSeenCredits && showOnFirstLaunch) {
-      localStorage.setItem('fluidflow-credits-seen', 'true');
+      localStorage.setItem(STORAGE_KEYS.CREDITS_SEEN, 'true');
       setHasSeenCredits(true);
     }
     setTimeout(onClose, 200);

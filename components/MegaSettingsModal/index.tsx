@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TOAST_DURATION_MS } from '../../constants/timing';
+import { STORAGE_KEYS as GLOBAL_STORAGE_KEYS } from '../../constants/storage';
 import { createPortal } from 'react-dom';
 import { X, Settings2, Download, Upload, RotateCcw } from 'lucide-react';
 import { ConfirmModal } from '../ContextIndicator/ConfirmModal';
@@ -84,10 +85,10 @@ export const MegaSettingsModal: React.FC<MegaSettingsModalProps> = ({
       });
 
       // Also get tech stack and other existing keys
-      const techStack = localStorage.getItem('fluidflow-tech-stack');
+      const techStack = localStorage.getItem(GLOBAL_STORAGE_KEYS.TECH_STACK);
       if (techStack) settings.techStack = JSON.parse(techStack);
 
-      const config = localStorage.getItem('fluidflow_config');
+      const config = localStorage.getItem(GLOBAL_STORAGE_KEYS.CONFIG);
       if (config) settings.fluidflowConfig = JSON.parse(config);
 
       // Create and download JSON file
@@ -128,11 +129,11 @@ export const MegaSettingsModal: React.FC<MegaSettingsModalProps> = ({
         });
 
         if (settings.techStack) {
-          localStorage.setItem('fluidflow-tech-stack', JSON.stringify(settings.techStack));
+          localStorage.setItem(GLOBAL_STORAGE_KEYS.TECH_STACK, JSON.stringify(settings.techStack));
         }
 
         if (settings.fluidflowConfig) {
-          localStorage.setItem('fluidflow_config', JSON.stringify(settings.fluidflowConfig));
+          localStorage.setItem(GLOBAL_STORAGE_KEYS.CONFIG, JSON.stringify(settings.fluidflowConfig));
         }
 
         setImportExportMessage({ type: 'success', message: 'Settings imported! Refresh to apply.' });

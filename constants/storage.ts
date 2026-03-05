@@ -21,14 +21,20 @@ export const STORAGE_KEYS = {
   ACTIVE_PROVIDER: 'active-provider',
   SELECTED_MODEL: 'selected-model',
   EDITOR_SETTINGS: 'editor-settings',
-  TECH_STACK: 'tech-stack',
+  TECH_STACK: 'fluidflow-tech-stack',
   DIFF_MODE_ENABLED: 'diffModeEnabled',
+  AUTO_COMMIT_ENABLED: 'autoCommitEnabled',
   HAS_VISITED: 'fluidflow-visited',
+  CREDITS_SEEN: 'fluidflow-credits-seen',
   DEBUG_MODE: 'debug-mode',
+  DEBUG_ENABLED: 'fluidflow_debug_enabled',
   THEME: 'theme',
   CONTEXTS: 'fluidflow_contexts',
+  CONFIG: 'fluidflow_config',
   PROMPT_CONFIRMATION: 'prompt-confirmation-enabled',
   FILE_CONTEXT_ENABLED: 'file-context-delta-enabled',
+  GITHUB_PUSH_SETTINGS: 'fluidflow_github_push_settings',
+  DEBUG_SETTINGS: 'fluidflow_debug_settings',
 } as const;
 
 // Context IDs
