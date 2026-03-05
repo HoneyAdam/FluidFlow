@@ -36,7 +36,10 @@ const MAX_PREVIEW_LENGTH = 200;
 export function getPromptHistory(): PromptHistoryItem[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    // FIX-21: Runtime validation
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }

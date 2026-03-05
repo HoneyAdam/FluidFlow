@@ -79,7 +79,7 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
   // HTML/JS code like <script> tags, event handlers, etc. Scanning these
   // causes false positives when creating/updating projects.
   const bodyToScan = req.body ? (() => {
-    const { files, ...rest } = req.body;
+    const { files: _files, ...rest } = req.body;
     return JSON.stringify(rest);
   })() : '{}';
   const query = JSON.stringify(req.query);

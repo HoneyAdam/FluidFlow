@@ -66,10 +66,12 @@ class ConversationContextManager {
     try {
       const saved = localStorage.getItem(this.config.storageKey);
       if (saved) {
-        const parsed = JSON.parse(saved) as ConversationContext[];
+        const parsed = JSON.parse(saved);
+        // FIX-21: Runtime validation before type assertion
+        if (!Array.isArray(parsed)) return;
         let cleared = 0;
 
-        parsed.forEach((ctx) => {
+        (parsed as ConversationContext[]).forEach((ctx) => {
           // AUTO-CLEAR: If context has excessive tokens (>500k), clear it on load
           // This prevents token bloat from corrupted or stale contexts
           if (ctx.estimatedTokens > 500000) {
@@ -146,7 +148,7 @@ class ConversationContextManager {
     // Remove oldest contexts until we're under the limit
     const targetSize = Math.max(3, Math.floor(this.contexts.size * 0.7)); // Keep 70% or at least 3
     for (let i = 0; i < sortedContexts.length - targetSize; i++) {
-      const [id, context] = sortedContexts[i];
+      const [id, _context] = sortedContexts[i];
       // Keep system contexts (main-chat, etc.)
       if (!id.includes('main-chat')) {
         console.log(`[ContextManager] Removing old context: ${id}`);

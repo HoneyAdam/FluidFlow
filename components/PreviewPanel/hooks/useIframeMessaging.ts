@@ -51,6 +51,8 @@ export function useIframeMessaging({
   // Message handler
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // FIX-07: Validate message origin (allow same-origin and sandbox null origin)
+      if (event.origin !== window.location.origin && event.origin !== 'null') return;
       if (!event.data) return;
 
       switch (event.data.type) {

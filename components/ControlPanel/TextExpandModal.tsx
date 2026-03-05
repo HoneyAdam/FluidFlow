@@ -14,6 +14,7 @@ import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { createPortal } from 'react-dom';
 import { X, Copy, Check } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { escapeHtml } from '../../utils/renderMarkdown';
 
 interface TextExpandModalProps {
   isOpen: boolean;
@@ -23,19 +24,8 @@ interface TextExpandModalProps {
   type: 'prompt' | 'explanation';
 }
 
-// Simple markdown renderer (same as ChatPanel)
+// Simple markdown renderer (same as ChatPanel) - FIX-17: escapeHtml consolidated
 const renderMarkdown = (text: string): React.ReactNode => {
-  const escapeHtml = (str: string): string => {
-    const htmlEntities: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    };
-    return str.replace(/[&<>"']/g, char => htmlEntities[char]);
-  };
-
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
   let inCodeBlock = false;

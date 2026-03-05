@@ -40,8 +40,11 @@ function getOrCreateSecret(): string {
     cachedSecret = secret;
     return secret;
   } catch {
-    // Fallback for environments without localStorage
-    return 'fallback-secret-for-ephemeral-session';
+    // FIX-22: Generate random session-level secret instead of predictable fallback
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    cachedSecret = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return cachedSecret;
   }
 }
 

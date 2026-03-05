@@ -63,6 +63,24 @@ function rateLimitMiddleware(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
+// FIX-03: Helper to safely extract string param from Express 5 (string | string[])
+function getParamString(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? '';
+  return value ?? '';
+}
+
+// FIX-14: Fetch with timeout to prevent server hanging on GitHub API issues
+// Note: Use globalThis.Response to avoid conflict with Express's Response type
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 30000): Promise<globalThis.Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // Helper to get project paths
 const getProjectPath = (id: string) => path.join(PROJECTS_DIR, id);
 const getFilesDir = (id: string) => path.join(getProjectPath(id), 'files');
@@ -98,7 +116,7 @@ const isValidGitHubToken = (token: string): boolean => {
 // Set remote origin
 router.post('/:id/remote', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -147,7 +165,7 @@ router.post('/:id/remote', async (req, res) => {
 // Get remotes
 router.get('/:id/remote', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -181,7 +199,7 @@ router.get('/:id/remote', async (req, res) => {
 // Push to backup branch (for auto-backup feature)
 router.post('/:id/backup-push', rateLimitMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -302,7 +320,7 @@ router.post('/:id/backup-push', rateLimitMiddleware, async (req, res) => {
 
 // Push to remote (GH-002 fix: rate limited)
 router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
-  const { id } = req.params;
+  const id = getParamString(req.params.id);
   if (!isValidProjectId(id)) {
     return res.status(400).json({ error: 'Invalid project ID' });
   }
@@ -506,7 +524,7 @@ router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
 // Pull from remote
 router.post('/:id/pull', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -539,7 +557,7 @@ router.post('/:id/pull', async (req, res) => {
 // Fetch from remote
 router.post('/:id/fetch', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -667,7 +685,7 @@ router.post('/clone', rateLimitMiddleware, async (req, res) => {
 // Create GitHub repository (requires token) (GH-002 fix: rate limited)
 router.post('/:id/create-repo', rateLimitMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = getParamString(req.params.id);
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -702,7 +720,7 @@ router.post('/:id/create-repo', rateLimitMiddleware, async (req, res) => {
     const repoName = name || (meta?.name?.replace(/\s+/g, '-').toLowerCase() || 'untitled-project');
 
     // Create repo via GitHub API
-    const response = await fetch('https://api.github.com/user/repos', {
+    const response = await fetchWithTimeout('https://api.github.com/user/repos', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -784,7 +802,7 @@ router.post('/verify-token', rateLimitMiddleware, async (req, res) => {
       return res.status(400).json({ valid: false, error: 'Invalid token format' });
     }
 
-    const response = await fetch('https://api.github.com/user', {
+    const response = await fetchWithTimeout('https://api.github.com/user', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.github.v3+json'
@@ -982,7 +1000,7 @@ router.get('/repos', rateLimitMiddleware, async (req, res) => {
       repos.map(async (repo) => {
         let hasBackupBranch = false;
         try {
-          const branchResponse = await fetch(
+          const branchResponse = await fetchWithTimeout(
             `https://api.github.com/repos/${repo.full_name}/branches/backup/auto`,
             {
               headers: {

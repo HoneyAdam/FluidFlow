@@ -210,6 +210,8 @@ export function useSandboxBridge({
    */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // FIX-07: Validate message origin (allow same-origin and sandbox null origin)
+      if (event.origin !== window.location.origin && event.origin !== 'null') return;
       if (!event.data || !event.data.type) return;
 
       const { type, requestId, ...data } = event.data;

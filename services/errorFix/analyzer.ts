@@ -643,13 +643,13 @@ class ErrorAnalyzer {
 
     if (error.identifier) {
       const identifier = error.identifier;
+      // FIX-29: Compile regexes once outside the loop
+      const exportPattern = new RegExp(`export\\s+(?:default\\s+)?(?:const|function|class)?\\s*${identifier}\\b`);
+      const declPattern = new RegExp(`(?:function|const)\\s+${identifier}\\s*[=(]`);
       for (const [filePath, content] of Object.entries(files)) {
         if (!content) continue;
 
-        if (
-          new RegExp(`export\\s+(?:default\\s+)?(?:const|function|class)?\\s*${identifier}\\b`).test(content) ||
-          new RegExp(`(?:function|const)\\s+${identifier}\\s*[=(]`).test(content)
-        ) {
+        if (exportPattern.test(content) || declPattern.test(content)) {
           related.push(filePath);
         }
       }

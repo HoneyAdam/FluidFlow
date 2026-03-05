@@ -431,6 +431,18 @@ function validateFileSizes(files: Record<string, unknown>): { valid: boolean; er
 router.post('/', async (req, res) => {
   try {
     const { name, description, files } = req.body;
+
+    // FIX-34: Validate project name/description length
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Project name is required' });
+    }
+    if (name.length > 100) {
+      return res.status(400).json({ error: 'Project name must be 100 characters or less' });
+    }
+    if (description && typeof description === 'string' && description.length > 500) {
+      return res.status(400).json({ error: 'Project description must be 500 characters or less' });
+    }
+
     const id = uuidv4();
     const projectPath = getProjectPath(id);
     const filesDir = getFilesDir(id);
@@ -494,6 +506,19 @@ router.put('/:id', async (req, res) => {
     // Validate project ID to prevent path traversal
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    // FIX-34: Validate project name/description length on update
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({ error: 'Project name is required' });
+      }
+      if (name.length > 100) {
+        return res.status(400).json({ error: 'Project name must be 100 characters or less' });
+      }
+    }
+    if (description !== undefined && typeof description === 'string' && description.length > 500) {
+      return res.status(400).json({ error: 'Project description must be 500 characters or less' });
     }
 
     // Validate file paths to prevent path traversal attacks

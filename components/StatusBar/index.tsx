@@ -71,9 +71,13 @@ export const StatusBar = memo(function StatusBar({
   // Update check state
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckResult | null>(null);
 
-  // Check for updates on mount
+  // Check for updates on mount (FIX-11: mounted guard + catch)
   useEffect(() => {
-    checkForUpdatesWithCache().then(setUpdateCheck);
+    let mounted = true;
+    checkForUpdatesWithCache()
+      .then(result => { if (mounted) setUpdateCheck(result); })
+      .catch(err => console.warn('[StatusBar] Update check failed:', err));
+    return () => { mounted = false; };
   }, []);
 
   // Project health status

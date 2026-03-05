@@ -78,15 +78,18 @@ export function UIProvider({ children }: UIProviderProps) {
     return config?.defaultModel || 'models/gemini-2.5-flash';
   });
 
-  // Sync selectedModel with ProviderManager on mount (after async init)
+  // Sync selectedModel with ProviderManager on mount (FIX-11: mounted guard + catch)
   useEffect(() => {
+    let mounted = true;
     const pm = getProviderManager();
     pm.waitForInit().then(() => {
+      if (!mounted) return;
       const config = pm.getActiveConfig();
       if (config?.defaultModel) {
         setSelectedModel(config.defaultModel);
       }
-    });
+    }).catch(err => console.warn('[UIContext] Provider init failed:', err));
+    return () => { mounted = false; };
   }, []);
 
   // Suggestions

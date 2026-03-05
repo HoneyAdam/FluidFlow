@@ -33,7 +33,10 @@ export async function loadProvidersFromLocalStorage(): Promise<ProviderConfig[]>
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const providers = JSON.parse(saved) as ProviderConfig[];
+      const parsed = JSON.parse(saved);
+      // FIX-21: Runtime validation before type assertion
+      if (!Array.isArray(parsed)) return [createDefaultConfig()];
+      const providers = parsed as ProviderConfig[];
       // Decrypt API keys
       return await decryptProviderConfigs(providers);
     }
@@ -53,7 +56,10 @@ export function loadProvidersFromLocalStorageSync(): ProviderConfig[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      // FIX-21: Runtime validation
+      if (!Array.isArray(parsed)) return [createDefaultConfig()];
+      return parsed;
     }
   } catch (e) {
     console.error('Failed to load providers from localStorage:', e);

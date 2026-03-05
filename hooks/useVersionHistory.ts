@@ -106,12 +106,11 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
       pendingFilesRef.current = null;
 
       setState(prevState => {
-        // do not add to history if nothing changed
-        if (JSON.stringify(prevState.present.files) === JSON.stringify(pendingFiles)) {
+        // FIX-10: Use key-based diff instead of JSON.stringify for O(n) vs O(n*m) comparison
+        const changedFiles = calculateChangedFiles(prevState.present.files, pendingFiles);
+        if (changedFiles.length === 0) {
           return prevState;
         }
-
-        const changedFiles = calculateChangedFiles(prevState.present.files, pendingFiles);
         const autoLabel = changedFiles.length > 0
           ? `Modified ${changedFiles.length} file${changedFiles.length > 1 ? 's' : ''}`
           : 'Changes';
@@ -335,9 +334,9 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
       const { files: pendingFiles, label } = pendingFilesRef.current;
       pendingFilesRef.current = null;
 
-      // Check if changes are meaningful
-      if (JSON.stringify(state.present.files) !== JSON.stringify(pendingFiles)) {
-        const changedFiles = calculateChangedFiles(state.present.files, pendingFiles);
+      // FIX-10: Use key-based diff instead of JSON.stringify
+      const changedFiles = calculateChangedFiles(state.present.files, pendingFiles);
+      if (changedFiles.length > 0) {
         const autoLabel = changedFiles.length > 0
           ? `Modified ${changedFiles.length} file${changedFiles.length > 1 ? 's' : ''}`
           : 'Changes';

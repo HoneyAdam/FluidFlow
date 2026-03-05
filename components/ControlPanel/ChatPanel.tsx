@@ -6,6 +6,7 @@ import { TextExpandModal } from './TextExpandModal';
 import { ChatTimeline } from './ChatTimeline';
 import { useChatContextMenu } from '../ContextMenu';
 import { useUI } from '../../contexts/UIContext';
+import { escapeHtml } from '../../utils/renderMarkdown';
 
 // Truncation limits
 const TRUNCATE_PROMPT_LENGTH = 200;
@@ -80,24 +81,13 @@ const getFileName = (path: string): string => {
   return parts[parts.length - 1];
 };
 
-// HTML entity escaping to prevent XSS attacks
-const escapeHtml = (text: string): string => {
-  const htmlEntities: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  };
-  return text.replace(/[&<>"']/g, char => htmlEntities[char]);
-};
-
 // Simple markdown renderer for explanations
 const renderMarkdown = (text: string): React.ReactNode => {
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
   let inCodeBlock = false;
-  let codeContent = '';
+  // FIX-30: Use array + join instead of string concatenation in loop
+  let codeLines: string[] = [];
   let _codeLanguage = '';
 
   lines.forEach((line, idx) => {
@@ -105,10 +95,10 @@ const renderMarkdown = (text: string): React.ReactNode => {
       if (inCodeBlock) {
         elements.push(
           <pre key={`code-${idx}`} className="rounded-lg p-3 my-2 overflow-x-auto text-xs" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
-            <code style={{ color: 'var(--theme-text-secondary)' }}>{codeContent.trim()}</code>
+            <code style={{ color: 'var(--theme-text-secondary)' }}>{codeLines.join('\n').trim()}</code>
           </pre>
         );
-        codeContent = '';
+        codeLines = [];
         inCodeBlock = false;
       } else {
         inCodeBlock = true;
@@ -118,7 +108,7 @@ const renderMarkdown = (text: string): React.ReactNode => {
     }
 
     if (inCodeBlock) {
-      codeContent += line + '\n';
+      codeLines.push(line);
       return;
     }
 

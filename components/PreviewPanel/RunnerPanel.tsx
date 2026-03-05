@@ -126,6 +126,10 @@ export const RunnerPanel: React.FC<RunnerPanelProps> = ({
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (!event.data || typeof event.data !== 'object') return;
+      // FIX-07: Validate origin - allow localhost runner ports (33xx) and same-origin
+      const validOrigin = event.origin === window.location.origin ||
+        /^https?:\/\/localhost:33\d{2}$/.test(event.origin);
+      if (!validOrigin) return;
 
       if (event.data.type === 'RUNNER_CONSOLE') {
         setConsoleLogs(prev => [...prev.slice(-499), {

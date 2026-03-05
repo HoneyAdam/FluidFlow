@@ -78,6 +78,10 @@ export const ExpandedPromptModal: React.FC<ExpandedPromptModalProps> = ({
   const [showPromptLibrary, setShowPromptLibrary] = useState(true);
   const [showImproverModal, setShowImproverModal] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const errorTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // FIX-16: Cleanup error timeout on unmount
+  useEffect(() => () => clearTimeout(errorTimeoutRef.current), []);
 
   // Prompt library state
   const [activeCategory, setActiveCategory] = useState<string>(promptLibrary[0]?.id || '');
@@ -140,13 +144,13 @@ export const ExpandedPromptModal: React.FC<ExpandedPromptModalProps> = ({
 
     if (!hasExistingApp && !hasSketch && !hasPrompt) {
       setLocalError('Please upload a sketch or enter a prompt');
-      setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
+      errorTimeoutRef.current = setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
       return;
     }
 
     if (hasExistingApp && !hasPrompt && attachments.length === 0) {
       setLocalError('Please enter a prompt or attach an image');
-      setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
+      errorTimeoutRef.current = setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
       return;
     }
 
@@ -186,11 +190,16 @@ export const ExpandedPromptModal: React.FC<ExpandedPromptModalProps> = ({
     const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       setLocalError('Invalid file type');
-      setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
+      errorTimeoutRef.current = setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
       return;
     }
 
     const reader = new FileReader();
+    // FIX-33: Add onerror handler for FileReader
+    reader.onerror = () => {
+      setLocalError('Failed to read file');
+      errorTimeoutRef.current = setTimeout(() => setLocalError(null), ERROR_DISPLAY_DURATION_MS);
+    };
     reader.onloadend = () => {
       const result = reader.result as string;
       // Only attach if we got a valid result (not empty string)

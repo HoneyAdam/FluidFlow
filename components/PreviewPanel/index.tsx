@@ -633,12 +633,67 @@ export const PreviewPanel = memo(function PreviewPanel({
     projectId,
   });
 
-  // Build iframe content
+  // FIX-12: Stable callbacks for FileExplorer to avoid defeating React.memo
+  const activeFileRef = useRef(activeFile);
+  activeFileRef.current = activeFile;
+
+  const handleCreateFile = useCallback((path: string, content: string) => {
+    setFiles((prev: FileSystem) => ({ ...prev, [path]: content }));
+  }, [setFiles]);
+
+  const handleDeleteFile = useCallback((path: string) => {
+    setFiles((prev: FileSystem) => {
+      const newFiles = { ...prev };
+      Object.keys(newFiles).forEach(filePath => {
+        if (filePath === path || filePath.startsWith(path + '/')) {
+          delete newFiles[filePath];
+        }
+      });
+      // If deleted file was active, switch to another file
+      const currentActive = activeFileRef.current;
+      if (currentActive === path || currentActive.startsWith(path + '/')) {
+        const remainingFiles = Object.keys(newFiles);
+        if (remainingFiles.length > 0) {
+          setActiveFile(remainingFiles[0]);
+        }
+      }
+      return newFiles;
+    });
+  }, [setFiles, setActiveFile]);
+
+  const handleRenameFile = useCallback((oldPath: string, newPath: string) => {
+    setFiles((prev: FileSystem) => {
+      const newFiles: FileSystem = {};
+      (Object.entries(prev) as [string, string][]).forEach(([filePath, content]) => {
+        if (filePath === oldPath) {
+          newFiles[newPath] = content;
+        } else if (filePath.startsWith(oldPath + '/')) {
+          const relativePath = filePath.substring(oldPath.length);
+          newFiles[newPath + relativePath] = content;
+        } else {
+          newFiles[filePath] = content;
+        }
+      });
+      // Update active file if it was renamed
+      const currentActive = activeFileRef.current;
+      if (currentActive === oldPath) {
+        setActiveFile(newPath);
+      } else if (currentActive.startsWith(oldPath + '/')) {
+        const relativePath = currentActive.substring(oldPath.length);
+        setActiveFile(newPath + relativePath);
+      }
+      return newFiles;
+    });
+  }, [setFiles, setActiveFile]);
+
+  // Build iframe content (FIX-08: debounce to avoid rebuilding on every keystroke)
   useEffect(() => {
-    if (appCode) {
+    if (!appCode) return;
+    const timeout = setTimeout(() => {
       const html = buildIframeHtml(files, isInspectMode);
       setIframeSrc(html);
-    }
+    }, 500);
+    return () => clearTimeout(timeout);
   }, [appCode, files, isInspectMode]);
 
   // Handle inspect mode toggle with iframe refresh
@@ -1148,48 +1203,9 @@ export const PreviewPanel = memo(function PreviewPanel({
                 files={files}
                 activeFile={activeFile}
                 onFileSelect={setActiveFile}
-                onCreateFile={(path, content) => {
-                  setFiles({ ...files, [path]: content });
-                }}
-                onDeleteFile={(path) => {
-                  const newFiles = { ...files };
-                  // Delete the file and any files in the folder if it's a folder
-                  Object.keys(newFiles).forEach(filePath => {
-                    if (filePath === path || filePath.startsWith(path + '/')) {
-                      delete newFiles[filePath];
-                    }
-                  });
-                  setFiles(newFiles);
-                  // If deleted file was active, switch to another file
-                  if (activeFile === path || activeFile.startsWith(path + '/')) {
-                    const remainingFiles = Object.keys(newFiles);
-                    if (remainingFiles.length > 0) {
-                      setActiveFile(remainingFiles[0]);
-                    }
-                  }
-                }}
-                onRenameFile={(oldPath, newPath) => {
-                  const newFiles: FileSystem = {};
-                  (Object.entries(files) as [string, string][]).forEach(([filePath, content]) => {
-                    if (filePath === oldPath) {
-                      newFiles[newPath] = content;
-                    } else if (filePath.startsWith(oldPath + '/')) {
-                      // Handle folder rename - update all nested files
-                      const relativePath = filePath.substring(oldPath.length);
-                      newFiles[newPath + relativePath] = content;
-                    } else {
-                      newFiles[filePath] = content;
-                    }
-                  });
-                  setFiles(newFiles);
-                  // Update active file if it was renamed
-                  if (activeFile === oldPath) {
-                    setActiveFile(newPath);
-                  } else if (activeFile.startsWith(oldPath + '/')) {
-                    const relativePath = activeFile.substring(oldPath.length);
-                    setActiveFile(newPath + relativePath);
-                  }
-                }}
+                onCreateFile={handleCreateFile}
+                onDeleteFile={handleDeleteFile}
+                onRenameFile={handleRenameFile}
               />
             <div className="flex-1 flex flex-col min-h-0 min-w-0">
               {/* Split View Toggle */}

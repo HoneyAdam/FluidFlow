@@ -67,6 +67,10 @@ router.post('/minimax/chat/completions', async (req: Request, res: Response) => 
     return;
   }
 
+  // FIX-02: AbortController to prevent server hanging if upstream API is unresponsive
+  const controller = new AbortController();
+  const fetchTimeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
   try {
     const isStreaming = req.body?.stream === true;
 
@@ -77,6 +81,7 @@ router.post('/minimax/chat/completions', async (req: Request, res: Response) => 
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(req.body),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -123,10 +128,13 @@ router.post('/minimax/chat/completions', async (req: Request, res: Response) => 
     }
   } catch (error) {
     console.error('[AI Proxy] MiniMax request failed:', error);
-    res.status(500).json({
-      error: 'Failed to connect to MiniMax API',
+    const isAbort = error instanceof Error && error.name === 'AbortError';
+    res.status(isAbort ? 504 : 500).json({
+      error: isAbort ? 'MiniMax API request timed out' : 'Failed to connect to MiniMax API',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
+  } finally {
+    clearTimeout(fetchTimeout);
   }
 });
 
@@ -146,6 +154,10 @@ router.get('/minimax/test', async (req: Request, res: Response) => {
     return;
   }
 
+  // FIX-02: AbortController for test endpoint
+  const testController = new AbortController();
+  const testTimeout = setTimeout(() => testController.abort(), 15000); // 15s for test
+
   try {
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
@@ -158,6 +170,7 @@ router.get('/minimax/test', async (req: Request, res: Response) => {
         messages: [{ role: 'user', content: 'Hi' }],
         max_tokens: 10,
       }),
+      signal: testController.signal,
     });
 
     if (!response.ok) {
@@ -173,6 +186,8 @@ router.get('/minimax/test', async (req: Request, res: Response) => {
       success: false,
       error: error instanceof Error ? error.message : 'Connection failed',
     });
+  } finally {
+    clearTimeout(testTimeout);
   }
 });
 

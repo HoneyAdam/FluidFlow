@@ -155,9 +155,15 @@ export function AppProvider({ children, defaultFiles }: AppProviderProps) {
     incompleteFiles?: string[];
   } | null>(null);
 
-  // PERF: Memoize file keys to avoid recalculating localChanges on content-only edits.
-  // Only recompute when the set of files changes or uncommitted state changes.
-  const fileKeysSignature = useMemo(() => Object.keys(files).sort().join('\0'), [files]);
+  // FIX-13: Stable file key signature that only changes when files are added/removed,
+  // not on content-only edits. Uses ref to avoid [files] dependency triggering on every edit.
+  const prevKeysRef = useRef<string>('');
+  const fileKeysSignature = useMemo(() => {
+    const sig = Object.keys(files).sort().join('\0');
+    if (sig === prevKeysRef.current) return prevKeysRef.current;
+    prevKeysRef.current = sig;
+    return sig;
+  }, [files]);
   const filesRef = useRef(files);
   filesRef.current = files;
 
@@ -187,7 +193,9 @@ export function AppProvider({ children, defaultFiles }: AppProviderProps) {
       });
 
       return changes;
-    } catch {
+    } catch (err) {
+      // FIX-15: Log instead of silently swallowing - helps debug missing change detection
+      console.error('[AppContext] getLocalChanges failed:', err);
       return [];
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,7 +327,9 @@ export function AppProvider({ children, defaultFiles }: AppProviderProps) {
         activeTab,
         savedAt: Date.now()
       };
-      saveWIP(wipData);
+      saveWIP(wipData).catch((err) => {
+        console.error('[AppContext] WIP save failed:', err);
+      });
     }, 1000);
 
     return () => clearTimeout(timeout);

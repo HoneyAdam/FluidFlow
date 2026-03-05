@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ERROR_DISPLAY_DURATION_MS } from '../../../constants/timing';
 import { Github, Check, Info, Loader2, CloudUpload, Eye, EyeOff, FileJson, MessageSquare, Shield, ExternalLink } from 'lucide-react';
 import { SettingsSection } from '../shared';
@@ -25,6 +25,9 @@ export const GitHubPanel: React.FC = () => {
   const [backupSaving, setBackupSaving] = useState(false);
   const [backupMessage, setBackupMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // FIX-16: Timeout ref for cleanup
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   // Push settings (stored in localStorage)
   const [pushSettings, setPushSettings] = useState<GitHubPushSettings>(DEFAULT_PUSH_SETTINGS);
 
@@ -46,6 +49,9 @@ export const GitHubPanel: React.FC = () => {
     } catch (err) {
       console.error('Failed to load push settings:', err);
     }
+
+    // FIX-16: Cleanup timeout on unmount
+    return () => clearTimeout(messageTimeoutRef.current);
   }, []);
 
   // GitHub Backup handlers
@@ -58,11 +64,11 @@ export const GitHubPanel: React.FC = () => {
       await settingsApi.saveGitHubBackup(updates);
       setBackupSettings(prev => ({ ...prev, [key]: value }));
       setBackupMessage({ type: 'success', text: 'Saved!' });
-      setTimeout(() => setBackupMessage(null), 2000);
+      messageTimeoutRef.current = setTimeout(() => setBackupMessage(null), 2000);
     } catch (err) {
       console.error('Failed to save backup settings:', err);
       setBackupMessage({ type: 'error', text: 'Failed to save' });
-      setTimeout(() => setBackupMessage(null), ERROR_DISPLAY_DURATION_MS);
+      messageTimeoutRef.current = setTimeout(() => setBackupMessage(null), ERROR_DISPLAY_DURATION_MS);
     } finally {
       setBackupSaving(false);
     }
@@ -79,11 +85,11 @@ export const GitHubPanel: React.FC = () => {
     try {
       await settingsApi.saveGitHubBackup({ token: backupToken });
       setBackupMessage({ type: 'success', text: 'Token saved!' });
-      setTimeout(() => setBackupMessage(null), 2000);
+      messageTimeoutRef.current = setTimeout(() => setBackupMessage(null), 2000);
     } catch (err) {
       console.error('Failed to save token:', err);
       setBackupMessage({ type: 'error', text: 'Failed to save token' });
-      setTimeout(() => setBackupMessage(null), ERROR_DISPLAY_DURATION_MS);
+      messageTimeoutRef.current = setTimeout(() => setBackupMessage(null), ERROR_DISPLAY_DURATION_MS);
     } finally {
       setBackupSaving(false);
     }

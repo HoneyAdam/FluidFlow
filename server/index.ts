@@ -7,7 +7,7 @@ import { githubRouter } from './api/github.js';
 import { settingsRouter } from './api/settings.js';
 import { runnerRouter, cleanupAllRunningProjects, getRunnerHealth } from './api/runner.js';
 import { aiRouter } from './api/ai.js';
-import { apiLimiter, requestLogger, securityHeaders, validateRequest } from './middleware/security.js';
+import { apiLimiter, aiLimiter, requestLogger, securityHeaders, validateRequest } from './middleware/security.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -83,7 +83,7 @@ app.use('/api/git', gitRouter);
 app.use('/api/github', githubRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/runner', runnerRouter);
-app.use('/api/ai', aiRouter);
+app.use('/api/ai', aiLimiter, aiRouter); // FIX-06: Apply stricter rate limit to AI proxy
 
 // Error handling middleware (must be after all routes)
 app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {

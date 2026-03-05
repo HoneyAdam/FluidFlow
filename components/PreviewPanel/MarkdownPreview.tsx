@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { FileText, Eye, Code2, Copy, Check, RefreshCw } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { escapeHtml } from '../../utils/renderMarkdown';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -9,18 +10,6 @@ interface MarkdownPreviewProps {
   onRegenerate?: () => void;
   isGenerating?: boolean;
 }
-
-// HTML entity escaping
-const escapeHtml = (text: string): string => {
-  const htmlEntities: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  };
-  return text.replace(/[&<>"']/g, char => htmlEntities[char]);
-};
 
 // BUG-003/014/015 FIX: Comprehensive URL sanitization to prevent XSS
 // Decodes URL-encoded characters and blocks all dangerous protocols

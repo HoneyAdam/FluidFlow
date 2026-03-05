@@ -196,9 +196,11 @@ export default function App() {
     const hasVisited = localStorage.getItem('fluidflow-visited');
     if (!hasVisited) {
       localStorage.setItem('fluidflow-visited', 'true');
-      setTimeout(() => {
+      // FIX-16: Store timeout for cleanup
+      const creditsTimeout = setTimeout(() => {
         modals.open('credits');
       }, CREDITS_MODAL_DELAY_MS);
+      return () => clearTimeout(creditsTimeout);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

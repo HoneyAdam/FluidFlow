@@ -44,9 +44,13 @@ export const AboutPanel: React.FC = () => {
   // Parse changelog
   const changelog = useMemo(() => parseChangelog(changelogContent), []);
 
-  // Check for updates on mount
+  // Check for updates on mount (FIX-11: mounted guard + catch)
   useEffect(() => {
-    checkForUpdatesWithCache().then(setUpdateCheck);
+    let mounted = true;
+    checkForUpdatesWithCache()
+      .then(result => { if (mounted) setUpdateCheck(result); })
+      .catch(err => console.warn('[AboutPanel] Update check failed:', err));
+    return () => { mounted = false; };
   }, []);
 
   const handleCheckUpdate = async () => {

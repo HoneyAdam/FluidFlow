@@ -118,7 +118,7 @@ export const ControlPanel = forwardRef<ControlPanelRef, ControlPanelProps>(({
   const [isConsultantMode, setIsConsultantMode] = useState(false);
   const [isEducationMode, setIsEducationMode] = useState(false);
   const [hasProjectContext, setHasProjectContext] = useState(false);
-  const [providerVersion, setProviderVersion] = useState(0);
+  const [_providerVersion, setProviderVersion] = useState(0);
   // Track last user prompt for revert & retry functionality
   const [lastUserPrompt, setLastUserPrompt] = useState<{
     prompt: string;
