@@ -15,6 +15,12 @@ const router = Router();
 // Projects directory - use process.cwd() for reliability
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
+// Create a simpleGit instance with safe.directory configured
+// This prevents "dubious ownership" errors when project dirs have different ownership
+const createGit = (dir: string): SimpleGit => {
+  return simpleGit(dir).addConfig('safe.directory', dir.replace(/\\/g, '/'));
+};
+
 // GH-002 fix: Simple in-memory rate limiter for expensive operations
 interface RateLimitEntry {
   count: number;
@@ -135,7 +141,7 @@ router.post('/:id/remote', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Check if remote exists
     const remotes = await git.getRemotes();
@@ -179,7 +185,7 @@ router.get('/:id/remote', async (req, res) => {
       return res.json({ initialized: false, remotes: [] });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const remotes = await git.getRemotes(true);
 
     res.json({
@@ -215,7 +221,7 @@ router.post('/:id/backup-push', rateLimitMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Check if remote exists
     const remotes = await git.getRemotes(true);
@@ -340,7 +346,7 @@ router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Git not initialized' });
   }
 
-  const git: SimpleGit = simpleGit(filesDir);
+  const git: SimpleGit = createGit(filesDir);
   let originalRemoteUrl: string | null = null;
 
   try {
@@ -539,7 +545,7 @@ router.post('/:id/pull', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const currentBranch = branch || (await git.branchLocal()).current;
     const result = await git.pull(remote, currentBranch);
 
@@ -572,7 +578,7 @@ router.post('/:id/fetch', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const fetchOptions = prune ? ['--prune'] : [];
     await git.fetch(remote, undefined, fetchOptions);
 
@@ -746,7 +752,7 @@ router.post('/:id/create-repo', rateLimitMiddleware, async (req, res) => {
     const repo = await response.json();
 
     // Initialize git if needed
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     if (!isOwnGitRepo(filesDir)) {
       await git.init();
@@ -880,7 +886,7 @@ router.post('/import', rateLimitMiddleware, async (req, res) => {
 
     // Remove token from remote URL for security
     if (token) {
-      const gitInDir = simpleGit(filesDir);
+      const gitInDir = createGit(filesDir);
       await gitInDir.remote(['set-url', 'origin', url]);
     }
 

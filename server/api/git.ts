@@ -24,6 +24,12 @@ const getProjectPath = (id: string) => path.join(PROJECTS_DIR, id);
 const getFilesDir = (id: string) => path.join(getProjectPath(id), 'files');
 const getMetaPath = (id: string) => path.join(getProjectPath(id), 'project.json');
 
+// Create a simpleGit instance with safe.directory configured
+// This prevents "dubious ownership" errors when project dirs have different ownership
+const createGit = (dir: string): SimpleGit => {
+  return simpleGit(dir).addConfig('safe.directory', dir.replace(/\\/g, '/'));
+};
+
 // Check if directory has its own .git folder (not inherited from parent)
 const isOwnGitRepo = (dir: string): boolean => {
   const gitPath = path.join(dir, '.git');
@@ -99,7 +105,7 @@ router.post('/:id/init', async (req, res) => {
       await fs.rm(gitDir, { recursive: true, force: true });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Initialize
     await git.init();
@@ -153,7 +159,7 @@ router.get('/:id/status', async (req, res) => {
       return res.json({ initialized: false, message: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const status = await git.status();
     const branch = await git.branchLocal();
 
@@ -172,6 +178,15 @@ router.get('/:id/status', async (req, res) => {
     console.error('Git status error:', error);
 
     const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Dubious ownership: directory owned by different user
+    if (errorMessage.includes('dubious ownership')) {
+      return res.status(403).json({
+        initialized: true,
+        error: 'Git repository ownership mismatch',
+        message: 'The project directory is owned by a different user. Try re-initializing git for this project.'
+      });
+    }
 
     // Corruption errors: 409 Conflict - repo exists but is unusable
     if (errorMessage.includes('corrupt') || errorMessage.includes('inflate')) {
@@ -217,7 +232,7 @@ router.get('/:id/log', async (req, res) => {
       return res.json({ initialized: false, commits: [] });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const log = await git.log({ maxCount: parsedLimit });
 
     res.json({
@@ -273,7 +288,7 @@ router.post('/:id/commit', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Check for changes
     const status = await git.status();
@@ -326,7 +341,7 @@ router.get('/:id/diff', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const diff = cached === 'true'
       ? await git.diff(['--cached'])
       : await git.diff();
@@ -364,7 +379,7 @@ router.post('/:id/checkout', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // BUG-049 FIX: Check for uncommitted changes before checkout
     const status = await git.status();
@@ -451,7 +466,7 @@ router.post('/:id/branch', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     if (checkout) {
       await git.checkoutLocalBranch(name);
@@ -486,7 +501,7 @@ router.get('/:id/branches', async (req, res) => {
       return res.json({ initialized: false, branches: [] });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
     const branches = await git.branchLocal();
 
     res.json({
@@ -523,7 +538,7 @@ router.get('/:id/commit/:hash', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Get commit info with --stat for file changes
     const showResult = await git.show([hash, '--stat', '--format=%H%n%h%n%s%n%b%n%an%n%ae%n%aI']);
@@ -617,7 +632,7 @@ router.get('/:id/commit/:hash/diff', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     // Get diff for commit (compare with parent)
     const args = [`${hash}^..${hash}`];
@@ -671,7 +686,7 @@ router.get('/:id/commit/:hash/file', async (req, res) => {
       return res.status(400).json({ error: 'Git not initialized' });
     }
 
-    const git: SimpleGit = simpleGit(filesDir);
+    const git: SimpleGit = createGit(filesDir);
 
     try {
       const content = await git.show([`${hash}:${sanitizedPath}`]);
