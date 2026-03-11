@@ -223,6 +223,82 @@ interface ProjectContext {
   savedAt: number;
 }
 
+const MAX_HISTORY = 30;
+const MAX_AI_HISTORY = 100;
+const MAX_CONTEXT_PAYLOAD_BYTES = 1024 * 1024;
+
+function enforceContextPayloadLimit(payload: unknown): boolean {
+  try {
+    return Buffer.byteLength(JSON.stringify(payload), 'utf-8') <= MAX_CONTEXT_PAYLOAD_BYTES;
+  } catch {
+    return false;
+  }
+}
+
+async function saveProjectContext(
+  id: string,
+  updates: Partial<ProjectContext>,
+): Promise<number> {
+  const projectPath = getProjectPath(id);
+
+  if (!existsSync(projectPath)) {
+    throw new Error('PROJECT_NOT_FOUND');
+  }
+
+  if (!enforceContextPayloadLimit(updates)) {
+    throw new Error('CONTEXT_TOO_LARGE');
+  }
+
+  const { history, currentIndex, activeFile, activeTab, aiHistory } = updates;
+
+  const contextPath = getContextPath(id);
+  let existingContext: Partial<ProjectContext> = {};
+  if (existsSync(contextPath)) {
+    existingContext = await safeReadJson<Partial<ProjectContext>>(contextPath, {});
+  }
+
+  let limitedHistory = history ?? existingContext.history ?? [];
+  if (limitedHistory.length > MAX_HISTORY) {
+    const snapshots = limitedHistory.filter((h: HistoryEntry) => h.type === 'snapshot');
+    const nonSnapshots = limitedHistory.filter((h: HistoryEntry) => h.type !== 'snapshot');
+    const nonSnapshotsToKeep = Math.max(0, MAX_HISTORY - snapshots.length);
+    const keepNonSnapshots = nonSnapshotsToKeep > 0
+      ? nonSnapshots.slice(-nonSnapshotsToKeep)
+      : [];
+    limitedHistory = [...snapshots, ...keepNonSnapshots]
+      .sort((a: HistoryEntry, b: HistoryEntry) => a.timestamp - b.timestamp);
+  }
+
+  let limitedAiHistory = aiHistory ?? existingContext.aiHistory ?? [];
+  if (limitedAiHistory.length > MAX_AI_HISTORY) {
+    limitedAiHistory = limitedAiHistory.slice(0, MAX_AI_HISTORY);
+  }
+
+  const context: ProjectContext = {
+    history: limitedHistory,
+    currentIndex: Math.min(currentIndex ?? existingContext.currentIndex ?? 0, Math.max(0, limitedHistory.length - 1)),
+    activeFile: activeFile ?? existingContext.activeFile,
+    activeTab: activeTab ?? existingContext.activeTab,
+    aiHistory: limitedAiHistory,
+    savedAt: Date.now()
+  };
+
+  if (!enforceContextPayloadLimit(context)) {
+    throw new Error('CONTEXT_TOO_LARGE');
+  }
+
+  await fs.writeFile(contextPath, JSON.stringify(context, null, 2));
+
+  const metaPath = getMetaPath(id);
+  const meta = await safeReadJson<ProjectMeta | null>(metaPath, null);
+  if (meta) {
+    meta.updatedAt = Date.now();
+    await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+  }
+
+  return context.savedAt;
+}
+
 // List all projects
 router.get('/', async (req, res) => {
   try {
@@ -883,76 +959,22 @@ router.get('/:id/context', async (req, res) => {
 router.put('/:id/context', async (req, res) => {
   try {
     const { id } = req.params;
-    const { history, currentIndex, activeFile, activeTab, aiHistory } = req.body;
 
     // Validate project ID to prevent path traversal
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
-    const projectPath = getProjectPath(id);
-
-    if (!existsSync(projectPath)) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    // Load existing context to merge with (for partial updates like aiHistory-only)
-    // BUG-FIX: Use safe JSON parsing
-    const contextPath = getContextPath(id);
-    let existingContext: Partial<ProjectContext> = {};
-    if (existsSync(contextPath)) {
-      existingContext = await safeReadJson<Partial<ProjectContext>>(contextPath, {});
-    }
-
-    // Validate and limit history size (max 30 entries to avoid huge files)
-    const MAX_HISTORY = 30;
-    let limitedHistory = history ?? existingContext.history ?? [];
-    if (limitedHistory.length > MAX_HISTORY) {
-      // Keep most recent entries, but preserve snapshots
-      const snapshots = limitedHistory.filter((h: HistoryEntry) => h.type === 'snapshot');
-      const nonSnapshots = limitedHistory.filter((h: HistoryEntry) => h.type !== 'snapshot');
-
-      // BUG-046 FIX: Handle edge case where slice(-0) returns entire array
-      // Calculate how many non-snapshots we can keep
-      const nonSnapshotsToKeep = Math.max(0, MAX_HISTORY - snapshots.length);
-      // Only slice if we need to keep some non-snapshots (avoids slice(-0) bug)
-      const keepNonSnapshots = nonSnapshotsToKeep > 0
-        ? nonSnapshots.slice(-nonSnapshotsToKeep)
-        : [];
-      limitedHistory = [...snapshots, ...keepNonSnapshots]
-        .sort((a: HistoryEntry, b: HistoryEntry) => a.timestamp - b.timestamp);
-    }
-
-    // Limit AI history to 100 entries
-    const MAX_AI_HISTORY = 100;
-    let limitedAiHistory = aiHistory ?? existingContext.aiHistory ?? [];
-    if (limitedAiHistory.length > MAX_AI_HISTORY) {
-      limitedAiHistory = limitedAiHistory.slice(0, MAX_AI_HISTORY);
-    }
-
-    const context: ProjectContext = {
-      history: limitedHistory,
-      currentIndex: Math.min(currentIndex ?? existingContext.currentIndex ?? 0, Math.max(0, limitedHistory.length - 1)),
-      activeFile: activeFile ?? existingContext.activeFile,
-      activeTab: activeTab ?? existingContext.activeTab,
-      aiHistory: limitedAiHistory,
-      savedAt: Date.now()
-    };
-
-    await fs.writeFile(contextPath, JSON.stringify(context, null, 2));
-
-    // Also update project meta updatedAt
-    const metaPath = getMetaPath(id);
-    // BUG-FIX: Use safe JSON parsing
-    const meta = await safeReadJson<ProjectMeta | null>(metaPath, null);
-    if (meta) {
-      meta.updatedAt = Date.now();
-      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
-    }
-
-    res.json({ message: 'Context saved', savedAt: context.savedAt });
+    const savedAt = await saveProjectContext(id, req.body as Partial<ProjectContext>);
+    res.json({ message: 'Context saved', savedAt });
   } catch (_error) {
     console.error('Save context error:', _error);
+    if (_error instanceof Error && _error.message === 'PROJECT_NOT_FOUND') {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (_error instanceof Error && _error.message === 'CONTEXT_TOO_LARGE') {
+      return res.status(413).json({ error: 'Project context payload too large' });
+    }
     res.status(500).json({ error: 'Failed to save project context' });
   }
 });
@@ -961,76 +983,22 @@ router.put('/:id/context', async (req, res) => {
 router.post('/:id/context', async (req, res) => {
   try {
     const { id } = req.params;
-    const { history, currentIndex, activeFile, activeTab, aiHistory } = req.body;
 
     // Validate project ID to prevent path traversal
     if (!isValidProjectId(id)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
-    const projectPath = getProjectPath(id);
-
-    if (!existsSync(projectPath)) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    // Load existing context to merge with (for partial updates like aiHistory-only)
-    // BUG-FIX: Use safe JSON parsing
-    const contextPath = getContextPath(id);
-    let existingContext: Partial<ProjectContext> = {};
-    if (existsSync(contextPath)) {
-      existingContext = await safeReadJson<Partial<ProjectContext>>(contextPath, {});
-    }
-
-    // Validate and limit history size (max 30 entries to avoid huge files)
-    const MAX_HISTORY = 30;
-    let limitedHistory = history ?? existingContext.history ?? [];
-    if (limitedHistory.length > MAX_HISTORY) {
-      // Keep most recent entries, but preserve snapshots
-      const snapshots = limitedHistory.filter((h: HistoryEntry) => h.type === 'snapshot');
-      const nonSnapshots = limitedHistory.filter((h: HistoryEntry) => h.type !== 'snapshot');
-
-      // BUG-046 FIX: Handle edge case where slice(-0) returns entire array
-      // Calculate how many non-snapshots we can keep
-      const nonSnapshotsToKeep = Math.max(0, MAX_HISTORY - snapshots.length);
-      // Only slice if we need to keep some non-snapshots (avoids slice(-0) bug)
-      const keepNonSnapshots = nonSnapshotsToKeep > 0
-        ? nonSnapshots.slice(-nonSnapshotsToKeep)
-        : [];
-      limitedHistory = [...snapshots, ...keepNonSnapshots]
-        .sort((a: HistoryEntry, b: HistoryEntry) => a.timestamp - b.timestamp);
-    }
-
-    // Limit AI history to 100 entries
-    const MAX_AI_HISTORY = 100;
-    let limitedAiHistory = aiHistory ?? existingContext.aiHistory ?? [];
-    if (limitedAiHistory.length > MAX_AI_HISTORY) {
-      limitedAiHistory = limitedAiHistory.slice(0, MAX_AI_HISTORY);
-    }
-
-    const context: ProjectContext = {
-      history: limitedHistory,
-      currentIndex: Math.min(currentIndex ?? existingContext.currentIndex ?? 0, Math.max(0, limitedHistory.length - 1)),
-      activeFile: activeFile ?? existingContext.activeFile,
-      activeTab: activeTab ?? existingContext.activeTab,
-      aiHistory: limitedAiHistory,
-      savedAt: Date.now()
-    };
-
-    await fs.writeFile(contextPath, JSON.stringify(context, null, 2));
-
-    // Also update project meta updatedAt
-    const metaPath = getMetaPath(id);
-    // BUG-FIX: Use safe JSON parsing
-    const meta = await safeReadJson<ProjectMeta | null>(metaPath, null);
-    if (meta) {
-      meta.updatedAt = Date.now();
-      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
-    }
-
-    res.json({ message: 'Context saved', savedAt: context.savedAt });
+    const savedAt = await saveProjectContext(id, req.body as Partial<ProjectContext>);
+    res.json({ message: 'Context saved', savedAt });
   } catch (_error) {
     console.error('Save context error:', _error);
+    if (_error instanceof Error && _error.message === 'PROJECT_NOT_FOUND') {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (_error instanceof Error && _error.message === 'CONTEXT_TOO_LARGE') {
+      return res.status(413).json({ error: 'Project context payload too large' });
+    }
     res.status(500).json({ error: 'Failed to save project context' });
   }
 });

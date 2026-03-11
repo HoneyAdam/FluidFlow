@@ -30,6 +30,9 @@ const ShareModalLazy = lazy(() => import('./ShareModal').then(m => ({ default: m
 const HistoryPanelLazy = lazy(() => import('./HistoryPanel').then(m => ({ default: m.HistoryPanel })));
 const ProjectHealthModalLazy = lazy(() => import('./ProjectHealthModal').then(m => ({ default: m.ProjectHealthModal })));
 const AutoFixModalLazy = lazy(() => import('./AutoFixModal').then(m => ({ default: m.AutoFixModal })));
+const SnippetsPanelLazy = lazy(() => import('./SnippetsPanel').then(m => ({ default: m.SnippetsPanel })));
+const ProjectManagerLazy = lazy(() => import('./ProjectManager').then(m => ({ default: m.ProjectManager })));
+const PromptHistoryModalLazy = lazy(() => import('./PromptHistoryModal').then(m => ({ default: m.PromptHistoryModal })));
 
 /**
  * Modal loading spinner
@@ -87,3 +90,6 @@ export const LazyShareModal = withLazyModal(ShareModalLazy, 'ShareModal');
 export const LazyHistoryPanel = withLazyModal(HistoryPanelLazy, 'HistoryPanel');
 export const LazyProjectHealthModal = withLazyModal(ProjectHealthModalLazy, 'ProjectHealthModal');
 export const LazyAutoFixModal = withLazyModal(AutoFixModalLazy, 'AutoFixModal');
+export const LazySnippetsPanel = withLazyModal(SnippetsPanelLazy, 'SnippetsPanel');
+export const LazyProjectManager = withLazyModal(ProjectManagerLazy, 'ProjectManager');
+export const LazyPromptHistoryModal = withLazyModal(PromptHistoryModalLazy, 'PromptHistoryModal');

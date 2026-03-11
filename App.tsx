@@ -15,12 +15,9 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { CREDITS_MODAL_DELAY_MS, STORAGE_KEYS } from '@/constants';
 import { ControlPanel, ControlPanelRef } from './components/ControlPanel';
 import { PreviewPanel } from './components/PreviewPanel';
-import { SnippetsPanel } from './components/SnippetsPanel';
 import { loadProjectFromUrl } from './utils/shareUrl';
-import { ProjectManager } from './components/ProjectManager';
 import { SyncConfirmationDialog } from './components/SyncConfirmationDialog';
 import { DiffModal } from './components/DiffModal';
-import { PromptHistoryModal } from './components/PromptHistoryModal';
 import { useModalManager } from './hooks/useModalManager';
 import { usePanelResize } from './hooks/usePanelResize';
 import { useAppContext } from './contexts/AppContext';
@@ -51,6 +48,9 @@ import {
   LazyShareModal,
   LazyHistoryPanel,
   LazyProjectHealthModal,
+  LazyProjectManager,
+  LazyPromptHistoryModal,
+  LazySnippetsPanel,
 } from './components/LazyModals';
 
 // Re-export types for backwards compatibility
@@ -115,6 +115,7 @@ export default function App() {
       const result = await githubApi.backupPush(ctx.currentProject.id, {
         branch: backupBranchName,
         token,
+        includeContext: false,
       });
 
       // Update backup status
@@ -323,7 +324,7 @@ export default function App() {
       )}
 
       {/* Snippets Panel */}
-      <SnippetsPanel
+      <LazySnippetsPanel
         isOpen={modals.state.snippetsPanel}
         onClose={() => modals.close('snippetsPanel')}
         onInsert={(code: string) => {
@@ -395,7 +396,7 @@ export default function App() {
       />
 
       {/* Project Manager */}
-      <ProjectManager
+      <LazyProjectManager
         isOpen={modals.state.projectManager}
         onClose={() => modals.close('projectManager')}
         projects={ctx.projects}
@@ -434,7 +435,7 @@ export default function App() {
       />
 
       {/* Prompt History Modal */}
-      <PromptHistoryModal
+      <LazyPromptHistoryModal
         isOpen={showPromptHistory}
         onClose={() => setShowPromptHistory(false)}
         onSelectPrompt={(selectedPrompt) => {

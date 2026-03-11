@@ -26,8 +26,14 @@ const getMetaPath = (id: string) => path.join(getProjectPath(id), 'project.json'
 
 // Create a simpleGit instance with safe.directory configured
 // This prevents "dubious ownership" errors when project dirs have different ownership
+// Uses config option (git -c) instead of --local to avoid catch-22 when git
+// refuses to enter the repo before safe.directory is set
 const createGit = (dir: string): SimpleGit => {
-  return simpleGit(dir).addConfig('safe.directory', dir.replace(/\\/g, '/'));
+  const safePath = dir.replace(/\\/g, '/');
+  return simpleGit({
+    baseDir: dir,
+    config: [`safe.directory=${safePath}`],
+  });
 };
 
 // Check if directory has its own .git folder (not inherited from parent)

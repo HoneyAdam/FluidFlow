@@ -234,8 +234,9 @@ export function useAIHistory(projectId: string | null): UseAIHistoryReturn {
       if (pid && pending && pending.length > 0) {
         console.log('[AIHistory] Page unload - saving pending changes via beacon');
         // Use sendBeacon for reliable saves during page unload
-        // Use full API base URL like App.tsx does
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3200/api';
+        // Prefer the same relative API base used by the normal client to avoid
+        // mixed-content issues when the frontend runs over HTTPS.
+        const apiBase = import.meta.env.VITE_API_URL || '/api';
         const url = `${apiBase}/projects/${pid}/context`;
         const data = JSON.stringify({ aiHistory: pending });
         navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));

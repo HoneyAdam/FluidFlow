@@ -617,6 +617,7 @@ function extractImportedPackages(filesDir: string): Set<string> {
  */
 function ensureMissingDependencies(filesDir: string): string[] {
   const packageJsonPath = path.join(filesDir, 'package.json');
+  const autoInstallEnabled = process.env.FF_AUTO_INSTALL_MISSING_DEPS === 'true';
 
   if (!existsSync(packageJsonPath)) {
     console.log('[Runner] No package.json found, skipping dependency check');
@@ -642,6 +643,11 @@ function ensureMissingDependencies(filesDir: string): string[] {
 
     if (missingPackages.length > 0) {
       console.log(`[Runner] Found ${missingPackages.length} missing packages:`, missingPackages);
+
+      if (!autoInstallEnabled) {
+        console.warn('[Runner] Auto-install of missing dependencies is disabled. Set FF_AUTO_INSTALL_MISSING_DEPS=true to enable it.');
+        return [];
+      }
 
       // Add missing packages to dependencies
       if (!packageJson.dependencies) {

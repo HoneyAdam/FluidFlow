@@ -26,6 +26,7 @@ dist-ssr
 .env
 projects/
 global.json
+settings/global.json
 BUG_*.*
 bug_*.*
 .enc

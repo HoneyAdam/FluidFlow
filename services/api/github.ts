@@ -80,7 +80,7 @@ export const githubApi = {
   /**
    * Push to backup branch
    */
-  backupPush: (projectId: string, options?: { branch?: string; token?: string }) =>
+  backupPush: (projectId: string, options?: { branch?: string; token?: string; includeContext?: boolean }) =>
     apiCall<{ success: boolean; message: string; branch: string; commit: string; timestamp: number }>(
       `/github/${projectId}/backup-push`,
       {

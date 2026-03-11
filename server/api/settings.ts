@@ -218,56 +218,22 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   updatedAt: 0
 };
 
-// SEC-004 fix: Initialize default provider from .env for development convenience
-// This runs once on server startup if no providers are configured
-async function initializeDefaultProvider(): Promise<void> {
-  try {
-    // Check if settings file exists
-    if (existsSync(SETTINGS_FILE)) {
-      const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
-      const settings = safeJsonParse(data, {}) as GlobalSettings;
-      // If providers already configured, do not overwrite
-      if (settings.aiProviders && settings.aiProviders.length > 0) {
-        return;
-      }
-    }
-
-    // Check for GEMINI_API_KEY in environment
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
-      console.log('[Settings] No GEMINI_API_KEY found in .env - users must configure via Settings UI');
-      return;
-    }
-
-    // Create default provider with key from .env
-    const defaultProvider: ProviderConfig = {
-      id: 'default-gemini',
-      name: 'Google Gemini',
-      type: 'gemini',
-      apiKey: geminiKey,
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-flash',
-      models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview'],
-    };
-
-    // Encrypt and save
-    const encryptedProvider = await encryptProviderConfig(defaultProvider);
-    const settings: GlobalSettings = {
-      ...DEFAULT_SETTINGS,
-      aiProviders: [encryptedProvider],
-      activeProviderId: 'default-gemini',
-      updatedAt: Date.now(),
-    };
-
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    console.log('[Settings] Initialized default Gemini provider from GEMINI_API_KEY');
-  } catch (error) {
-    console.error('[Settings] Failed to initialize default provider:', error);
+function getEnvDefaultProvider(): ProviderConfig | null {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    return null;
   }
-}
 
-// Run initialization on module load
-initializeDefaultProvider();
+  return {
+    id: 'default-gemini',
+    name: 'Google Gemini',
+    type: 'gemini',
+    apiKey: geminiKey,
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-2.5-flash',
+    models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview'],
+  };
+}
 
 // BUG-008 fix: Proper mutex pattern to prevent TOCTOU race condition
 // Using a queue-based approach where each request waits for the previous one
@@ -309,6 +275,12 @@ async function loadSettings(): Promise<GlobalSettings> {
         settings.aiProviders = await Promise.all(
           settings.aiProviders.map(provider => decryptProviderConfig(provider))
         );
+      } else {
+        const envProvider = getEnvDefaultProvider();
+        if (envProvider) {
+          settings.aiProviders = [envProvider];
+          settings.activeProviderId = envProvider.id;
+        }
       }
 
       return settings;
@@ -316,6 +288,16 @@ async function loadSettings(): Promise<GlobalSettings> {
   } catch (error) {
     console.error('Failed to load settings:', error);
   }
+
+  const envProvider = getEnvDefaultProvider();
+  if (envProvider) {
+    return {
+      ...DEFAULT_SETTINGS,
+      aiProviders: [envProvider],
+      activeProviderId: envProvider.id,
+    };
+  }
+
   return { ...DEFAULT_SETTINGS };
 }
 

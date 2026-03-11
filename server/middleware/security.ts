@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 
 // Development mode has relaxed limits
 const isDev = process.env.NODE_ENV !== 'production';
+const MAX_JSON_BODY_BYTES = 50 * 1024 * 1024;
 
 /**
  * Rate limiting configuration
@@ -103,6 +104,39 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
   }
 
   next();
+}
+
+/**
+ * Reject oversized JSON requests before body parsing when Content-Length is known.
+ */
+export function rejectLargeJsonRequests(req: Request, res: Response, next: NextFunction) {
+  if (!['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    return next();
+  }
+
+  const contentType = req.get('Content-Type');
+  if (contentType && !contentType.includes('application/json')) {
+    return next();
+  }
+
+  const contentLengthHeader = req.get('Content-Length');
+  if (!contentLengthHeader) {
+    return next();
+  }
+
+  const contentLength = Number.parseInt(contentLengthHeader, 10);
+  if (Number.isNaN(contentLength)) {
+    return next();
+  }
+
+  if (contentLength > MAX_JSON_BODY_BYTES) {
+    return res.status(413).json({
+      error: 'Request body too large',
+      limitBytes: MAX_JSON_BODY_BYTES,
+    });
+  }
+
+  return next();
 }
 
 /**
