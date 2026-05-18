@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk } from '../types';
+import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { GoogleGenAI } from '@google/genai';
 import { supportsNativeSchema } from '../utils/schemas';
 
@@ -28,6 +28,21 @@ export class GeminiProvider implements AIProvider {
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Connection failed' };
     }
+  }
+
+  async listModels(): Promise<ModelOption[]> {
+    // Gemini doesn't have a public list endpoint - return config models or default
+    if (this.config.models.length > 0) {
+      return this.config.models;
+    }
+    return [{
+      id: this.config.defaultModel,
+      name: this.config.defaultModel,
+      description: 'Google Gemini model',
+      supportsVision: true,
+      supportsStreaming: true,
+      contextWindow: 1000000,
+    }];
   }
 
   async generate(request: GenerationRequest, model: string): Promise<GenerationResponse> {
