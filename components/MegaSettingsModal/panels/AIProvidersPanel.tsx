@@ -10,6 +10,7 @@ import {
   getProviderManager
 } from '../../../services/ai';
 import { ProviderIcon } from '../../shared/ProviderIcon';
+import { SettingsToggle } from '../shared/SettingsToggle';
 
 interface AIProvidersPanelProps {
   onProviderChange?: (providerId: string, modelId: string) => void;
@@ -500,6 +501,31 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Tool Calling Settings */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium" style={{ color: 'var(--theme-text-secondary)' }}>
+                Tool Calling
+              </h4>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--theme-glass-100)', border: '1px solid var(--theme-border-light)' }}>
+                <SettingsToggle
+                  label="Enable Tool Calling"
+                  description="Allow AI to use file operation tools"
+                  checked={selectedProvider.toolCallingEnabled || false}
+                  onChange={(checked) => updateProvider(selectedProvider.id, { toolCallingEnabled: checked })}
+                />
+                {selectedProvider.toolCallingEnabled && (
+                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-light)' }}>
+                    <SettingsToggle
+                      label="Allow Tool Writes"
+                      description="Allow tools to modify project files"
+                      checked={selectedProvider.allowToolWrites || false}
+                      onChange={(checked) => updateProvider(selectedProvider.id, { allowToolWrites: checked })}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
