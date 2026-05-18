@@ -48,7 +48,7 @@ export async function executeProjectTool(
           return { id: '', name: toolName, success: false, error: 'Missing required parameters: path, content' };
         }
         await projectApi.saveFile(projectId, path, content);
-        return { id: '', name: toolName, success: true, result: { path, written: true } };
+        return { id: '', name: toolName, success: true, result: { path, written: true }, filesWritten: [path] };
       }
 
       case 'delete_file': {
@@ -60,7 +60,7 @@ export async function executeProjectTool(
           return { id: '', name: toolName, success: false, error: 'Missing required parameter: path' };
         }
         await projectApi.deleteFile(projectId, path);
-        return { id: '', name: toolName, success: true, result: { path, deleted: true } };
+        return { id: '', name: toolName, success: true, result: { path, deleted: true }, filesWritten: [path] };
       }
 
       case 'list_files': {

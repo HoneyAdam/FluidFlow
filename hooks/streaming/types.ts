@@ -12,7 +12,7 @@ import type { FilePlan, FileProgress } from '../useGenerationState';
 // ============================================================================
 
 /** Detected response format */
-export type StreamingFormat = 'json' | 'marker' | 'unknown';
+export type StreamingFormat = 'json' | 'marker' | 'tools' | 'unknown';
 
 // ============================================================================
 // Callback Types
@@ -39,6 +39,8 @@ export interface StreamingResult {
   currentFilePlan: FilePlan | null;
   /** Detected response format (json or marker) */
   format: StreamingFormat;
+  /** Files that were written via tool calls (tool calling mode) */
+  filesWritten?: string[];
 }
 
 // ============================================================================

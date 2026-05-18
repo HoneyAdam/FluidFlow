@@ -456,7 +456,10 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
         console.debug('[Debug] Could not save raw response:', e);
       }
 
-      return { fullText, chunkCount, detectedFiles, streamResponse, currentFilePlan, format: detectedFormat };
+      // Get files written via tool calls (tool calling mode)
+      const filesWritten = streamResponse?.filesWritten;
+
+      return { fullText, chunkCount, detectedFiles, streamResponse, currentFilePlan, format: detectedFormat, filesWritten };
     },
     [setStreamingChars, setStreamingFiles, setFilePlan, setStreamingStatus, updateFileProgress, initFileProgressFromPlan]
   );

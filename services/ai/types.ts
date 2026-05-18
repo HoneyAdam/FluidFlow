@@ -24,6 +24,8 @@ export interface ToolResult {
   success: boolean;
   result?: unknown;
   error?: string;
+  // For file operations - tracks files that were modified
+  filesWritten?: string[];
 }
 
 /**
@@ -180,6 +182,8 @@ export interface GenerationResponse {
     outputTokens?: number;
     isEstimated?: boolean; // True if tokens are estimated (not from API)
   };
+  // Files that were written via tool calls (tool calling mode)
+  filesWritten?: string[];
 }
 
 export interface StreamChunk {

@@ -259,6 +259,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
     let fullText = '';
     let finishReason: string | undefined;
     const accumulatedToolCalls: Array<{ id: string; name: string; arguments: string }> = [];
+    const filesWritten: string[] = [];
 
     try {
       while (true) {
@@ -319,8 +320,11 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       if (accumulatedToolCalls.length > 0 && finishReason === 'tool_calls') {
         onChunk({ text: '', done: true });
 
-        // Execute tool calls
-        const toolResults = await this.executeToolCalls(accumulatedToolCalls, toolExecutor);
+        // Execute tool calls with detailed results
+        const { messages: toolResults, filesWritten: writtenFiles } = await this.executeToolCallsWithResults(accumulatedToolCalls, toolExecutor);
+
+        // Track files written
+        filesWritten.push(...writtenFiles);
 
         // Add tool results to messages
         messages.push({
@@ -361,6 +365,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
             inputTokens: followUpData.usage?.prompt_tokens,
             outputTokens: followUpData.usage?.completion_tokens,
           },
+          filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
         };
       }
 
@@ -369,6 +374,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
         text: fullText,
         finishReason,
         usage: undefined, // Streaming doesn't provide usage
+        filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
       };
     } finally {
       reader.releaseLock();
@@ -580,6 +586,50 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
     );
 
     return results;
+  }
+
+  /**
+   * Execute tool calls with detailed results (for tracking files modified)
+   */
+  protected async executeToolCallsWithResults(
+    toolCalls: Array<{ id: string; name: string; arguments: string }>,
+    toolExecutor?: ToolExecutor
+  ): Promise<{ messages: ChatMessage[]; filesWritten: string[] }> {
+    const messages: ChatMessage[] = [];
+    const filesWritten: string[] = [];
+
+    if (!toolExecutor || toolCalls.length === 0) {
+      return { messages, filesWritten };
+    }
+
+    for (const tc of toolCalls) {
+      try {
+        const args = parseToolArguments(tc.arguments);
+        const result = await toolExecutor(tc.name, args);
+
+        messages.push({
+          role: 'tool' as const,
+          tool_call_id: tc.id,
+          name: tc.name,
+          content: result.success
+            ? typeof result.result === 'string' ? result.result : JSON.stringify(result.result)
+            : `Error: ${result.error}`,
+        });
+
+        if (result.filesWritten && result.filesWritten.length > 0) {
+          filesWritten.push(...result.filesWritten);
+        }
+      } catch (error) {
+        messages.push({
+          role: 'tool' as const,
+          tool_call_id: tc.id,
+          name: tc.name,
+          content: `Error: ${formatToolError(tc.name, error)}`,
+        });
+      }
+    }
+
+    return { messages, filesWritten };
   }
 
   /**

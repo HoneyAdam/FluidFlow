@@ -15,6 +15,7 @@ import { FileSystem, ChatMessage, ChatAttachment } from '../types';
 import { GenerationMeta } from '../utils/cleanCode';
 import { debugLog } from './useDebugStore';
 import { getProviderManager, GenerationRequest } from '../services/ai';
+import { projectApi } from '../services/api';
 import {
   FILE_GENERATION_SCHEMA,
   supportsAdditionalProperties,
@@ -301,7 +302,7 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         // Process streaming response
         // Pass expected format for early validation (abort if mismatch)
         const expectedFormat = responseFormat === 'marker' ? 'marker' : undefined;
-        const { fullText, chunkCount, detectedFiles, streamResponse, currentFilePlan } =
+        const { fullText, chunkCount, detectedFiles, streamResponse, currentFilePlan, filesWritten } =
           await processStreamingResponse(request, currentModel, genRequestId, genStartTime, expectedFormat);
         recoveryFilePlan = currentFilePlan;
 
@@ -313,6 +314,9 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         // Show parsing status
         setStreamingStatus(`✨ Processing ${detectedFiles.length} files...`);
         activityLogger.info('generation', `Received response`, `${fullText.length} chars, ${chunkCount} chunks`);
+
+        // Check if we have files written via tool calls (tool calling mode)
+        const isToolCallingMode = filesWritten && filesWritten.length > 0;
 
         // Parse response based on mode
         let explanation: string;
@@ -380,6 +384,52 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           generationMeta = stdResult.generationMeta;
           continuation = stdResult.continuation;
           incompleteFiles = stdResult.incompleteFiles;
+        }
+
+        // Handle tool calling mode - files were already written via tool calls
+        if (isToolCallingMode && filesWritten && projectId) {
+          activityLogger.info('generation', `Tool calling mode: ${filesWritten.length} files written via tools`, filesWritten.join(', '));
+
+          // Load the written files from project
+          const writtenFilesMap: Record<string, string> = {};
+          for (const filePath of filesWritten) {
+            try {
+              const content = await projectApi.readFile(projectId, filePath);
+              writtenFilesMap[filePath] = content;
+            } catch (e) {
+              activityLogger.error('generation', `Failed to read written file: ${filePath}`, String(e));
+            }
+          }
+
+          if (Object.keys(writtenFilesMap).length > 0) {
+            // Merge with existing files
+            mergedFiles = { ...files, ...writtenFilesMap };
+            newFiles = writtenFilesMap;
+
+            // Use AI's final text as explanation
+            explanation = fullText || 'Files created via tool calling';
+
+            // Go directly to success handling
+            handleGenerationSuccess(
+              newFiles,
+              mergedFiles,
+              explanation,
+              genStartTime,
+              currentModel,
+              providerName,
+              streamResponse,
+              fullText,
+              undefined,
+              undefined
+            );
+
+            const fileCount = Object.keys(newFiles).length;
+            const duration = Date.now() - genStartTime;
+            activityLogger.success('generation', `Tool calling: ${fileCount} file${fileCount !== 1 ? 's' : ''} written`, `${duration}ms`);
+
+            markFilesAsShared(mergedFiles);
+            return { success: true, continuationStarted: false };
+          }
         }
 
         // Check for missing files based on filePlan
