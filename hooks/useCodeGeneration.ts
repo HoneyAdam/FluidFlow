@@ -226,11 +226,13 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           conversationHistory && conversationHistory.length > 0 ? conversationHistory : undefined,
         // Pass file context for prompt confirmation modal
         fileContext: fileContext || undefined,
-        // Tool calling for project file operations
-        tools: PROJECT_TOOLS,
-        toolExecutor: projectId ? createProjectToolExecutor(projectId, true) : undefined,
+        // Tool calling for project file operations (enabled per-provider)
+        tools: activeProvider?.toolCallingEnabled ? PROJECT_TOOLS : undefined,
+        toolExecutor: activeProvider?.toolCallingEnabled && projectId
+          ? createProjectToolExecutor(projectId, activeProvider?.allowToolWrites ?? true)
+          : undefined,
         toolChoice: 'auto',
-        allowToolWrites: true,
+        allowToolWrites: activeProvider?.allowToolWrites ?? false,
         projectId,
       };
 

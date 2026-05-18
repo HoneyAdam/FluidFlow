@@ -178,6 +178,11 @@ export const AdvancedPanel: React.FC = () => {
                 value: 'marker',
                 label: 'Marker (Experimental)',
                 description: 'HTML-style markers, no escaping needed. Diff mode disabled.'
+              },
+              {
+                value: 'tools',
+                label: 'Tool Calling',
+                description: 'AI uses tools directly to create/modify files'
               }
             ]}
             onChange={handleResponseFormatChange}
@@ -190,6 +195,17 @@ export const AdvancedPanel: React.FC = () => {
               <span>
                 <span style={{ color: 'var(--color-info)' }}>Note:</span> Diff mode (search/replace) is JSON-only.
                 With marker format, updates use full file content.
+              </span>
+            </div>
+          )}
+
+          {/* Tool calling format note */}
+          {responseFormat === 'tools' && (
+            <div className="flex items-start gap-2 p-2 rounded text-xs" style={{ backgroundColor: 'var(--color-info-subtle)', border: '1px solid var(--color-info-border)', color: 'var(--theme-text-muted)' }}>
+              <Info className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--color-info)' }} />
+              <span>
+                <span style={{ color: 'var(--color-info)' }}>Note:</span> Tool calling requires a provider with tool calling enabled.
+                AI will use file operation tools directly instead of returning code in the response.
               </span>
             </div>
           )}

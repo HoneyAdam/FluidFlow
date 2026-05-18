@@ -8,8 +8,9 @@
  * AI Response format type
  * - json: Structured JSON response (more reliable for complex schemas)
  * - marker: Marker-based format (default, better streaming support)
+ * - tools: Tool calling mode (AI uses tools directly to create/modify files)
  */
-export type AIResponseFormat = 'json' | 'marker';
+export type AIResponseFormat = 'json' | 'marker' | 'tools';
 
 /**
  * Main FluidFlow configuration interface

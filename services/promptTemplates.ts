@@ -8,6 +8,7 @@
 // Import prompts as raw text (Vite handles this with ?raw suffix)
 import generationPrompt from '../prompts/generation.md?raw';
 import generationMarkerPrompt from '../prompts/generation-marker.md?raw';
+import generationToolsPrompt from '../prompts/generation-tools.md?raw';
 import inspectEditPrompt from '../prompts/inspect-edit.md?raw';
 import autoFixPrompt from '../prompts/auto-fix.md?raw';
 import quickEditPrompt from '../prompts/quick-edit.md?raw';
@@ -20,6 +21,7 @@ import { getFluidFlowConfig, type AIResponseFormat } from './fluidflowConfig';
 // Template types
 export type PromptTemplateId =
   | 'generation'
+  | 'generation-tools'
   | 'inspect-edit'
   | 'auto-fix'
   | 'quick-edit'
@@ -31,6 +33,7 @@ export type PromptTemplateId =
 // Template registry
 const templates: Record<PromptTemplateId, string> = {
   'generation': generationPrompt,
+  'generation-tools': generationToolsPrompt,
   'inspect-edit': inspectEditPrompt,
   'auto-fix': autoFixPrompt,
   'quick-edit': quickEditPrompt,
@@ -106,6 +109,11 @@ export function getGenerationPrompt(format?: AIResponseFormat): string {
     return generationMarkerPrompt;
   }
 
+  if (effectiveFormat === 'tools') {
+    console.log('[PromptTemplates] Using TOOLS format generation prompt');
+    return generationToolsPrompt;
+  }
+
   console.log('[PromptTemplates] Using JSON format generation prompt');
   return generationPrompt;
 }
@@ -114,6 +122,7 @@ export function getGenerationPrompt(format?: AIResponseFormat): string {
 export const PROMPTS = {
   generation: generationPrompt,
   generationMarker: generationMarkerPrompt,
+  generationTools: generationToolsPrompt,
   inspectEdit: inspectEditPrompt,
   autoFix: autoFixPrompt,
   quickEdit: quickEditPrompt,

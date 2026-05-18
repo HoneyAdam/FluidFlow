@@ -108,6 +108,9 @@ export interface ProviderConfig {
   defaultModel: string;
   isLocal?: boolean;
   headers?: Record<string, string>;
+  // Tool calling settings
+  toolCallingEnabled?: boolean;
+  allowToolWrites?: boolean;
 }
 
 export interface ModelOption {
