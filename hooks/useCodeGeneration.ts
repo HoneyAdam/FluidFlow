@@ -28,6 +28,8 @@ import { useGenerationSuccess } from './useGenerationSuccess';
 import { buildSystemInstruction, buildPromptParts, markFilesAsShared } from '../utils/generationUtils';
 import { getFluidFlowConfig } from '../services/fluidflowConfig';
 import { activityLogger } from '../services/activityLogger';
+import { PROJECT_TOOLS } from '../services/ai/utils/toolExecutor';
+import { createProjectToolExecutor } from '../services/ai/utils/projectToolHandler';
 
 export interface CodeGenerationOptions {
   prompt: string;
@@ -224,6 +226,12 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           conversationHistory && conversationHistory.length > 0 ? conversationHistory : undefined,
         // Pass file context for prompt confirmation modal
         fileContext: fileContext || undefined,
+        // Tool calling for project file operations
+        tools: PROJECT_TOOLS,
+        toolExecutor: projectId ? createProjectToolExecutor(projectId, true) : undefined,
+        toolChoice: 'auto',
+        allowToolWrites: true,
+        projectId,
       };
 
       // Initialize streaming state

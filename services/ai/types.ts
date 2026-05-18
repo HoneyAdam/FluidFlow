@@ -2,6 +2,39 @@
 
 export type ProviderType = 'gemini' | 'openai' | 'anthropic' | 'zai' | 'cerebras' | 'ollama' | 'lmstudio' | 'openrouter' | 'minimax' | 'custom';
 
+// ============================================================================
+// Tool Calling Types
+// ============================================================================
+
+/**
+ * Tool definition for AI providers
+ */
+export interface AIToolDefinition {
+  name: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
+/**
+ * Result of a tool execution
+ */
+export interface ToolResult {
+  id: string;
+  name: string;
+  success: boolean;
+  result?: unknown;
+  error?: string;
+}
+
+/**
+ * Executor function for tools - takes tool name and arguments, returns result
+ */
+export type ToolExecutor = (toolName: string, args: Record<string, unknown>) => Promise<ToolResult>;
+
+// ============================================================================
+// Retry Utility
+// ============================================================================
+
 /**
  * Retry utility with exponential backoff for transient errors
  */
@@ -126,6 +159,14 @@ export interface GenerationRequest {
   conversationHistory?: ConversationMessage[];
   // File context info for prompt confirmation modal (optional)
   fileContext?: FileContextInfo;
+  // Tool calling configuration (optional)
+  tools?: AIToolDefinition[];
+  toolExecutor?: ToolExecutor;
+  toolChoice?: 'auto' | 'none' | { type: 'function'; name: string };
+  // Allow tools to write/modify project files (default: false for safety)
+  allowToolWrites?: boolean;
+  // Project ID for tool context (optional)
+  projectId?: string;
 }
 
 export interface GenerationResponse {
@@ -223,7 +264,7 @@ export const DEFAULT_PROVIDERS: Record<ProviderType, Omit<ProviderConfig, 'id' |
     name: 'Cerebras',
     baseUrl: 'https://api.cerebras.ai/v1',
     models: [
-      { id: 'llama3.1-8b', name: 'Llama 3.1 8B', description: '~2200 tok/s', supportsVision: false, supportsStreaming: true, contextWindow: 32000, maxOutput: 8000 },
+      { id: 'llama3.1-8b', name: 'Llama 3.1 8B', description: '~2200 tok/s', supportsVision: false, supportsStreaming: true, contextWindow: 31010, maxOutput: 8000 },
       { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', description: '~2100 tok/s', supportsVision: false, supportsStreaming: true, contextWindow: 128000 },
       { id: 'qwen-3-32b', name: 'Qwen 3 32B', description: '~2600 tok/s', supportsVision: false, supportsStreaming: true, contextWindow: 131000 },
       { id: 'gpt-oss-120b', name: 'GPT-OSS 120B', description: '~3000 tok/s', supportsVision: false, supportsStreaming: true, contextWindow: 131000, maxOutput: 40000 },
