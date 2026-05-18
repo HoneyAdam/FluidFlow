@@ -1,11 +1,14 @@
 import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { GoogleGenAI } from '@google/genai';
 import { supportsNativeSchema } from '../utils/schemas';
+import { parseToolArguments } from '../utils/toolUtils';
 
 // Gemini content part types
 type GeminiPart =
   | { text: string }
-  | { inlineData: { mimeType: string; data: string } };
+  | { inlineData: { mimeType: string; data: string } }
+  | { functionCall: { name: string; args: Record<string, unknown> } }
+  | { functionResponse: { name: string; response: Record<string, unknown> } };
 
 export class GeminiProvider implements AIProvider {
   readonly config: ProviderConfig;
@@ -110,11 +113,86 @@ export class GeminiProvider implements AIProvider {
       }
     }
 
+    // Add tools if provided (for tool calling mode)
+    if (request.responseFormat === 'tools' && request.tools && request.tools.length > 0) {
+      config.tools = [{
+        functionDeclarations: request.tools.map(t => ({
+          name: t.name,
+          description: t.description || '',
+          parameters: t.parameters || { type: 'object', properties: {} },
+        }))
+      }];
+    }
+
     const response = await this.client.models.generateContent({
       model,
       contents,
       config,
     });
+
+    // Handle function call response (tool calling mode)
+    const functionCalls = response.candidates?.[0]?.content?.parts?.filter(
+      (p) => 'functionCall' in p
+    );
+
+    if (functionCalls && functionCalls.length > 0 && request.toolExecutor) {
+      const results: Array<{ role: 'user'; parts: GeminiPart[] }> = [];
+      const filesWritten: string[] = [];
+
+      for (const fc of functionCalls) {
+        if ('functionCall' in fc) {
+          try {
+            const args = parseToolArguments(JSON.stringify(fc.functionCall.args || {}));
+            const result = await request.toolExecutor(fc.functionCall.name, args);
+
+            if (result.success && result.filesWritten) {
+              filesWritten.push(...result.filesWritten);
+            }
+
+            results.push({
+              role: 'user',
+              parts: [{
+                functionResponse: {
+                  name: fc.functionCall.name,
+                  response: (result.success
+                    ? (result.result || { success: true })
+                    : { error: result.error || 'Unknown error' }) as Record<string, unknown>
+                }
+              }]
+            });
+          } catch (error) {
+            results.push({
+              role: 'user',
+              parts: [{
+                functionResponse: {
+                  name: fc.functionCall.name,
+                  response: { error: error instanceof Error ? error.message : String(error) }
+                }
+              }]
+            });
+          }
+        }
+      }
+
+      // Continue conversation with function responses
+      contents.push(...results);
+
+      // Make follow-up request
+      const followUpResponse = await this.client.models.generateContent({
+        model,
+        contents,
+        config,
+      });
+
+      return {
+        text: followUpResponse.text || '',
+        usage: {
+          inputTokens: followUpResponse.usageMetadata?.promptTokenCount,
+          outputTokens: followUpResponse.usageMetadata?.candidatesTokenCount,
+        },
+        filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
+      };
+    }
 
     return {
       text: response.text || '',
@@ -194,6 +272,17 @@ export class GeminiProvider implements AIProvider {
       }
     }
 
+    // Add tools if provided (for tool calling mode)
+    if (request.responseFormat === 'tools' && request.tools && request.tools.length > 0) {
+      config.tools = [{
+        functionDeclarations: request.tools.map(t => ({
+          name: t.name,
+          description: t.description || '',
+          parameters: t.parameters || { type: 'object', properties: {} },
+        }))
+      }];
+    }
+
     try {
       const stream = await this.client.models.generateContentStream({
         model,
@@ -201,10 +290,81 @@ export class GeminiProvider implements AIProvider {
         config,
       });
 
+      const functionCalls: Array<{ functionCall: { name: string; args: Record<string, unknown> } }> = [];
+
       for await (const chunk of stream) {
+        // Check for function calls in the chunk
+        const chunkFunctionCalls = chunk.candidates?.[0]?.content?.parts?.filter(
+          (p) => 'functionCall' in p
+        ) as typeof functionCalls;
+        if (chunkFunctionCalls && chunkFunctionCalls.length > 0) {
+          functionCalls.push(...chunkFunctionCalls);
+        }
+
         const text = chunk.text || '';
         fullText += text;
         onChunk({ text, done: false });
+      }
+
+      // Handle function calls after streaming completes
+      if (functionCalls.length > 0 && request.toolExecutor) {
+        const results: Array<{ role: 'user'; parts: GeminiPart[] }> = [];
+        const filesWritten: string[] = [];
+
+        for (const fc of functionCalls) {
+          try {
+            const args = parseToolArguments(JSON.stringify(fc.functionCall.args || {}));
+            const result = await request.toolExecutor(fc.functionCall.name, args);
+
+            if (result.success && result.filesWritten) {
+              filesWritten.push(...result.filesWritten);
+            }
+
+            results.push({
+              role: 'user',
+              parts: [{
+                functionResponse: {
+                  name: fc.functionCall.name,
+                  response: (result.success
+                    ? (result.result || { success: true })
+                    : { error: result.error || 'Unknown error' }) as Record<string, unknown>
+                }
+              }]
+            });
+          } catch (error) {
+            results.push({
+              role: 'user',
+              parts: [{
+                functionResponse: {
+                  name: fc.functionCall.name,
+                  response: { error: error instanceof Error ? error.message : String(error) }
+                }
+              }]
+            });
+          }
+        }
+
+        // Send final chunk
+        onChunk({ text: '', done: true });
+
+        // Continue conversation with function responses
+        contents.push(...results);
+
+        // Make follow-up request (non-streaming)
+        const followUpResponse = await this.client.models.generateContent({
+          model,
+          contents,
+          config,
+        });
+
+        return {
+          text: followUpResponse.text || '',
+          usage: {
+            inputTokens: followUpResponse.usageMetadata?.promptTokenCount,
+            outputTokens: followUpResponse.usageMetadata?.candidatesTokenCount,
+          },
+          filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
+        };
       }
     } catch (error) {
       // Signal completion even on error, with partial text if available

@@ -152,7 +152,7 @@ export interface GenerationRequest {
   stream?: boolean;
   maxTokens?: number;
   temperature?: number;
-  responseFormat?: 'text' | 'json';
+  responseFormat?: 'text' | 'json' | 'tools';
   // JSON Schema for structured output (used by Gemini's responseJsonSchema)
   // When provided with responseFormat: 'json', ensures response conforms to schema
   responseSchema?: Record<string, unknown>;

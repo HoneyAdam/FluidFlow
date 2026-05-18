@@ -218,7 +218,7 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         prompt: promptParts.join('\n\n'),
         systemInstruction,
         images,
-        responseFormat: responseFormat === 'marker' ? undefined : 'json',
+        responseFormat: responseFormat === 'marker' ? undefined : responseFormat,
         responseSchema:
           responseFormat !== 'marker' && activeProvider?.type && supportsAdditionalProperties(activeProvider.type)
             ? FILE_GENERATION_SCHEMA
