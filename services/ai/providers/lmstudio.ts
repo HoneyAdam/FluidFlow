@@ -1,218 +1,48 @@
-import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
-import { fetchWithTimeout, TIMEOUT_TEST_CONNECTION, TIMEOUT_GENERATE, TIMEOUT_LIST_MODELS } from '../utils/fetchWithTimeout';
-import { throwIfNotOk } from '../utils/errorHandling';
-import { processSSEStream } from '../utils/streamParser';
+import { OpenAICompatibleProvider } from './base/OpenAICompatibleProvider';
+import type { ProviderConfig, ModelOption } from '../types';
 
-// OpenAI-compatible API content types for multimodal messages
-type ContentPart =
-  | { type: 'text'; text: string }
-  | { type: 'image_url'; image_url: { url: string } };
-
-// OpenAI-compatible API message interface
-interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string | ContentPart[];
-}
-
-// LMStudio request body (OpenAI-compatible)
-interface ChatCompletionRequest {
-  model: string;
-  messages: ChatMessage[];
-  max_tokens: number;
-  temperature: number;
-  stream?: boolean;
-  response_format?: { type: 'json_object' };
-}
-
-// LMStudio model object
-interface LMStudioModel {
-  id: string;
-}
-
-export class LMStudioProvider implements AIProvider {
-  readonly config: ProviderConfig;
-
+/**
+ * LM Studio AI Provider
+ * Local OpenAI-compatible inference server
+ * Supports vision models and JSON output
+ */
+export class LMStudioProvider extends OpenAICompatibleProvider {
   constructor(config: ProviderConfig) {
-    this.config = config;
+    super(config);
   }
 
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
-    try {
-      // BUG-010 fix: Add timeout to prevent indefinite hanging
-      const response = await fetchWithTimeout(`${this.config.baseUrl}/models`, {
-        timeout: TIMEOUT_TEST_CONNECTION,
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection failed. Is LM Studio running?'
-      };
-    }
+  protected getApiEndpoint(): string {
+    return `${this.config.baseUrl}/chat/completions`;
   }
 
-  async generate(request: GenerationRequest, model: string): Promise<GenerationResponse> {
-    const messages: ChatMessage[] = [];
+  protected getModelsEndpoint(): string {
+    // LM Studio uses /api/tags for model listing
+    return `${this.config.baseUrl}/api/tags`;
+  }
 
-    // Build system instruction with optional JSON schema guidance
-    let systemContent = request.systemInstruction || '';
-    if (request.responseFormat === 'json' && request.responseSchema) {
-      // Include schema in system prompt for LMStudio (no native schema enforcement)
-      const schemaInstruction = `\n\nYou MUST respond with valid JSON that follows this exact schema:\n${JSON.stringify(request.responseSchema, null, 2)}\n\nDo not include any text outside the JSON object.`;
-      systemContent = systemContent ? systemContent + schemaInstruction : schemaInstruction.trim();
-    }
+  protected getAuthHeader(): string {
+    // LM Studio typically doesn't require auth, but can use optional API key
+    return this.config.apiKey ? `Bearer ${this.config.apiKey}` : '';
+  }
 
-    if (systemContent) {
-      messages.push({ role: 'system', content: systemContent });
-    }
+  protected getDefaultMaxTokens(): number {
+    return 4096;
+  }
 
-    // Build user message content
-    const content: ContentPart[] = [];
+  protected getAdditionalHeaders(): Record<string, string> {
+    return this.config.headers || {};
+  }
 
-    if (request.images) {
-      for (const img of request.images) {
-        content.push({
-          type: 'image_url',
-          image_url: { url: `data:${img.mimeType};base64,${img.data}` }
-        });
-      }
-    }
-
-    content.push({ type: 'text', text: request.prompt });
-    messages.push({ role: 'user', content });
-
-    const body: ChatCompletionRequest = {
-      model,
-      messages,
-      max_tokens: request.maxTokens || 4096,
-      temperature: request.temperature ?? 0.7,
-    };
-
-    if (request.responseFormat === 'json') {
-      body.response_format = { type: 'json_object' };
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    // LM Studio may optionally use API key
-    if (this.config.apiKey) {
-      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
-    }
-
-    // BUG-010 fix: Add timeout to prevent indefinite hanging
-    const response = await fetchWithTimeout(`${this.config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      timeout: TIMEOUT_GENERATE,
-    });
-
-    // Use centralized error handling
-    await throwIfNotOk(response, 'lmstudio');
-
-    const data = await response.json();
-
+  protected mapModel(m: { name: string }): ModelOption {
     return {
-      text: data.choices[0]?.message?.content || '',
-      finishReason: data.choices[0]?.finish_reason,
-      usage: {
-        inputTokens: data.usage?.prompt_tokens,
-        outputTokens: data.usage?.completion_tokens,
-      }
-    };
-  }
-
-  async generateStream(
-    request: GenerationRequest,
-    model: string,
-    onChunk: (chunk: StreamChunk) => void
-  ): Promise<GenerationResponse> {
-    const messages: ChatMessage[] = [];
-
-    // Build system instruction with optional JSON schema guidance
-    let systemContent = request.systemInstruction || '';
-    if (request.responseFormat === 'json' && request.responseSchema) {
-      // Include schema in system prompt for LMStudio (no native schema enforcement)
-      const schemaInstruction = `\n\nYou MUST respond with valid JSON that follows this exact schema:\n${JSON.stringify(request.responseSchema, null, 2)}\n\nDo not include any text outside the JSON object.`;
-      systemContent = systemContent ? systemContent + schemaInstruction : schemaInstruction.trim();
-    }
-
-    if (systemContent) {
-      messages.push({ role: 'system', content: systemContent });
-    }
-
-    const content: ContentPart[] = [];
-
-    if (request.images) {
-      for (const img of request.images) {
-        content.push({
-          type: 'image_url',
-          image_url: { url: `data:${img.mimeType};base64,${img.data}` }
-        });
-      }
-    }
-
-    content.push({ type: 'text', text: request.prompt });
-    messages.push({ role: 'user', content });
-
-    const body: ChatCompletionRequest = {
-      model,
-      messages,
-      max_tokens: request.maxTokens || 4096,
-      temperature: request.temperature ?? 0.7,
-      stream: true,
-    };
-
-    if (request.responseFormat === 'json') {
-      body.response_format = { type: 'json_object' };
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.config.apiKey) {
-      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
-    }
-
-    // BUG-010 fix: Add timeout to prevent indefinite hanging
-    const response = await fetchWithTimeout(`${this.config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      timeout: TIMEOUT_GENERATE,
-    });
-
-    // Use centralized error handling
-    await throwIfNotOk(response, 'lmstudio');
-
-    // Use unified SSE stream parser (OpenAI-compatible format)
-    const { fullText } = await processSSEStream(response, {
-      format: 'openai',
-      onChunk,
-    });
-
-    return { text: fullText };
-  }
-
-  async listModels(): Promise<ModelOption[]> {
-    // BUG-010 fix: Add timeout to prevent indefinite hanging
-    const response = await fetchWithTimeout(`${this.config.baseUrl}/models`, {
-      timeout: TIMEOUT_LIST_MODELS,
-    });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const data = await response.json();
-    return (data.data || []).map((m: LMStudioModel) => ({
-      id: m.id,
-      name: m.id,
+      id: m.name,
+      name: m.name,
       description: 'Local model',
-      supportsVision: false,
+      supportsVision: true, // LM Studio can support vision models
       supportsStreaming: true,
-    }));
+    };
   }
 }
+
+// Re-export for convenience
+export { LMStudioProvider as default };
