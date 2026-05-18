@@ -481,7 +481,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({
               <div className="flex flex-col items-center justify-center py-8" style={{ color: 'var(--theme-text-muted)' }}>
                 <CloudOff className="w-8 h-8 mb-2 opacity-50" />
                 <p className="text-xs">Server offline</p>
-                <p className="text-[10px] mt-1" style={{ color: 'var(--theme-text-dim)' }}>Start backend on port 3200</p>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--theme-text-dim)' }}>Start backend on port 3101</p>
               </div>
             ) : isLoadingProjects ? (
               <div className="flex items-center justify-center py-8">

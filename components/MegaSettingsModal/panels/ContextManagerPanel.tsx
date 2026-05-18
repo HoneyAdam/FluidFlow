@@ -115,7 +115,7 @@ export const ContextManagerPanel: React.FC = () => {
           value={contextSettings.minRemainingTokens ?? contextSettings.maxTokensBeforeCompact ?? 8000}
           onChange={(value) => updateSettings({ minRemainingTokens: value })}
           min={2000}
-          max={32000}
+          max={31010}
           step={1000}
           suffix=" tokens"
         />

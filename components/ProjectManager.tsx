@@ -258,7 +258,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
             <div className="flex flex-col items-center justify-center py-16" style={{ color: 'var(--theme-text-muted)' }}>
               <CloudOff className="w-12 h-12 mb-3 opacity-50" />
               <p className="text-sm">Server is offline</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--theme-text-dim)' }}>Check if backend is running on port 3200</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--theme-text-dim)' }}>Check if backend is running on port 3101</p>
             </div>
           ) : isLoading ? (
             <div className="flex items-center justify-center py-16">

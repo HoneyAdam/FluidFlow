@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { request } from 'http';
 
-const API_BASE = 'http://localhost:3200/api';
+const API_BASE = 'http://localhost:3101/api';
 
 describe('API Integration Tests', () => {
   beforeAll(async () => {

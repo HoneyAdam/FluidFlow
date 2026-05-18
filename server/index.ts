@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 3200;
+const PORT = process.env.SERVER_PORT || 3101;
 
 // Ensure projects directory exists
 const PROJECTS_DIR = path.join(__dirname, '../projects');
