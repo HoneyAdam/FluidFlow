@@ -34,3 +34,5 @@ bug_*.*
 
 # Test coverage
 coverage/
+
+.dfmt/

@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy API requests to HTTPS backend
         '/api': {
-          target: 'https://localhost:3200',
+          target: 'https://localhost:3101',
           changeOrigin: true,
           secure: false, // Allow self-signed certificates
         },

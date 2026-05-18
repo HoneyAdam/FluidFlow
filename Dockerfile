@@ -42,11 +42,11 @@ RUN mkdir -p /app/projects && chown nextjs:nodejs /app/projects
 USER nextjs
 
 # Expose the port the app runs on
-EXPOSE 3200
+EXPOSE 3101
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3200/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD node -e "require('http').get('http://localhost:3101/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Run the application
 CMD ["npm", "run", "server"]

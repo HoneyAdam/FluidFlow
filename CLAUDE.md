@@ -15,7 +15,7 @@ IndexedDB-based WIP persistence.
 ```bash
 # Prerequisites: Node.js 20+ (LTS)
 npm install                  # Install dependencies
-npm run dev                  # Start frontend (port 3100) + backend (port 3200)
+npm run dev                  # Start frontend (port 3100) + backend (port 3101)
 
 # Individual servers
 npm run dev:frontend         # Vite dev server (HTTPS required for WebContainer API)
@@ -52,7 +52,7 @@ GEMINI_API_KEY=your_key      # At least one provider key required
 
 - **Frontend**: React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4 (port 3100,
   HTTPS)
-- **Backend**: Express 5, tsx (port 3200)
+- **Backend**: Express 5, tsx (port 3101)
 - **Editor**: Monaco Editor
 - **Testing**: Vitest 4 with jsdom
 
@@ -135,7 +135,7 @@ refresh resilience.
 
 - HTTPS enabled with self-signed cert for WebContainer API
 - Cross-Origin headers: `Cross-Origin-Embedder-Policy: credentialless`
-- API proxy: `/api` → `http://localhost:3200`
+- API proxy: `/api` → `http://localhost:3101`
 - Watch ignores: `projects/**`, `node_modules/**`, `.git/**`
 
 ## Path Aliases
@@ -182,3 +182,51 @@ These files require understanding multiple parts of the codebase:
 | `server/api/projects.ts`            | Project CRUD, file management                         |
 | `hooks/useProject.ts`               | Project state, git integration, GitHub push           |
 | `components/ControlPanel/index.tsx` | AI call orchestration, message handling               |
+
+<!-- dfmt:v1 begin -->
+## Context Discipline
+
+This project uses DFMT to keep tool output from flooding the context
+window and to preserve session state across compactions. When working
+in this project, follow these rules.
+
+### Tool preferences
+
+Prefer DFMT's MCP tools over native ones:
+
+| Native     | DFMT replacement | `intent` required? |
+|------------|------------------|--------------------|
+| `Bash`     | `dfmt_exec`      | yes                |
+| `Read`     | `dfmt_read`      | yes                |
+| `WebFetch` | `dfmt_fetch`     | yes                |
+| `Glob`     | `dfmt_glob`      | yes                |
+| `Grep`     | `dfmt_grep`      | yes                |
+| `Edit`     | `dfmt_edit`      | n/a                |
+| `Write`    | `dfmt_write`     | n/a                |
+
+Every `dfmt_*` call MUST pass an `intent` parameter — a short phrase
+describing what you need from the output (e.g. "failing tests",
+"error message", "imports"). Without `intent` the tool returns raw
+bytes and the token savings are lost.
+
+On DFMT failure, report it to the user (one short line — which call,
+what error) and then fall back to the native tool so the session is
+not blocked. The ban is on *silent* fallback — every switch must be
+announced. After a fallback, drop a brief `dfmt_remember` note tagged
+`gap` when practical, so the journal records that a call was bypassed.
+If the native tool is also denied (permission rule, sandbox refusal),
+stop and ask the user; do not retry blindly.
+
+### Session memory
+
+DFMT tracks tool calls automatically. After substantive decisions or
+findings, call `dfmt_remember` with descriptive tags (`decision`,
+`finding`, `summary`) so future sessions can recall the context after
+compaction.
+
+### When native tools are acceptable
+
+Native `Bash` and `Read` are acceptable for outputs you know are small
+(< 2 KB) and will not be referenced again. For everything else, DFMT
+tools are preferred.
+<!-- dfmt:v1 end -->

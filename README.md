@@ -137,14 +137,14 @@ MINIMAX_API_KEY=your_minimax_api_key
 GITHUB_TOKEN=your_github_personal_access_token
 
 # Backend API (optional)
-VITE_API_URL=https://localhost:3200/api
+VITE_API_URL=https://localhost:3101/api
 ```
 
 ### Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start both frontend (port 3100) and backend (port 3200) (Self-Signed SSL) |
+| `npm run dev` | Start both frontend (port 3100) and backend (port 3101) (Self-Signed SSL) |
 | `npm run dev:frontend` | Start only frontend development server |
 | `npm run dev:server` | Start only backend development server |
 | `npm run build` | Build for production |
