@@ -80,7 +80,7 @@ const MODEL_CAPABILITIES: Record<string, Partial<ModelCapabilities>> = {
   'o4': { supportsVision: false, supportsStreaming: false, supportsJsonMode: false, contextWindow: 128000, maxOutputTokens: 65536 },
 
   // Anthropic models
-  'claude-opus-4': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 200000, maxOutputTokens: 32000 },
+  'claude-opus-4': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 200000, maxOutputTokens: 31010 },
   'claude-sonnet-4': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 200000, maxOutputTokens: 64000 },
   'claude-haiku-4': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, supportsStructuredOutput: true, contextWindow: 200000, maxOutputTokens: 64000 },
   'claude-3-opus': { supportsVision: true, supportsStreaming: true, supportsJsonMode: true, contextWindow: 200000, maxOutputTokens: 4096 },
