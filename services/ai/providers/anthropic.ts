@@ -1,13 +1,15 @@
-import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk } from '../types';
+import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { fetchWithTimeout, TIMEOUT_TEST_CONNECTION, TIMEOUT_GENERATE } from '../utils/fetchWithTimeout';
 import { prepareJsonRequest } from '../utils/jsonOutput';
 import { throwIfNotOk } from '../utils/errorHandling';
 import { processSSEStream } from '../utils/streamParser';
+import { parseToolArguments } from '../utils/toolUtils';
 
 // Anthropic API content types for multimodal messages
 type AnthropicContentPart =
   | { type: 'text'; text: string }
-  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+  | { type: 'tool_result'; tool_use_id: string; content: string };
 
 // Anthropic API message interface (only user/assistant, system is separate parameter)
 interface AnthropicMessage {
@@ -27,6 +29,11 @@ interface AnthropicRequestBody {
     type: 'json_schema';
     schema: Record<string, unknown>;
   };
+  tools?: Array<{
+    name: string;
+    description?: string;
+    input_schema: Record<string, unknown>;
+  }>;
 }
 
 export class AnthropicProvider implements AIProvider {
@@ -59,6 +66,21 @@ export class AnthropicProvider implements AIProvider {
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Connection failed' };
     }
+  }
+
+  async listModels(): Promise<ModelOption[]> {
+    // Anthropic doesn't have a public list endpoint - return config models or default
+    if (this.config.models.length > 0) {
+      return this.config.models;
+    }
+    return [{
+      id: this.config.defaultModel,
+      name: this.config.defaultModel,
+      description: 'Anthropic model',
+      supportsVision: true,
+      supportsStreaming: true,
+      contextWindow: 200000,
+    }];
   }
 
   async generate(request: GenerationRequest, model: string): Promise<GenerationResponse> {
@@ -122,6 +144,15 @@ export class AnthropicProvider implements AIProvider {
       };
     }
 
+    // Add tools if provided
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools.map(t => ({
+        name: t.name,
+        description: t.description || '',
+        input_schema: t.parameters || { type: 'object', properties: {} },
+      }));
+    }
+
     // BUG-010 fix: Add timeout to prevent indefinite hanging
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -146,6 +177,80 @@ export class AnthropicProvider implements AIProvider {
     await throwIfNotOk(response, 'anthropic');
 
     const data = await response.json();
+
+    // Handle tool use content blocks
+    const toolUseBlocks = data.content?.filter((c: { type: string }) => c.type === 'tool_use') || [];
+    if (toolUseBlocks.length > 0 && request.toolExecutor) {
+      const results: Array<{ role: 'user'; content: Array<{ type: 'tool_result'; tool_use_id: string; content: string }> }> = [];
+      const filesWritten: string[] = [];
+
+      for (const toolBlock of toolUseBlocks) {
+        try {
+          const args = parseToolArguments(toolBlock.input || '{}');
+          const result = await request.toolExecutor(toolBlock.name, args);
+
+          if (result.success && result.filesWritten) {
+            filesWritten.push(...result.filesWritten);
+          }
+
+          results.push({
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolBlock.id,
+              content: result.success
+                ? JSON.stringify(result.result || { success: true })
+                : `Tool "${toolBlock.name}" failed: ${result.error || 'Unknown error'}`,
+            }]
+          });
+        } catch (error) {
+          results.push({
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolBlock.id,
+              content: `Tool "${toolBlock.name}" failed: ${error instanceof Error ? error.message : String(error)}`,
+            }]
+          });
+        }
+      }
+
+      // Continue conversation with tool results
+      messages.push(...results);
+
+      // Make follow-up request
+      const followUpBody: AnthropicRequestBody = {
+        model,
+        messages,
+        max_tokens: request.maxTokens || 4096,
+        temperature: request.temperature ?? 0.7,
+      };
+      if (systemContent) {
+        followUpBody.system = systemContent;
+      }
+
+      const followUpResponse = await fetchWithTimeout(`${this.config.baseUrl}/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(followUpBody),
+        timeout: TIMEOUT_GENERATE,
+      });
+
+      await throwIfNotOk(followUpResponse, 'anthropic');
+      const followUpData = await followUpResponse.json();
+      const followUpTextContent = followUpData.content?.find((c: { type: string; text?: string }) => c.type === 'text');
+
+      return {
+        text: followUpTextContent?.text || '',
+        finishReason: followUpData.stop_reason,
+        usage: {
+          inputTokens: followUpData.usage?.input_tokens || data.usage?.input_tokens,
+          outputTokens: followUpData.usage?.output_tokens || data.usage?.output_tokens,
+        },
+        filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
+      };
+    }
+
     const textContent = data.content?.find((c: { type: string; text?: string }) => c.type === 'text');
 
     return {
@@ -221,6 +326,15 @@ export class AnthropicProvider implements AIProvider {
         type: 'json_schema',
         schema: request.responseSchema
       };
+    }
+
+    // Add tools if provided
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools.map(t => ({
+        name: t.name,
+        description: t.description || '',
+        input_schema: t.parameters || { type: 'object', properties: {} },
+      }));
     }
 
     // BUG-010 fix: Add timeout to prevent indefinite hanging
