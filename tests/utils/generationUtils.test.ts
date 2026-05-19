@@ -348,17 +348,16 @@ describe('generationUtils', () => {
       expect(instruction.length).toBeGreaterThan(0);
     });
 
-    it('should use marker format when specified', () => {
+    it('should use update mode instructions for existing app', () => {
       const instruction = buildSystemInstruction(
         true,
         false,
         false,
         false,
-        '',
-        'marker' // response format
+        ''
       );
 
-      expect(instruction).toContain('markers');
+      expect(instruction).toContain('UPDATE');
     });
 
     it('should handle all flags combined', () => {

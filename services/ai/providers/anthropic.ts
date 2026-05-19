@@ -204,6 +204,7 @@ export class AnthropicProvider implements AIProvider {
             }]
           });
         } catch (error) {
+          console.error('[AnthropicProvider] Tool execution threw:', toolBlock.name, error);
           results.push({
             role: 'user',
             content: [{

@@ -10,10 +10,8 @@ import { generateContextForPrompt } from './codemap';
 import {
   SEARCH_REPLACE_MODE_INSTRUCTION,
   STANDARD_UPDATE_INSTRUCTION,
-  STANDARD_UPDATE_INSTRUCTION_MARKER,
 } from '../components/ControlPanel/prompts';
 import { getGenerationPrompt } from '../services/promptTemplates';
-import type { AIResponseFormat } from '../services/fluidflowConfig';
 import { getFileContextTracker, type FileContextDelta } from '../services/context/fileContextTracker';
 import { FILE_CONTEXT_PREVIEW_LENGTH, STORAGE_KEYS } from '../constants';
 import type { FileContextInfo, ProviderType } from '../services/ai/types';
@@ -105,7 +103,7 @@ export function createTokenUsage(
 
 /**
  * Build system instruction for code generation
- * @param responseFormat - Optional override for response format (json or marker)
+ * Uses tool calling for all file operations
  * @param projectId - Optional project ID for style guide lookup
  */
 export function buildSystemInstruction(
@@ -114,11 +112,11 @@ export function buildSystemInstruction(
   isEducationMode: boolean,
   diffModeEnabled: boolean,
   techStackInstruction: string,
-  responseFormat?: AIResponseFormat,
   projectId?: string
 ): string {
-  // Use format-aware base generation prompt
-  let systemInstruction = getGenerationPrompt(responseFormat);
+  // Tool calling mode - use basic generation prompt
+  let systemInstruction = getGenerationPrompt(); // No format argument
+  console.log(`[buildSystemInstruction] Tool calling mode, prompt starts: ${systemInstruction.substring(0, 50)}`);
 
   // Include project context if available (style guide + project summary)
   if (projectId) {
@@ -140,23 +138,12 @@ export function buildSystemInstruction(
   // Add technology stack instructions
   systemInstruction += techStackInstruction;
 
-  // Add update mode instructions based on format
+  // Add update mode instructions
   if (existingApp) {
-    const isMarkerFormat = responseFormat === 'marker';
-
-    // Search/Replace mode is JSON-only - ignore diffMode for marker format
-    if (diffModeEnabled && !isMarkerFormat) {
+    if (diffModeEnabled) {
       systemInstruction += SEARCH_REPLACE_MODE_INSTRUCTION;
     } else {
-      // Use format-appropriate update instructions
-      systemInstruction += isMarkerFormat
-        ? STANDARD_UPDATE_INSTRUCTION_MARKER
-        : STANDARD_UPDATE_INSTRUCTION;
-    }
-
-    // Log format decision
-    if (isMarkerFormat && diffModeEnabled) {
-      console.log('[SystemInstruction] Marker format selected - ignoring diff mode (JSON-only feature)');
+      systemInstruction += STANDARD_UPDATE_INSTRUCTION;
     }
   }
 

@@ -151,8 +151,8 @@ export const AI_MODELS: ModelConfig[] = [
 export interface DebugLogEntry {
   id: string;
   timestamp: number;
-  type: 'request' | 'response' | 'stream' | 'error' | 'info';
-  category: 'generation' | 'accessibility' | 'quick-edit' | 'auto-fix' | 'git-commit' | 'auto-commit' | 'prompt-improver' | 'other';
+  type: 'request' | 'response' | 'stream' | 'error' | 'info' | 'tool-call';
+  category: 'generation' | 'accessibility' | 'quick-edit' | 'auto-fix' | 'git-commit' | 'auto-commit' | 'prompt-improver' | 'tool-call' | 'other';
   model?: string;
   provider?: string;
   duration?: number;
@@ -175,6 +175,15 @@ export interface DebugLogEntry {
   };
   // Error data
   error?: string;
+  // Tool call data (for tool-call type entries)
+  toolCallInfo?: {
+    toolName: string;
+    arguments?: Record<string, unknown>;
+    result?: unknown;
+    success?: boolean;
+    error?: string;
+    filesWritten?: string[];
+  };
   // Metadata
   metadata?: Record<string, unknown>;
 }
@@ -389,7 +398,7 @@ export interface UsageRecord {
   outputCost: number;
   totalCost: number;
   currency: string;
-  category: 'generation' | 'accessibility' | 'quick-edit' | 'auto-fix' | 'git-commit' | 'auto-commit' | 'prompt-improver' | 'other';
+  category: 'generation' | 'accessibility' | 'quick-edit' | 'auto-fix' | 'git-commit' | 'auto-commit' | 'prompt-improver' | 'tool-call' | 'other';
   duration: number; // ms
   projectId?: string;
   success: boolean;

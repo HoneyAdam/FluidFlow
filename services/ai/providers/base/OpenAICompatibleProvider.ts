@@ -318,10 +318,12 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
 
       // If tool calls were made, handle them
       if (accumulatedToolCalls.length > 0 && finishReason === 'tool_calls') {
+        console.log('[OpenAICompatibleProvider] Tool calls detected:', accumulatedToolCalls.length);
         onChunk({ text: '', done: true });
 
         // Execute tool calls with detailed results
         const { messages: toolResults, filesWritten: writtenFiles } = await this.executeToolCallsWithResults(accumulatedToolCalls, toolExecutor);
+        console.log('[OpenAICompatibleProvider] Tool execution complete:', { toolResults: toolResults.length, writtenFiles });
 
         // Track files written
         filesWritten.push(...writtenFiles);
@@ -444,7 +446,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       temperature?: number;
       stream?: boolean;
       tools?: AIToolDefinition[];
-      toolChoice?: 'auto' | 'none' | { type: 'function'; name: string };
+      toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; name: string };
     }
   ): ChatCompletionRequest {
     const body: ChatCompletionRequest = {
@@ -461,6 +463,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
     // Add tools if provided
     const preparedTools = this.prepareToolsForRequest(options.tools);
     if (preparedTools) {
+      console.log(`[OpenAICompatibleProvider] Prepared ${preparedTools.tools.length} tools for request`);
       body.tools = preparedTools.tools;
       if (options.toolChoice) {
         body.tool_choice = options.toolChoice;
@@ -605,7 +608,9 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
     for (const tc of toolCalls) {
       try {
         const args = parseToolArguments(tc.arguments);
+        console.log('[OpenAICompatibleProvider] Executing tool:', tc.name, 'with args:', args);
         const result = await toolExecutor(tc.name, args);
+        console.log('[OpenAICompatibleProvider] Tool result:', tc.name, 'success:', result.success, 'filesWritten:', result.filesWritten);
 
         messages.push({
           role: 'tool' as const,
@@ -620,15 +625,19 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
           filesWritten.push(...result.filesWritten);
         }
       } catch (error) {
+        // Tool executor itself threw an error (not a result error)
+        console.error('[OpenAICompatibleProvider] Tool execution threw:', tc.name, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         messages.push({
           role: 'tool' as const,
           tool_call_id: tc.id,
           name: tc.name,
-          content: `Error: ${formatToolError(tc.name, error)}`,
+          content: `Error: ${errorMessage}`,
         });
       }
     }
 
+    console.log('[OpenAICompatibleProvider] All tools executed. Total filesWritten:', filesWritten);
     return { messages, filesWritten };
   }
 

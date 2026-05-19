@@ -52,12 +52,13 @@ export type {
 } from './useCodeGeneration';
 
 // Streaming response hook (extracted from useCodeGeneration)
-export { useStreamingResponse, parseFilePlanFromStream } from './useStreamingResponse';
+export { useStreamingResponse } from './useStreamingResponse';
+export { parseFilePlanFromStream } from './streaming';
 export type {
   StreamingCallbacks,
   StreamingResult,
   UseStreamingResponseReturn,
-} from './useStreamingResponse';
+} from './streaming';
 
 // Response parser hook (extracted from useCodeGeneration)
 export { useResponseParser } from './useResponseParser';

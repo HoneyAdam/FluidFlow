@@ -114,7 +114,7 @@ export class GeminiProvider implements AIProvider {
     }
 
     // Add tools if provided (for tool calling mode)
-    if (request.responseFormat === 'tools' && request.tools && request.tools.length > 0) {
+    if (request.tools && request.tools.length > 0) {
       config.tools = [{
         functionDeclarations: request.tools.map(t => ({
           name: t.name,
@@ -161,6 +161,7 @@ export class GeminiProvider implements AIProvider {
               }]
             });
           } catch (error) {
+            console.error('[GeminiProvider] Tool execution threw:', fc.functionCall.name, error);
             results.push({
               role: 'user',
               parts: [{
@@ -273,7 +274,7 @@ export class GeminiProvider implements AIProvider {
     }
 
     // Add tools if provided (for tool calling mode)
-    if (request.responseFormat === 'tools' && request.tools && request.tools.length > 0) {
+    if (request.tools && request.tools.length > 0) {
       config.tools = [{
         functionDeclarations: request.tools.map(t => ({
           name: t.name,
@@ -332,6 +333,7 @@ export class GeminiProvider implements AIProvider {
               }]
             });
           } catch (error) {
+            console.error('[GeminiProvider] Tool execution threw:', fc.functionCall.name, error);
             results.push({
               role: 'user',
               parts: [{

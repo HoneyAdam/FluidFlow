@@ -113,16 +113,43 @@ export interface ProviderConfig {
   // Tool calling settings
   toolCallingEnabled?: boolean;
   allowToolWrites?: boolean;
+  // models.dev sync
+  syncEnabled?: boolean;
+  syncApiKey?: string; // Optional API key for models.dev premium features
 }
+
+export interface ModelPricing {
+  input?: number; // Price per 1M input tokens
+  output?: number; // Price per 1M output tokens
+  currency?: string; // Default: 'usd'
+}
+
+export type ModelFamily =
+  | 'gpt' | 'claude' | 'gemini' | 'glm' | 'llama' | 'qwen'
+  | 'mistral' | 'mixtral' | 'custom' | 'unknown';
 
 export interface ModelOption {
   id: string;
   name: string;
   description?: string;
+  // Capability
   contextWindow?: number;
   maxOutput?: number;
   supportsVision?: boolean;
   supportsStreaming?: boolean;
+  supportsToolCalling?: boolean;
+  // Family & Grouping
+  family?: ModelFamily;
+  group?: string; // e.g., "gpt-5", "claude-4", "gemini-2.5"
+  // Pricing (from models.dev or provider docs)
+  pricing?: ModelPricing;
+  // Metadata
+  isLatest?: boolean;
+  releaseDate?: string; // ISO date string
+  isDeprecated?: boolean;
+  // Provider-specific
+  provider?: string; // Original provider for the model
+  mode?: 'chat' | 'reasoning' | 'code' | 'embedding';
 }
 
 export interface ConversationMessage {
@@ -167,7 +194,7 @@ export interface GenerationRequest {
   // Tool calling configuration (optional)
   tools?: AIToolDefinition[];
   toolExecutor?: ToolExecutor;
-  toolChoice?: 'auto' | 'none' | { type: 'function'; name: string };
+  toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; name: string };
   // Allow tools to write/modify project files (default: false for safety)
   allowToolWrites?: boolean;
   // Project ID for tool context (optional)

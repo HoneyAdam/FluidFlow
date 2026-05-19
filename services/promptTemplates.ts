@@ -103,6 +103,7 @@ export function hasTemplate(id: string): id is PromptTemplateId {
  */
 export function getGenerationPrompt(format?: AIResponseFormat): string {
   const effectiveFormat = format ?? getFluidFlowConfig().getResponseFormat();
+  console.log(`[getGenerationPrompt] format param=${format}, effectiveFormat=${effectiveFormat}`);
 
   if (effectiveFormat === 'marker') {
     console.log('[PromptTemplates] Using MARKER format generation prompt');

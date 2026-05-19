@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { prepareJsonRequest } from '../utils/jsonOutput';
-import { parseToolArguments } from '../utils/toolUtils';
+import { createToolCallHandler } from '../utils/ToolCallHandler';
+import type { ChatMessage } from '../utils/ToolCallHandler';
 
 // Z.AI Coding API endpoint (for GLM-4.7 coding plan)
 const ZAI_CODING_BASE_URL = 'https://api.z.ai/api/coding/paas/v4';
@@ -97,6 +98,8 @@ export class ZAIProvider implements AIProvider {
       messages,
       max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
       temperature: request.temperature ?? 0.7,
+      // Force tool calling when tools are provided - use 'required' to demand tool calls
+      tool_choice: request.tools && request.tools.length > 0 ? 'required' : undefined,
     };
 
     // Z.AI supports json_object mode
@@ -114,55 +117,58 @@ export class ZAIProvider implements AIProvider {
           parameters: t.parameters || { type: 'object', properties: {} },
         },
       }));
-      // Note: tool_choice is set automatically by the SDK when tools are provided
     }
 
     try {
       const completion = await this.client.chat.completions.create(requestParams);
 
-      // Handle tool calls
+      // Handle tool calls using ToolCallHandler
       const toolCalls = completion.choices[0]?.message?.tool_calls;
       if (toolCalls && toolCalls.length > 0 && request.toolExecutor) {
-        const results: Array<{ role: 'tool'; tool_call_id: string; content: string }> = [];
-        const filesWritten: string[] = [];
-
-        for (const toolCall of toolCalls) {
-          // Only handle function tool calls
-          if (!('function' in toolCall)) continue;
-
-          try {
-            const args = parseToolArguments(toolCall.function.arguments);
-            const result = await request.toolExecutor(toolCall.function.name, args);
-
-            if (result.success && result.filesWritten) {
-              filesWritten.push(...result.filesWritten);
-            }
-
-            results.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: result.success
-                ? JSON.stringify(result.result || { success: true })
-                : `Tool "${toolCall.function.name}" failed: ${result.error || 'Unknown error'}`,
-            });
-          } catch (error) {
-            results.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: `Tool "${toolCall.function.name}" failed: ${error instanceof Error ? error.message : String(error)}`,
+        // Create handler and populate with tool calls from non-streaming response
+        const toolCallHandler = createToolCallHandler();
+        for (const tc of toolCalls) {
+          if ('function' in tc) {
+            toolCallHandler.accumulate({
+              choices: [{
+                delta: {
+                  tool_calls: [{
+                    id: tc.id,
+                    function: {
+                      name: (tc as { function?: { name?: string } }).function?.name || '',
+                      arguments: (tc as { function?: { arguments?: string } }).function?.arguments || '{}',
+                    },
+                  }],
+                },
+                finish_reason: 'tool_calls',
+              }],
             });
           }
         }
 
-        // Continue conversation with tool results
-        const assistantMessage = completion.choices[0]?.message;
-        messages.push(assistantMessage);
-        messages.push(...results);
+        const assistantMessage = toolCallHandler.buildAssistantMessage();
+        if (!assistantMessage) {
+          throw new Error('Failed to build assistant message for tool calls');
+        }
+
+        // Execute tool calls
+        const execResult = await toolCallHandler.execute(request.toolExecutor, 'zai-non-stream');
+
+        // Build messages for follow-up
+        const existingMessages: ChatMessage[] = messages.map(m => ({
+          role: m.role as 'system' | 'user' | 'assistant' | 'tool',
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+        }));
+        const followUpMessages = toolCallHandler.buildFollowUpMessages(
+          existingMessages,
+          assistantMessage,
+          execResult.messages
+        );
 
         // Make follow-up request
         const followUp = await this.client.chat.completions.create({
           model: model || this.config.defaultModel || DEFAULT_MODEL,
-          messages,
+          messages: followUpMessages as OpenAI.Chat.ChatCompletionMessageParam[],
           max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
           temperature: request.temperature ?? 0.7,
         });
@@ -174,7 +180,7 @@ export class ZAIProvider implements AIProvider {
             inputTokens: followUp.usage?.prompt_tokens || completion.usage?.prompt_tokens,
             outputTokens: followUp.usage?.completion_tokens || completion.usage?.completion_tokens,
           },
-          filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
+          filesWritten: execResult.filesWritten.length > 0 ? execResult.filesWritten : undefined,
         };
       }
 
@@ -229,6 +235,8 @@ export class ZAIProvider implements AIProvider {
       max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
       temperature: request.temperature ?? 0.7,
       stream: true,
+      // Force tool calling when tools are provided - use 'required' to demand tool calls
+      tool_choice: request.tools && request.tools.length > 0 ? 'required' : undefined,
     };
 
     // Z.AI supports json_object mode
@@ -246,47 +254,26 @@ export class ZAIProvider implements AIProvider {
           parameters: t.parameters || { type: 'object', properties: {} },
         },
       }));
-      // Note: tool_choice is set automatically by the SDK when tools are provided
     }
 
     try {
       const stream = await this.client.chat.completions.create(requestParams);
 
+      // Use unified tool call handler
+      const toolCallHandler = createToolCallHandler();
       let fullText = '';
-      let finishReason: string | undefined;
       let usage: GenerationResponse['usage'];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const toolCalls: any[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let assistantMessage: any = null;
 
       for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta;
         const content = delta?.content || '';
 
-        // Collect tool calls if present
-        if (delta?.tool_calls && delta.tool_calls.length > 0) {
-          toolCalls.push(...delta.tool_calls);
-        }
-
-        // Capture assistant message reference
-        if (chunk.choices[0]?.finish_reason === 'tool_calls' && !assistantMessage) {
-          // Build full assistant message from accumulated data
-          assistantMessage = {
-            role: 'assistant',
-            content: null,
-            tool_calls: toolCalls,
-          };
-        }
+        // Accumulate tool calls using unified handler
+        toolCallHandler.accumulate(chunk);
 
         if (content) {
           fullText += content;
           onChunk({ text: content, done: false });
-        }
-
-        // Capture finish reason
-        if (chunk.choices[0]?.finish_reason) {
-          finishReason = chunk.choices[0].finish_reason;
         }
 
         // Capture usage if available
@@ -298,57 +285,45 @@ export class ZAIProvider implements AIProvider {
         }
       }
 
-      // Handle tool calls
-      if (toolCalls.length > 0 && request.toolExecutor && assistantMessage) {
-        const results: Array<{ role: 'tool'; tool_call_id: string; content: string }> = [];
-        const filesWritten: string[] = [];
+      // Final chunk
+      onChunk({ text: '', done: true });
 
-        for (const toolCall of toolCalls) {
-          // Only handle function tool calls
-          if (!('function' in toolCall)) continue;
+      // Handle tool calls if ready
+      if (toolCallHandler.isReadyForExecution() && request.toolExecutor) {
+        const assistantMessage = toolCallHandler.buildAssistantMessage();
 
-          try {
-            const args = parseToolArguments(toolCall.function.arguments);
-            const result = await request.toolExecutor(toolCall.function.name, args);
-
-            if (result.success && result.filesWritten) {
-              filesWritten.push(...result.filesWritten);
-            }
-
-            results.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: result.success
-                ? JSON.stringify(result.result || { success: true })
-                : `Tool "${toolCall.function.name}" failed: ${result.error || 'Unknown error'}`,
-            });
-          } catch (error) {
-            results.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: `Tool "${toolCall.function.name}" failed: ${error instanceof Error ? error.message : String(error)}`,
-            });
-          }
+        if (!assistantMessage) {
+          console.error('[ZAI] Failed to build assistant message for tool calls');
+          throw new Error('Tool call handling failed: no assistant message');
         }
 
-        // Add assistant message and tool results to messages
-        messages.push(assistantMessage);
-        messages.push(...results);
+        // Execute tool calls
+        const execResult = await toolCallHandler.execute(request.toolExecutor, 'zai-stream');
 
-        // Send final chunk with done: true
-        onChunk({ text: '', done: true });
+        // Build messages for follow-up
+        const existingMessages: ChatMessage[] = messages.map(m => ({
+          role: m.role as 'system' | 'user' | 'assistant' | 'tool',
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+        }));
+        const followUpMessages = toolCallHandler.buildFollowUpMessages(
+          existingMessages,
+          assistantMessage,
+          execResult.messages
+        );
 
-        // Make follow-up request for final response (non-streaming)
+        // Make follow-up request
         const followUp = await this.client.chat.completions.create({
           model: model || this.config.defaultModel || DEFAULT_MODEL,
-          messages,
+          messages: followUpMessages as OpenAI.Chat.ChatCompletionMessageParam[],
           max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
           temperature: request.temperature ?? 0.7,
         });
 
         const followUpText = followUp.choices[0]?.message?.content || '';
 
-        onChunk({ text: '', done: true });
+        if (!followUpText && execResult.toolCallsExecuted > 0) {
+          console.warn('[ZAI] Tool calling completed but follow-up response is empty. Model may not have received tool results correctly.');
+        }
 
         return {
           text: followUpText,
@@ -357,26 +332,12 @@ export class ZAIProvider implements AIProvider {
             inputTokens: followUp.usage?.prompt_tokens || usage?.inputTokens,
             outputTokens: followUp.usage?.completion_tokens || usage?.outputTokens,
           },
-          filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
+          filesWritten: execResult.filesWritten.length > 0 ? execResult.filesWritten : undefined,
         };
       }
 
-      // Check if response appears to be incomplete (ZAI truncation detection)
-      const trimmed = fullText.trim();
-      const isIncomplete =
-        (trimmed.endsWith('```') && !trimmed.includes('```tsx') && !trimmed.includes('```jsx')) ||
-        (trimmed.endsWith('"') && !trimmed.endsWith('"}') && !trimmed.endsWith('"}\n')) ||
-        (trimmed.includes('className=\\') && !trimmed.endsWith('}')) ||
-        (trimmed.startsWith('{') && trimmed.split('{').length > trimmed.split('}').length);
-
-      if (isIncomplete) {
-        console.warn('[ZAI] Response appears to be truncated');
-      }
-
-      // Send final chunk with done: true
-      onChunk({ text: '', done: true });
-
-      return { text: fullText, finishReason, usage };
+      // No tool calls - return normal response
+      return { text: fullText, finishReason: toolCallHandler.getFinishReason(), usage };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[ZAI] Stream failed:', message);

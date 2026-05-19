@@ -12,7 +12,7 @@ import type { FilePlan, FileProgress } from '../useGenerationState';
 // ============================================================================
 
 /** Detected response format */
-export type StreamingFormat = 'json' | 'marker' | 'tools' | 'unknown';
+export type StreamingFormat = 'json' | 'marker' | 'tools' | 'tool-calling' | 'unknown';
 
 // ============================================================================
 // Callback Types

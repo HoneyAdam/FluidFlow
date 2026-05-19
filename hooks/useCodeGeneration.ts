@@ -16,10 +16,6 @@ import { GenerationMeta } from '../utils/cleanCode';
 import { debugLog } from './useDebugStore';
 import { getProviderManager, GenerationRequest } from '../services/ai';
 import { projectApi } from '../services/api';
-import {
-  FILE_GENERATION_SCHEMA,
-  supportsAdditionalProperties,
-} from '../services/ai/utils/schemas';
 import { FilePlan, TruncatedContent, ContinuationState, FileProgress } from './useGenerationState';
 import { useStreamingResponse, getLastAIResponse } from './useStreamingResponse';
 import { useResponseParser } from './useResponseParser';
@@ -27,7 +23,6 @@ import { useContinuationHandler } from './useContinuationHandler';
 import { useTruncationRecovery } from './useTruncationRecovery';
 import { useGenerationSuccess } from './useGenerationSuccess';
 import { buildSystemInstruction, buildPromptParts, markFilesAsShared } from '../utils/generationUtils';
-import { getFluidFlowConfig } from '../services/fluidflowConfig';
 import { activityLogger } from '../services/activityLogger';
 import { PROJECT_TOOLS } from '../services/ai/utils/toolExecutor';
 import { createProjectToolExecutor } from '../services/ai/utils/projectToolHandler';
@@ -190,10 +185,7 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
       const currentModel = activeProvider?.defaultModel || selectedModel;
       const providerName = activeProvider?.name || 'AI';
 
-      // Build system instruction with configured response format
-      const responseFormat = getFluidFlowConfig().getResponseFormat();
       activityLogger.info('generation', `Starting generation with ${providerName}`, `Model: ${currentModel}`);
-      activityLogger.debug('generation', `Response format: ${responseFormat}`);
 
       // Extract projectId from sessionId (format: main-chat-{projectId})
       const projectId = sessionId?.replace('main-chat-', '') || undefined;
@@ -204,7 +196,6 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         isEducationMode,
         !!diffModeEnabled,
         generateSystemInstruction(),
-        responseFormat,
         projectId
       );
 
@@ -218,24 +209,21 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         prompt: promptParts.join('\n\n'),
         systemInstruction,
         images,
-        responseFormat: responseFormat === 'marker' ? undefined : responseFormat,
-        responseSchema:
-          responseFormat !== 'marker' && activeProvider?.type && supportsAdditionalProperties(activeProvider.type)
-            ? FILE_GENERATION_SCHEMA
-            : undefined,
         conversationHistory:
           conversationHistory && conversationHistory.length > 0 ? conversationHistory : undefined,
         // Pass file context for prompt confirmation modal
         fileContext: fileContext || undefined,
-        // Tool calling for project file operations (enabled per-provider)
-        tools: activeProvider?.toolCallingEnabled ? PROJECT_TOOLS : undefined,
-        toolExecutor: activeProvider?.toolCallingEnabled && projectId
+        // Tool calling for project file operations - ALWAYS enabled
+        tools: PROJECT_TOOLS,
+        toolExecutor: projectId
           ? createProjectToolExecutor(projectId, activeProvider?.allowToolWrites ?? true)
           : undefined,
-        toolChoice: 'auto',
+        toolChoice: 'required', // Force tool calling
         allowToolWrites: activeProvider?.allowToolWrites ?? false,
         projectId,
       };
+
+      console.log('📤 [REQUEST] tools:', request.tools?.length ?? 0, '| toolExecutor:', !!request.toolExecutor);
 
       // Initialize streaming state
       setStreamingStatus(`🚀 Starting generation with ${providerName}...`);
@@ -281,6 +269,9 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           historyMessages: conversationHistory?.length || 0,
           historyTokens,
           totalInputTokens: promptTokens + historyTokens,
+          toolCallingEnabled: !!activeProvider?.toolCallingEnabled,
+          toolsProvided: !!(request.tools && request.tools.length > 0),
+          toolExecutorProvided: !!request.toolExecutor,
           fileContext: fileContext ? {
             totalFiles: fileContext.totalFiles,
             filesInPrompt: fileContext.filesInPrompt,
@@ -300,10 +291,8 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
 
       try {
         // Process streaming response
-        // Pass expected format for early validation (abort if mismatch)
-        const expectedFormat = responseFormat === 'marker' ? 'marker' : undefined;
         const { fullText, chunkCount, detectedFiles, streamResponse, currentFilePlan, filesWritten } =
-          await processStreamingResponse(request, currentModel, genRequestId, genStartTime, expectedFormat);
+          await processStreamingResponse(request, currentModel, genRequestId, genStartTime);
         recoveryFilePlan = currentFilePlan;
 
         // Check if generation was cancelled while streaming
@@ -317,8 +306,56 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
 
         // Check if we have files written via tool calls (tool calling mode)
         const isToolCallingMode = filesWritten && filesWritten.length > 0;
+        console.log('[CodeGen] Tool calling check:', { isToolCallingMode, filesWritten: filesWritten?.length });
 
-        // Parse response based on mode
+        // Handle tool calling mode FIRST - files were already written via tool calls
+        if (isToolCallingMode && filesWritten && projectId) {
+          console.log('[CodeGen] Entering tool calling mode, filesWritten:', filesWritten);
+          activityLogger.info('generation', `Tool calling mode: ${filesWritten.length} files written via tools`, filesWritten.join(', '));
+
+          // Load the written files from project
+          const writtenFilesMap: Record<string, string> = {};
+          for (const filePath of filesWritten) {
+            try {
+              const content = await projectApi.readFile(projectId, filePath);
+              writtenFilesMap[filePath] = content;
+            } catch (e) {
+              activityLogger.error('generation', `Failed to read written file: ${filePath}`, String(e));
+            }
+          }
+
+          if (Object.keys(writtenFilesMap).length > 0) {
+            // Merge with existing files
+            const mergedFiles = { ...files, ...writtenFilesMap };
+            const newFiles = writtenFilesMap;
+
+            // Use AI's final text as explanation
+            const explanation = fullText || 'Files created via tool calling';
+
+            // Go directly to success handling
+            handleGenerationSuccess(
+              newFiles,
+              mergedFiles,
+              explanation,
+              genStartTime,
+              currentModel,
+              providerName,
+              streamResponse,
+              fullText,
+              undefined,
+              undefined
+            );
+
+            const fileCount = Object.keys(newFiles).length;
+            const duration = Date.now() - genStartTime;
+            activityLogger.success('generation', `Tool calling: ${fileCount} file${fileCount !== 1 ? 's' : ''} written`, `${duration}ms`);
+
+            markFilesAsShared(mergedFiles);
+            return { success: true, continuationStarted: false };
+          }
+        }
+
+        // Parse response (for non-tool-calling mode)
         let explanation: string;
         let mergedFiles: FileSystem;
         let newFiles: Record<string, string>;
@@ -384,52 +421,6 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           generationMeta = stdResult.generationMeta;
           continuation = stdResult.continuation;
           incompleteFiles = stdResult.incompleteFiles;
-        }
-
-        // Handle tool calling mode - files were already written via tool calls
-        if (isToolCallingMode && filesWritten && projectId) {
-          activityLogger.info('generation', `Tool calling mode: ${filesWritten.length} files written via tools`, filesWritten.join(', '));
-
-          // Load the written files from project
-          const writtenFilesMap: Record<string, string> = {};
-          for (const filePath of filesWritten) {
-            try {
-              const content = await projectApi.readFile(projectId, filePath);
-              writtenFilesMap[filePath] = content;
-            } catch (e) {
-              activityLogger.error('generation', `Failed to read written file: ${filePath}`, String(e));
-            }
-          }
-
-          if (Object.keys(writtenFilesMap).length > 0) {
-            // Merge with existing files
-            mergedFiles = { ...files, ...writtenFilesMap };
-            newFiles = writtenFilesMap;
-
-            // Use AI's final text as explanation
-            explanation = fullText || 'Files created via tool calling';
-
-            // Go directly to success handling
-            handleGenerationSuccess(
-              newFiles,
-              mergedFiles,
-              explanation,
-              genStartTime,
-              currentModel,
-              providerName,
-              streamResponse,
-              fullText,
-              undefined,
-              undefined
-            );
-
-            const fileCount = Object.keys(newFiles).length;
-            const duration = Date.now() - genStartTime;
-            activityLogger.success('generation', `Tool calling: ${fileCount} file${fileCount !== 1 ? 's' : ''} written`, `${duration}ms`);
-
-            markFilesAsShared(mergedFiles);
-            return { success: true, continuationStarted: false };
-          }
         }
 
         // Check for missing files based on filePlan
