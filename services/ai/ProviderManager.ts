@@ -343,11 +343,29 @@ export class ProviderManager {
         maxTokens: request.maxTokens,
         temperature: request.temperature,
         responseFormat: request.responseFormat,
+        toolCallingEnabled: !!request.toolExecutor,
+        toolCount: request.tools?.length ?? 0,
+        toolChoice: request.toolChoice,
       },
     });
 
     try {
       const response = await provider.generate(request, model);
+
+      // Log tool call results if any files were written
+      if (response.filesWritten && response.filesWritten.length > 0) {
+        debugLog.toolCall(category, {
+          toolCallInfo: {
+            toolName: 'multiple',
+            arguments: { count: response.filesWritten.length },
+            result: { files: response.filesWritten },
+            success: true,
+            filesWritten: response.filesWritten,
+          },
+          model,
+          provider: config?.name,
+        });
+      }
 
       // Log response
       debugLog.response(category, {
@@ -363,6 +381,9 @@ export class ProviderManager {
               isEstimated: response.usage.isEstimated,
             }
           : undefined,
+        metadata: {
+          filesWritten: response.filesWritten,
+        },
       });
 
       // Track usage analytics
@@ -458,6 +479,9 @@ export class ProviderManager {
         temperature: request.temperature,
         responseFormat: request.responseFormat,
         streaming: true,
+        toolCallingEnabled: !!request.toolExecutor,
+        toolCount: request.tools?.length ?? 0,
+        toolChoice: request.toolChoice,
       },
     });
 
@@ -475,6 +499,10 @@ export class ProviderManager {
         chars: 0,
         chunks: 0,
         isComplete: false,
+      },
+      metadata: {
+        toolCallingEnabled: !!request.toolExecutor,
+        tools: request.tools?.map(t => t.name) ?? [],
       },
     });
 
@@ -505,6 +533,21 @@ export class ProviderManager {
     try {
       const response = await provider.generateStream(request, model, wrappedOnChunk);
 
+      // Log tool call results if any files were written
+      if (response.filesWritten && response.filesWritten.length > 0) {
+        debugLog.toolCall(category, {
+          toolCallInfo: {
+            toolName: 'multiple',
+            arguments: { count: response.filesWritten.length },
+            result: { files: response.filesWritten },
+            success: true,
+            filesWritten: response.filesWritten,
+          },
+          model,
+          provider: config?.name,
+        });
+      }
+
       // Final update with complete status
       debugLog.streamUpdate(
         streamId,
@@ -522,6 +565,10 @@ export class ProviderManager {
             chars: response.text.length,
             chunks: chunkCount,
             isComplete: true,
+          },
+          metadata: {
+            ...(request.tools?.length ? { toolCallingEnabled: true } : {}),
+            filesWritten: response.filesWritten,
           },
         },
         true

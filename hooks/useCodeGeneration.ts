@@ -213,12 +213,12 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           conversationHistory && conversationHistory.length > 0 ? conversationHistory : undefined,
         // Pass file context for prompt confirmation modal
         fileContext: fileContext || undefined,
-        // Tool calling for project file operations - ALWAYS enabled
+        // Tool calling for project file operations
         tools: PROJECT_TOOLS,
         toolExecutor: projectId
           ? createProjectToolExecutor(projectId, activeProvider?.allowToolWrites ?? true)
           : undefined,
-        toolChoice: 'required', // Force tool calling
+        toolChoice: 'auto', // Use 'auto' to let model decide when to call tools
         allowToolWrites: activeProvider?.allowToolWrites ?? false,
         projectId,
       };
@@ -269,9 +269,10 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
           historyMessages: conversationHistory?.length || 0,
           historyTokens,
           totalInputTokens: promptTokens + historyTokens,
-          toolCallingEnabled: !!activeProvider?.toolCallingEnabled,
-          toolsProvided: !!(request.tools && request.tools.length > 0),
+          toolCallingEnabled: !!request.toolExecutor,
+          toolsProvided: request.tools?.length ?? 0,
           toolExecutorProvided: !!request.toolExecutor,
+          toolChoice: request.toolChoice,
           fileContext: fileContext ? {
             totalFiles: fileContext.totalFiles,
             filesInPrompt: fileContext.filesInPrompt,

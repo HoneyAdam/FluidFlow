@@ -600,7 +600,10 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ backgroundColor: 'var(--theme-input-bg)', border: '1px solid var(--theme-input-border)', color: 'var(--theme-text-primary)' }}
               >
-                {[...selectedProvider.models].sort((a, b) => a.name.localeCompare(b.name)).map(m => (
+                {[...selectedProvider.models]
+                  .filter(m => m.supportsToolCalling)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(m => (
                   <option key={m.id} value={m.id}>{m.name} - {m.description}</option>
                 ))}
               </select>
@@ -650,7 +653,10 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
 
               {/* Models Grid */}
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                {[...selectedProvider.models].sort((a, b) => a.name.localeCompare(b.name)).map(model => (
+                {[...selectedProvider.models]
+                  .filter(m => m.supportsToolCalling)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(model => (
                   <div
                     key={model.id}
                     className="p-3 rounded-lg transition-colors"

@@ -164,7 +164,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
 
     // Handle tool calls if present
     if (data.choices?.[0]?.message?.tool_calls && request.toolExecutor) {
-      const result = await this.handleToolCalls(data, request.toolExecutor);
+      const result = await this.handleToolCallsWithResults(data, request.toolExecutor, 8, body.tools);
       return {
         text: result.text,
         finishReason: result.finishReason,
@@ -172,6 +172,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
           inputTokens: data.usage?.prompt_tokens,
           outputTokens: data.usage?.completion_tokens,
         },
+        filesWritten: result.filesWritten.length > 0 ? result.filesWritten : undefined,
       };
     }
 
@@ -316,56 +317,79 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       // Final chunk
       onChunk({ text: '', done: true });
 
-      // If tool calls were made, handle them
+      // If tool calls were made, handle them with an agentic loop
       if (accumulatedToolCalls.length > 0 && finishReason === 'tool_calls') {
         console.log('[OpenAICompatibleProvider] Tool calls detected:', accumulatedToolCalls.length);
         onChunk({ text: '', done: true });
 
-        // Execute tool calls with detailed results
-        const { messages: toolResults, filesWritten: writtenFiles } = await this.executeToolCallsWithResults(accumulatedToolCalls, toolExecutor);
-        console.log('[OpenAICompatibleProvider] Tool execution complete:', { toolResults: toolResults.length, writtenFiles });
+        const MAX_TOOL_ITERATIONS = 8;
+        let pendingToolCalls = accumulatedToolCalls;
+        let lastFollowUpData: { choices?: Array<{ message?: { content?: string; tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> }; finish_reason?: string }>; usage?: { prompt_tokens?: number; completion_tokens?: number } } = {};
+        let lastText = '';
 
-        // Track files written
-        filesWritten.push(...writtenFiles);
+        for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+          // Execute accumulated tool calls
+          const { messages: toolResults, filesWritten: writtenFiles } = await this.executeToolCallsWithResults(pendingToolCalls, toolExecutor);
+          console.log(`[OpenAICompatibleProvider] Tool execution iter ${iter}:`, { toolResults: toolResults.length, writtenFiles });
+          filesWritten.push(...writtenFiles);
 
-        // Add tool results to messages
-        messages.push({
-          role: 'assistant',
-          content: '',
-          tool_calls: accumulatedToolCalls.map((tc) => ({
-            id: tc.id,
-            type: 'function' as const,
-            function: { name: tc.name, arguments: tc.arguments }
-          })),
-        });
-        messages.push(...toolResults);
+          // Append assistant message (with tool_calls) and tool results to history
+          messages.push({
+            role: 'assistant',
+            content: '',
+            tool_calls: pendingToolCalls.map((tc) => ({
+              id: tc.id,
+              type: 'function' as const,
+              function: { name: tc.name, arguments: tc.arguments }
+            })),
+          });
+          messages.push(...toolResults);
 
-        // Make follow-up request (non-streaming for tool call handling)
-        const followUpBody: ChatCompletionRequest = {
-          ...baseBody,
-          model,
-          messages,
-          stream: false,
-        };
-        delete followUpBody.stream_options;
+          // Follow-up request (non-streaming) — keep tools so model can continue calling them
+          const followUpBody: ChatCompletionRequest = {
+            ...baseBody,
+            model,
+            messages,
+            stream: false,
+          };
+          delete followUpBody.stream_options;
+          if (followUpBody.tools && followUpBody.tools.length > 0) {
+            followUpBody.tool_choice = 'auto';
+          }
 
-        const followUpResponse = await fetchWithTimeout(this.getApiEndpoint(), {
-          method: 'POST',
-          headers: this.buildHeaders(),
-          body: JSON.stringify(followUpBody),
-          timeout: TIMEOUT_GENERATE,
-        });
+          const followUpResponse = await fetchWithTimeout(this.getApiEndpoint(), {
+            method: 'POST',
+            headers: this.buildHeaders(),
+            body: JSON.stringify(followUpBody),
+            timeout: TIMEOUT_GENERATE,
+          });
 
-        await throwIfNotOk(followUpResponse, this.config.type);
-        const followUpData = await followUpResponse.json();
+          await throwIfNotOk(followUpResponse, this.config.type);
+          lastFollowUpData = await followUpResponse.json();
+          lastText = lastFollowUpData.choices?.[0]?.message?.content || '';
 
-        const followUpText = followUpData.choices?.[0]?.message?.content || '';
+          const nextToolCalls = lastFollowUpData.choices?.[0]?.message?.tool_calls;
+          if (!nextToolCalls || nextToolCalls.length === 0) {
+            break;
+          }
+
+          pendingToolCalls = nextToolCalls.map((tc) => ({
+            id: tc.id || `call_${Date.now()}`,
+            name: tc.function?.name || '',
+            arguments: tc.function?.arguments || '{}',
+          }));
+
+          if (iter === MAX_TOOL_ITERATIONS - 1) {
+            console.warn(`[OpenAICompatibleProvider] Tool-call loop hit MAX_TOOL_ITERATIONS=${MAX_TOOL_ITERATIONS}, stopping.`);
+          }
+        }
+
         return {
-          text: followUpText,
-          finishReason: followUpData.choices?.[0]?.finish_reason,
+          text: lastText,
+          finishReason: lastFollowUpData.choices?.[0]?.finish_reason,
           usage: {
-            inputTokens: followUpData.usage?.prompt_tokens,
-            outputTokens: followUpData.usage?.completion_tokens,
+            inputTokens: lastFollowUpData.usage?.prompt_tokens,
+            outputTokens: lastFollowUpData.usage?.completion_tokens,
           },
           filesWritten: filesWritten.length > 0 ? filesWritten : undefined,
         };
@@ -696,6 +720,75 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
     }
 
     return { messages, text, finishReason };
+  }
+
+  /**
+   * Handle tool calls with results tracking (files written)
+   */
+  protected async handleToolCallsWithResults(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    responseData: any,
+    toolExecutor?: ToolExecutor,
+    maxIterations = 5,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools?: any[]
+  ): Promise<{ messages: ChatMessage[]; text: string; finishReason?: string; filesWritten: string[] }> {
+    const messages = [...(responseData.choices?.[0]?.message ? [responseData.choices[0].message] : [])];
+    let text = responseData.choices?.[0]?.message?.content || '';
+    let finishReason = responseData.choices?.[0]?.finish_reason;
+    const filesWritten: string[] = [];
+
+    let iterations = 0;
+    while (iterations < maxIterations) {
+      const lastMessage = messages[messages.length - 1];
+      const toolCalls = lastMessage ? this.extractToolCalls(lastMessage) : [];
+
+      if (toolCalls.length === 0) break;
+
+      // Execute tool calls with results tracking
+      const { messages: toolResults, filesWritten: newFilesWritten } = await this.executeToolCallsWithResults(toolCalls, toolExecutor);
+
+      // Track files written
+      filesWritten.push(...newFilesWritten);
+
+      // Add tool results to messages
+      messages.push(...toolResults);
+
+      // Make follow-up request with tool results
+      const followUpBody: Record<string, unknown> = {
+        model: responseData.model || this.config.defaultModel,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+          ...('tool_call_id' in m ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
+        })),
+      };
+      if (tools && tools.length > 0) {
+        followUpBody.tools = tools;
+        followUpBody.tool_choice = 'auto';
+      }
+
+      const followUpResponse = await fetchWithTimeout(this.getApiEndpoint(), {
+        method: 'POST',
+        headers: this.buildHeaders(),
+        body: JSON.stringify(followUpBody),
+        timeout: TIMEOUT_GENERATE,
+      });
+
+      await throwIfNotOk(followUpResponse, this.config.type);
+
+      const followUpData = await followUpResponse.json();
+      const followUpMessage = followUpData.choices?.[0]?.message;
+      if (followUpMessage) {
+        messages.push(followUpMessage);
+        text = followUpMessage.content || text;
+        finishReason = followUpData.choices?.[0]?.finish_reason;
+      }
+
+      iterations++;
+    }
+
+    return { messages, text, finishReason, filesWritten };
   }
 
   /**

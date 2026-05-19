@@ -1,7 +1,7 @@
 import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { fetchWithTimeout, TIMEOUT_TEST_CONNECTION, TIMEOUT_GENERATE, TIMEOUT_LIST_MODELS } from '../utils/fetchWithTimeout';
 import { throwIfNotOk } from '../utils/errorHandling';
-import { processSSEStream, createEstimatedUsage } from '../utils/streamParser';
+import { createEstimatedUsage } from '../utils/streamParser';
 import { OpenAICompatibleProvider } from './base/OpenAICompatibleProvider';
 
 type ContentPart =
@@ -135,67 +135,8 @@ export class OpenAIProvider extends OpenAICompatibleProvider implements AIProvid
     model: string,
     onChunk: (chunk: StreamChunk) => void
   ): Promise<GenerationResponse> {
-    const messages: ChatMessage[] = [];
-
-    const systemContent = request.systemInstruction || '';
-
-    if (systemContent) {
-      messages.push({ role: 'system', content: systemContent });
-    }
-
-    if (request.conversationHistory && request.conversationHistory.length > 0) {
-      for (const msg of request.conversationHistory) {
-        messages.push({ role: msg.role, content: msg.content });
-      }
-    }
-
-    const content: ContentPart[] = [];
-
-    if (request.images) {
-      for (const img of request.images) {
-        content.push({
-          type: 'image_url',
-          image_url: { url: `data:${img.mimeType};base64,${img.data}` }
-        });
-      }
-    }
-
-    content.push({ type: 'text', text: request.prompt });
-    messages.push({ role: 'user', content });
-
-    const body = {
-      model,
-      messages,
-      max_tokens: request.maxTokens || 16384,
-      temperature: request.temperature ?? 0.7,
-      stream: true,
-      stream_options: { include_usage: true },
-    };
-
-    const response = await fetchWithTimeout(`${this.config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        ...this.config.headers,
-      },
-      body: JSON.stringify(body),
-      timeout: TIMEOUT_GENERATE,
-    });
-
-    await throwIfNotOk(response, 'openai');
-
-    const { fullText, usage } = await processSSEStream(response, {
-      format: 'openai',
-      onChunk,
-    });
-
-    if (!usage) {
-      const estimated = createEstimatedUsage(JSON.stringify(messages), fullText);
-      return { text: fullText, usage: estimated };
-    }
-
-    return { text: fullText, usage };
+    // Delegate to base class which properly handles tool calling in streaming
+    return super.generateStream(request, model, onChunk);
   }
 
   async listModels(): Promise<ModelOption[]> {

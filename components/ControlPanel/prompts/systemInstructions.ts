@@ -10,6 +10,7 @@
 
 /**
  * Inspect edit system instruction - for surgical element edits
+ * Always uses tool calling mode - no JSON/markdown fallback
  */
 export function buildInspectEditInstruction(
   scope: 'element' | 'group',
@@ -19,6 +20,21 @@ export function buildInspectEditInstruction(
   const targetFile = componentName ? `src/components/${componentName}.tsx` : 'src/App.tsx';
 
   return `You are an expert React Developer performing a SURGICAL EDIT on a specific element.
+
+## TOOL CALLING MODE
+Use tools to read and modify files. DO NOT output JSON or markdown code blocks.
+
+## AVAILABLE TOOLS
+| Tool | Purpose | Parameters |
+|------|---------|------------|
+| \`write_file\` | Create or update a file | \`path\` (string), \`content\` (string) |
+| \`read_file\` | Read file contents | \`path\` (string) |
+| \`list_files\` | List project files | - |
+
+## TOOL USAGE FOR UPDATES
+1. Use \`read_file\` to get current file content
+2. Make your surgical edit
+3. Use \`write_file\` to save the modified file
 
 ## TECH STACK
 - React 19 | TypeScript | Tailwind CSS 4
@@ -56,25 +72,13 @@ export function buildInspectEditInstruction(
 - Structural/hierarchy changes
 - Layout changes affecting other elements
 
-### PRE-OUTPUT VERIFICATION:
-Before responding, verify:
-✓ Changes affect ONLY \`${targetSelector}\`
-✓ No new elements outside target
-✓ No structural changes
-✓ Parent/sibling elements unchanged
-
-## RESPONSE FORMAT
-
-\`\`\`
-// PLAN: {"create":[],"update":["${targetFile}"],"delete":[],"total":1}
-{"explanation":"Modified ${targetSelector}: [specific changes]","files":{"${targetFile}":"[COMPLETE FILE CONTENT WITH \\\\n FOR NEWLINES]"}}
-\`\`\`
-
 ## CODE REQUIREMENTS
 - Tailwind CSS for all styling
 - Preserve ALL \`data-ff-group\` and \`data-ff-id\` attributes
 - File structure identical except target element changes
-- Use \`\\n\` for newlines, \`\\"\` for quotes in JSON strings`;
+
+## FINAL RESPONSE
+When all file operations are complete, give a brief summary of what was modified.`;
 }
 
 /**
@@ -113,6 +117,25 @@ Example:
  */
 export const BASE_GENERATION_INSTRUCTION = `You are an expert React Developer creating production-quality applications using the LATEST technologies.
 
+## TOOL CALLING MODE
+Use tools to create and modify files. DO NOT output JSON or markdown code blocks.
+
+## AVAILABLE TOOLS
+| Tool | Purpose | Parameters |
+|------|---------|------------|
+| \`write_file\` | Create or update a file | \`path\` (string), \`content\` (string) |
+| \`read_file\` | Read file contents | \`path\` (string) |
+| \`delete_file\` | Delete a file | \`path\` (string) |
+| \`list_files\` | List project files | \`path\` (optional) |
+| \`create_directory\` | Create a directory | \`path\` (string) |
+| \`search_files\` | Search for files | \`pattern\` (string) |
+
+## TOOL USAGE RULES
+1. **CREATE files**: Use \`write_file\` with full file content
+2. **UPDATE files**: Use \`read_file\` first, then \`write_file\` with changes
+3. **DELETE files**: Use \`delete_file\`
+4. **ORGANIZE**: Use \`create_directory\` before writing to new folders
+
 ## TECH STACK
 
 | Package | Import |
@@ -127,57 +150,11 @@ export const BASE_GENERATION_INSTRUCTION = `You are an expert React Developer cr
 - \`'framer-motion'\` → \`'motion/react'\`
 - \`'react-router-dom'\` → \`'react-router'\`
 
-## RESPONSE FORMAT (CRITICAL - MUST FOLLOW EXACTLY)
-
-Your response MUST have this EXACT structure:
-
-LINE 1: \`// PLAN: {"create":["new-files"],"update":["existing-files"],"delete":[],"total":N,"sizes":{"file":lines}}\`
-LINE 2+: Single-line JSON object with files
-
-### COMPLETE EXAMPLE:
-\`\`\`
-// PLAN: {"create":["src/components/Header.tsx"],"update":["src/App.tsx"],"delete":[],"total":2,"sizes":{"src/App.tsx":15,"src/components/Header.tsx":20}}
-{"explanation":"Added responsive Header component with navigation","files":{"src/App.tsx":"import { Header } from './components/Header';\\n\\nexport default function App() {\\n  return (\\n    <div className=\\"min-h-screen bg-gray-50\\">\\n      <Header />\\n      <main className=\\"container mx-auto px-4 py-8\\">\\n        <h1 className=\\"text-3xl font-bold\\">Welcome</h1>\\n      </main>\\n    </div>\\n  );\\n}","src/components/Header.tsx":"import { Menu } from 'lucide-react';\\n\\nexport function Header() {\\n  return (\\n    <header className=\\"bg-white shadow-sm\\">\\n      <nav className=\\"container mx-auto px-4 py-4 flex items-center justify-between\\">\\n        <span className=\\"text-xl font-bold\\">Logo</span>\\n        <button className=\\"p-2 hover:bg-gray-100 rounded-lg\\" data-ff-group=\\"header\\" data-ff-id=\\"menu-btn\\">\\n          <Menu className=\\"w-6 h-6\\" />\\n        </button>\\n      </nav>\\n    </header>\\n  );\\n}"}}
-\`\`\`
-
-## JSON STRING ENCODING (VIOLATIONS = PARSE FAILURE)
-
-| Character | Encoding | Example |
-|-----------|----------|---------|
-| Newline | \\n | \`"line1\\nline2"\` |
-| Tab | \\t | \`"col1\\tcol2"\` |
-| Quote | \\" | \`"className=\\"flex\\""\` |
-| Backslash | \\\\ | \`"path\\\\to\\\\file"\` |
-
-### CRITICAL RULES:
-1. **Single-line JSON**: Entire response JSON on ONE line (after PLAN comment)
-2. **No raw newlines**: Use \`\\n\` escape sequence
-3. **No trailing commas**: \`{"a":1,"b":2}\` ✓ | \`{"a":1,"b":2,}\` ✗
-4. **Double quotes only**: \`{"key":"value"}\` ✓ | \`{'key':'value'}\` ✗
-5. **No markdown wrappers**: Do NOT wrap in \`\`\`json blocks
-6. **Complete JSON**: Always close ALL { } [ ] pairs
-
-## BATCH RULES (PREVENTS TRUNCATION)
-
-- **Maximum 5 files** per response
-- **Each file under 200 lines** or 3000 characters
-- **Large projects**: Include generationMeta for continuation:
-
-\`\`\`json
-{
-  "generationMeta": {
-    "totalFilesPlanned": 12,
-    "filesInThisBatch": ["src/App.tsx", "src/components/Header.tsx"],
-    "completedFiles": ["src/App.tsx", "src/components/Header.tsx"],
-    "remainingFiles": ["src/components/Footer.tsx", "..."],
-    "currentBatch": 1,
-    "totalBatches": 3,
-    "isComplete": false
-  },
-  "explanation": "Batch 1/3: Core layout components",
-  "files": { ... }
-}
-\`\`\`
+## EXECUTION ORDER
+1. Use \`list_files\` to see existing project structure
+2. Use \`read_file\` to examine files you need to modify
+3. Create/update files using \`write_file\`
+4. When all done, respond with brief summary
 
 ## CODE ARCHITECTURE
 
@@ -227,24 +204,8 @@ Add \`data-ff-group\` and \`data-ff-id\` to ALL interactive elements:
 - Semantic HTML: \`<header>\`, \`<main>\`, \`<nav>\`, \`<section>\`
 - Icon buttons need \`aria-label\`, forms need \`<label htmlFor>\`
 
-## COMMON ERRORS TO AVOID
-
-| Error | Cause | Fix |
-|-------|-------|-----|
-| \`Failed to resolve import\` | Using 'src/' prefix | Use relative: './components/X' |
-| \`Unexpected token\` | Multi-line string in JSON | Use \\n escapes |
-| \`Unterminated string\` | Unescaped quote | Use \\" or single quotes in JSX |
-| \`Cannot find module\` | Wrong import path | Check file exists, use correct casing |
-| \`X is not defined\` | Missing import | Add import statement |
-
-## EXPLANATION FIELD
-
-Write clear, concise explanations:
-- What was built/changed
-- Key components created
-- Notable patterns used
-- If batched: "Batch X/Y: [description]"`;
-
+## FINAL RESPONSE
+When all file operations are complete, give a brief summary of what was created/modified.`;
 
 /**
  * Search/Replace mode extension for system instruction

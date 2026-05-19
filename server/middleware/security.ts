@@ -79,8 +79,16 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
   // File content (stored on disk, not rendered in app UI) naturally contains
   // HTML/JS code like <script> tags, event handlers, etc. Scanning these
   // causes false positives when creating/updating projects.
+  // Also exclude tool call arguments (path, content, arguments) - these are
+  // backend operations that don't render in UI.
   const bodyToScan = req.body ? (() => {
-    const { files: _files, ...rest } = req.body;
+    const {
+      files: _files,
+      content: _content,
+      path: _path,
+      arguments: _arguments,
+      ...rest
+    } = req.body;
     return JSON.stringify(rest);
   })() : '{}';
   const query = JSON.stringify(req.query);

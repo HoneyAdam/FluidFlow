@@ -201,6 +201,37 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
             {entry.duration}ms
           </span>
         )}
+        {/* Tool calling badge */}
+        {entry.metadata?.toolCallingEnabled && (
+          <span
+            className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
+            style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}
+          >
+            <Wrench size={10} />
+            TC
+            {entry.metadata?.toolCount && `(${entry.metadata.toolCount})`}
+          </span>
+        )}
+        {/* Files written badge */}
+        {(entry.metadata?.filesWritten as string[])?.length > 0 && (
+          <span
+            className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
+            style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}
+          >
+            <Check size={10} />
+            {(entry.metadata.filesWritten as string[]).length} file(s)
+          </span>
+        )}
+        {/* Tool call badge for tool-call entries */}
+        {entry.type === 'tool-call' && entry.toolCallInfo?.filesWritten?.length > 0 && (
+          <span
+            className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
+            style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}
+          >
+            <Check size={10} />
+            {entry.toolCallInfo.filesWritten.length} file(s)
+          </span>
+        )}
         {/* Stream progress indicator */}
         {entry.type === 'stream' && entry.streamProgress && (
           <span
@@ -390,6 +421,41 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                   />
                 </div>
               )}
+
+              {/* Tool calling info */}
+              {entry.metadata?.toolCallingEnabled && (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-subtle)' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wrench size={12} style={{ color: 'var(--color-warning)' }} />
+                    <span className="text-xs font-medium" style={{ color: 'var(--color-warning)' }}>Tool Calling</span>
+                    {entry.metadata.toolChoice && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}>
+                        {String(entry.metadata.toolChoice)}
+                      </span>
+                    )}
+                  </div>
+                  {(entry.metadata.tools as string[]) && (entry.metadata.tools as string[]).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <span className="text-[10px]" style={{ color: 'var(--theme-text-dim)' }}>Tools:</span>
+                      {(entry.metadata.tools as string[]).map((tool: string, i: number) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--theme-glass-200)', color: 'var(--theme-text-secondary)' }}>
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(entry.metadata.filesWritten as string[]) && (entry.metadata.filesWritten as string[]).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Files Written:</span>
+                      {(entry.metadata.filesWritten as string[]).map((file: string, i: number) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}>
+                          {file}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -399,6 +465,36 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
               <div className="rounded p-2 text-xs font-mono overflow-auto max-h-48" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
                 <JsonViewer data={entry.metadata} />
               </div>
+            </div>
+          )}
+
+          {/* Tool calling info for non-stream entries (request, response, etc.) */}
+          {entry.metadata?.toolCallingEnabled && entry.type !== 'stream' && (
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-subtle)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Wrench size={12} style={{ color: 'var(--color-warning)' }} />
+                <span className="text-xs font-medium" style={{ color: 'var(--color-warning)' }}>Tool Calling</span>
+                {entry.metadata.toolCount !== undefined && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}>
+                    {String(entry.metadata.toolCount)} tools
+                  </span>
+                )}
+                {entry.metadata.toolChoice && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--theme-glass-200)', color: 'var(--theme-text-secondary)' }}>
+                    {String(entry.metadata.toolChoice)}
+                  </span>
+                )}
+              </div>
+              {(entry.metadata.filesWritten as string[]) && (entry.metadata.filesWritten as string[]).length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Files Written:</span>
+                  {(entry.metadata.filesWritten as string[]).map((file: string, i: number) => (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}>
+                      {file}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -7,7 +7,6 @@
 
 import { useCallback } from 'react';
 import { FileSystem, ChatMessage } from '../types';
-import { safeParseAIResponse } from '../utils/cleanCode';
 import { generateContextForPrompt, generateCodeMap } from '../utils/codemap';
 import { debugLog } from './useDebugStore';
 import { getProviderManager } from '../services/ai';
@@ -15,6 +14,8 @@ import { FILE_GENERATION_SCHEMA, supportsAdditionalProperties } from '../service
 import { InspectedElement, EditScope } from '../components/PreviewPanel/ComponentInspector';
 import { buildInspectEditInstruction } from '../components/ControlPanel/prompts';
 import { calculateFileChanges, createTokenUsage } from '../utils/generationUtils';
+import { PROJECT_TOOLS } from '../services/ai/utils/toolExecutor';
+import { createProjectToolExecutor } from '../services/ai/utils/projectToolHandler';
 
 export interface InspectContext {
   element: InspectedElement;
@@ -24,6 +25,7 @@ export interface InspectContext {
 export interface UseInspectEditOptions {
   files: FileSystem;
   selectedModel: string;
+  projectId?: string;
   generateSystemInstruction: () => string;
   setStreamingStatus: (status: string) => void;
   setIsGenerating: (value: boolean) => void;
@@ -42,6 +44,7 @@ export function useInspectEdit(options: UseInspectEditOptions): UseInspectEditRe
   const {
     files,
     selectedModel,
+    projectId,
     generateSystemInstruction,
     setStreamingStatus,
     setIsGenerating,
@@ -105,6 +108,19 @@ export function useInspectEdit(options: UseInspectEditOptions): UseInspectEditRe
 
       const targetSelector = buildElementSelector(element, scope);
       console.log('[InspectEdit] Target selector:', targetSelector);
+
+      // Tool calling configuration - MUST be defined before systemInstruction
+      const hasToolExecutor = !!(projectId && activeProvider?.allowToolWrites);
+      const toolExecutor = hasToolExecutor
+        ? createProjectToolExecutor(projectId, true)
+        : undefined;
+
+      console.log('[InspectEdit] Tool calling config:', {
+        projectId,
+        hasToolExecutor,
+        allowToolWrites: activeProvider?.allowToolWrites,
+        toolExecutorDefined: !!toolExecutor,
+      });
 
       const systemInstruction = buildInspectEditInstruction(
         scope,
@@ -195,13 +211,60 @@ ${prompt}
               activeProvider?.type && supportsAdditionalProperties(activeProvider.type)
                 ? FILE_GENERATION_SCHEMA
                 : undefined,
+            // Tool calling
+            tools: PROJECT_TOOLS,
+            toolExecutor,
+            toolChoice: 'auto',
+            allowToolWrites: activeProvider?.allowToolWrites ?? false,
+            projectId,
           },
           currentModel
         );
 
+        console.log('[InspectEdit] Response received:', {
+          hasText: !!response.text,
+          textLength: response.text?.length,
+          filesWritten: response.filesWritten,
+        });
+
+        // If tool calling was used and files were written, handle them directly
+        if (response.filesWritten && response.filesWritten.length > 0) {
+          // Files were written via tool calling - we need to read them back
+          const { projectApi } = await import('../services/projectApi');
+          const newFiles: FileSystem = { ...files };
+          for (const filePath of response.filesWritten) {
+            try {
+              const content = await projectApi.readFile(projectId!, filePath);
+              newFiles[filePath] = content;
+            } catch (e) {
+              console.warn(`[InspectEdit] Could not read file ${filePath}:`, e);
+            }
+          }
+
+          const assistantMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            timestamp: Date.now(),
+            explanation: `🎯 Modified element via tool calling: ${targetSelector}`,
+            files: Object.fromEntries(
+              response.filesWritten.map((path) => [path, newFiles[path] || ''])
+            ),
+            fileChanges: calculateFileChanges(files, newFiles),
+            snapshotFiles: { ...files },
+            model: currentModel,
+            provider: providerName,
+            tokenUsage: createTokenUsage(response?.usage, undefined, '', newFiles),
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+
+          reviewChange(`Edit: ${element.ffId || element.tagName}`, newFiles);
+          return true;
+        }
+
+        // Fallback: Parse JSON response if no tool calling was used
+        const { safeParseAIResponse } = await import('../utils/cleanCode');
         const rawResponse = response.text || '';
 
-        // Parse response (with PLAN comment handling)
         const parsed = safeParseAIResponse<{
           files?: Record<string, string>;
           explanation?: string;
@@ -241,6 +304,7 @@ ${prompt}
     [
       files,
       selectedModel,
+      projectId,
       generateSystemInstruction,
       setStreamingStatus,
       setIsGenerating,

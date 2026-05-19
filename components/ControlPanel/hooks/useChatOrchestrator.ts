@@ -103,6 +103,7 @@ export function useChatOrchestrator({
   const { handleInspectEditRequest } = useInspectEdit({
     files,
     selectedModel,
+    projectId,
     generateSystemInstruction,
     setStreamingStatus,
     setIsGenerating,

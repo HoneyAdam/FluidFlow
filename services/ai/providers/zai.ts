@@ -13,6 +13,9 @@ const DEFAULT_MODEL = 'glm-4.7';
 // Max output tokens (128K supported)
 const DEFAULT_MAX_TOKENS = 131072; // 128K for GLM-4.7
 
+// Maximum agentic tool-call iterations after the initial call
+const MAX_TOOL_ITERATIONS = 8;
+
 export class ZAIProvider implements AIProvider {
   readonly config: ProviderConfig;
   private client: OpenAI;
@@ -117,70 +120,99 @@ export class ZAIProvider implements AIProvider {
           parameters: t.parameters || { type: 'object', properties: {} },
         },
       }));
+      // Use 'auto' to let model decide when to call tools
+      requestParams.tool_choice = 'auto';
     }
 
     try {
       const completion = await this.client.chat.completions.create(requestParams);
 
-      // Handle tool calls using ToolCallHandler
-      const toolCalls = completion.choices[0]?.message?.tool_calls;
-      if (toolCalls && toolCalls.length > 0 && request.toolExecutor) {
-        // Create handler and populate with tool calls from non-streaming response
-        const toolCallHandler = createToolCallHandler();
-        for (const tc of toolCalls) {
-          if ('function' in tc) {
-            toolCallHandler.accumulate({
-              choices: [{
-                delta: {
-                  tool_calls: [{
-                    id: tc.id,
-                    function: {
-                      name: (tc as { function?: { name?: string } }).function?.name || '',
-                      arguments: (tc as { function?: { arguments?: string } }).function?.arguments || '{}',
-                    },
-                  }],
-                },
-                finish_reason: 'tool_calls',
-              }],
-            });
-          }
-        }
-
-        const assistantMessage = toolCallHandler.buildAssistantMessage();
-        if (!assistantMessage) {
-          throw new Error('Failed to build assistant message for tool calls');
-        }
-
-        // Execute tool calls
-        const execResult = await toolCallHandler.execute(request.toolExecutor, 'zai-non-stream');
-
-        // Build messages for follow-up
-        const existingMessages: ChatMessage[] = messages.map(m => ({
+      // Handle tool calls using ToolCallHandler with agentic loop
+      const initialToolCalls = completion.choices[0]?.message?.tool_calls;
+      if (initialToolCalls && initialToolCalls.length > 0 && request.toolExecutor) {
+        const allFilesWritten: string[] = [];
+        let currentMessages: ChatMessage[] = messages.map(m => ({
           role: m.role as 'system' | 'user' | 'assistant' | 'tool',
           content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
         }));
-        const followUpMessages = toolCallHandler.buildFollowUpMessages(
-          existingMessages,
-          assistantMessage,
-          execResult.messages
-        );
 
-        // Make follow-up request
-        const followUp = await this.client.chat.completions.create({
-          model: model || this.config.defaultModel || DEFAULT_MODEL,
-          messages: followUpMessages as OpenAI.Chat.ChatCompletionMessageParam[],
-          max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
-          temperature: request.temperature ?? 0.7,
-        });
+        // Seed loop state from the initial response
+        let pendingToolCalls = initialToolCalls;
+        let lastUsage = completion.usage;
+        let lastFinishReason: string | undefined = completion.choices[0]?.finish_reason || undefined;
+        let lastContent = '';
+
+        for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+          const toolCallHandler = createToolCallHandler();
+          for (const tc of pendingToolCalls) {
+            if ('function' in tc) {
+              toolCallHandler.accumulate({
+                choices: [{
+                  delta: {
+                    tool_calls: [{
+                      id: tc.id,
+                      function: {
+                        name: (tc as { function?: { name?: string } }).function?.name || '',
+                        arguments: (tc as { function?: { arguments?: string } }).function?.arguments || '{}',
+                      },
+                    }],
+                  },
+                  finish_reason: 'tool_calls',
+                }],
+              });
+            }
+          }
+
+          const assistantMessage = toolCallHandler.buildAssistantMessage();
+          if (!assistantMessage) {
+            throw new Error('Failed to build assistant message for tool calls');
+          }
+
+          const execResult = await toolCallHandler.execute(request.toolExecutor, `zai-non-stream-iter-${iter}`);
+          allFilesWritten.push(...execResult.filesWritten);
+
+          currentMessages = toolCallHandler.buildFollowUpMessages(
+            currentMessages,
+            assistantMessage,
+            execResult.messages
+          );
+
+          const followUpParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
+            model: model || this.config.defaultModel || DEFAULT_MODEL,
+            messages: currentMessages as OpenAI.Chat.ChatCompletionMessageParam[],
+            max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
+            temperature: request.temperature ?? 0.7,
+          };
+
+          if (requestParams.tools && requestParams.tools.length > 0) {
+            followUpParams.tools = requestParams.tools;
+            followUpParams.tool_choice = 'auto';
+          }
+
+          const followUp = await this.client.chat.completions.create(followUpParams);
+          lastUsage = followUp.usage || lastUsage;
+          lastFinishReason = followUp.choices[0]?.finish_reason || lastFinishReason;
+          lastContent = followUp.choices[0]?.message?.content || '';
+          const nextToolCalls = followUp.choices[0]?.message?.tool_calls;
+
+          if (!nextToolCalls || nextToolCalls.length === 0) {
+            break;
+          }
+
+          pendingToolCalls = nextToolCalls;
+          if (iter === MAX_TOOL_ITERATIONS - 1) {
+            console.warn(`[ZAI] Tool-call loop hit MAX_TOOL_ITERATIONS=${MAX_TOOL_ITERATIONS}, stopping.`);
+          }
+        }
 
         return {
-          text: followUp.choices[0]?.message?.content || '',
-          finishReason: followUp.choices[0]?.finish_reason || undefined,
+          text: lastContent,
+          finishReason: lastFinishReason,
           usage: {
-            inputTokens: followUp.usage?.prompt_tokens || completion.usage?.prompt_tokens,
-            outputTokens: followUp.usage?.completion_tokens || completion.usage?.completion_tokens,
+            inputTokens: lastUsage?.prompt_tokens || completion.usage?.prompt_tokens,
+            outputTokens: lastUsage?.completion_tokens || completion.usage?.completion_tokens,
           },
-          filesWritten: execResult.filesWritten.length > 0 ? execResult.filesWritten : undefined,
+          filesWritten: allFilesWritten.length > 0 ? allFilesWritten : undefined,
         };
       }
 
@@ -288,51 +320,107 @@ export class ZAIProvider implements AIProvider {
       // Final chunk
       onChunk({ text: '', done: true });
 
-      // Handle tool calls if ready
+      // Handle tool calls with agentic loop
       if (toolCallHandler.isReadyForExecution() && request.toolExecutor) {
-        const assistantMessage = toolCallHandler.buildAssistantMessage();
+        const initialAssistantMessage = toolCallHandler.buildAssistantMessage();
 
-        if (!assistantMessage) {
+        if (!initialAssistantMessage) {
           console.error('[ZAI] Failed to build assistant message for tool calls');
           throw new Error('Tool call handling failed: no assistant message');
         }
 
-        // Execute tool calls
-        const execResult = await toolCallHandler.execute(request.toolExecutor, 'zai-stream');
+        // Execute first batch from the stream
+        const initialExec = await toolCallHandler.execute(request.toolExecutor, 'zai-stream-iter-0');
+        const allFilesWritten: string[] = [...initialExec.filesWritten];
 
-        // Build messages for follow-up
-        const existingMessages: ChatMessage[] = messages.map(m => ({
+        // Build initial follow-up messages
+        let currentMessages: ChatMessage[] = messages.map(m => ({
           role: m.role as 'system' | 'user' | 'assistant' | 'tool',
           content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
         }));
-        const followUpMessages = toolCallHandler.buildFollowUpMessages(
-          existingMessages,
-          assistantMessage,
-          execResult.messages
+        currentMessages = toolCallHandler.buildFollowUpMessages(
+          currentMessages,
+          initialAssistantMessage,
+          initialExec.messages
         );
 
-        // Make follow-up request
-        const followUp = await this.client.chat.completions.create({
-          model: model || this.config.defaultModel || DEFAULT_MODEL,
-          messages: followUpMessages as OpenAI.Chat.ChatCompletionMessageParam[],
-          max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
-          temperature: request.temperature ?? 0.7,
-        });
+        let lastUsage = usage;
+        let lastFinishReason: string | undefined = toolCallHandler.getFinishReason();
+        let lastContent = '';
 
-        const followUpText = followUp.choices[0]?.message?.content || '';
+        for (let iter = 1; iter <= MAX_TOOL_ITERATIONS; iter++) {
+          const followUpParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
+            model: model || this.config.defaultModel || DEFAULT_MODEL,
+            messages: currentMessages as OpenAI.Chat.ChatCompletionMessageParam[],
+            max_tokens: request.maxTokens || DEFAULT_MAX_TOKENS,
+            temperature: request.temperature ?? 0.7,
+          };
 
-        if (!followUpText && execResult.toolCallsExecuted > 0) {
-          console.warn('[ZAI] Tool calling completed but follow-up response is empty. Model may not have received tool results correctly.');
+          if (requestParams.tools && requestParams.tools.length > 0) {
+            followUpParams.tools = requestParams.tools;
+            followUpParams.tool_choice = 'auto';
+          }
+
+          const followUp = await this.client.chat.completions.create(followUpParams);
+          lastUsage = {
+            inputTokens: followUp.usage?.prompt_tokens || lastUsage?.inputTokens,
+            outputTokens: followUp.usage?.completion_tokens || lastUsage?.outputTokens,
+          };
+          lastFinishReason = followUp.choices[0]?.finish_reason || lastFinishReason;
+          lastContent = followUp.choices[0]?.message?.content || '';
+          const nextToolCalls = followUp.choices[0]?.message?.tool_calls;
+
+          if (!nextToolCalls || nextToolCalls.length === 0) {
+            break;
+          }
+
+          // Build a handler for the next batch
+          const nextHandler = createToolCallHandler();
+          for (const tc of nextToolCalls) {
+            if ('function' in tc) {
+              nextHandler.accumulate({
+                choices: [{
+                  delta: {
+                    tool_calls: [{
+                      id: tc.id,
+                      function: {
+                        name: (tc as { function?: { name?: string } }).function?.name || '',
+                        arguments: (tc as { function?: { arguments?: string } }).function?.arguments || '{}',
+                      },
+                    }],
+                  },
+                  finish_reason: 'tool_calls',
+                }],
+              });
+            }
+          }
+
+          const nextAssistantMessage = nextHandler.buildAssistantMessage();
+          if (!nextAssistantMessage) break;
+
+          const nextExec = await nextHandler.execute(request.toolExecutor, `zai-stream-iter-${iter}`);
+          allFilesWritten.push(...nextExec.filesWritten);
+
+          currentMessages = nextHandler.buildFollowUpMessages(
+            currentMessages,
+            nextAssistantMessage,
+            nextExec.messages
+          );
+
+          if (iter === MAX_TOOL_ITERATIONS) {
+            console.warn(`[ZAI] Tool-call loop hit MAX_TOOL_ITERATIONS=${MAX_TOOL_ITERATIONS}, stopping.`);
+          }
+        }
+
+        if (!lastContent && allFilesWritten.length === 0) {
+          console.warn('[ZAI] Tool calling completed but no follow-up content and no files written.');
         }
 
         return {
-          text: followUpText,
-          finishReason: followUp.choices[0]?.finish_reason || undefined,
-          usage: {
-            inputTokens: followUp.usage?.prompt_tokens || usage?.inputTokens,
-            outputTokens: followUp.usage?.completion_tokens || usage?.outputTokens,
-          },
-          filesWritten: execResult.filesWritten.length > 0 ? execResult.filesWritten : undefined,
+          text: lastContent,
+          finishReason: lastFinishReason,
+          usage: lastUsage,
+          filesWritten: allFilesWritten.length > 0 ? allFilesWritten : undefined,
         };
       }
 

@@ -54,6 +54,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
   const {
     setStreamingChars,
     setStreamingStatus,
+    setStreamingFiles,
   } = callbacks;
 
   const fullTextRef = useRef('');
@@ -67,7 +68,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       request: GenerationRequest,
       currentModel: string,
       genRequestId: string,
-      _genStartTime: number,
+      genStartTime: number,
     ): Promise<StreamingResult> => {
       const manager = getProviderManager();
       fullTextRef.current = '';
@@ -81,7 +82,13 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
         id: streamLogId,
         model: currentModel,
         response: 'Streaming started (tool calling mode)...',
-        metadata: { chunkCount: 0, totalChars: 0, status: 'streaming' },
+        metadata: {
+          chunkCount: 0,
+          totalChars: 0,
+          status: 'streaming',
+          toolCallingEnabled: !!request.toolExecutor,
+          tools: request.tools?.map(t => t.name) ?? [],
+        },
       });
 
       // Use streaming API - tool calling handles file operations
@@ -102,6 +109,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       console.log('[Generation] Stream complete:', {
         chars: fullText.length,
         chunks: chunkCount,
+        filesWritten: streamResponse?.filesWritten?.length ?? 0,
       });
 
       try {
@@ -113,6 +121,8 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
               chunkCount,
               totalChars: fullText.length,
               status: 'complete',
+              toolCallingEnabled: !!request.toolExecutor,
+              filesWritten: streamResponse?.filesWritten,
             },
           },
           true
@@ -134,9 +144,23 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       const filesWritten = streamResponse?.filesWritten;
       console.log('[Streaming] Response complete. Tool calling filesWritten:', filesWritten?.length ?? 0);
 
-      return { fullText, chunkCount, detectedFiles: [], streamResponse, currentFilePlan: null, format: 'tool-calling' as StreamingFormat, filesWritten };
+      // Update streaming status with files info
+      if (filesWritten && filesWritten.length > 0) {
+        setStreamingStatus(`✅ Done! ${filesWritten.length} file(s) written via tool calling`);
+        setStreamingFiles(filesWritten);
+      }
+
+      return {
+        fullText,
+        chunkCount,
+        detectedFiles: [],
+        streamResponse,
+        currentFilePlan: null,
+        format: 'tool-calling' as StreamingFormat,
+        filesWritten
+      };
     },
-    [setStreamingChars, setStreamingStatus]
+    [setStreamingChars, setStreamingStatus, setStreamingFiles]
   );
 
   return { processStreamingResponse };

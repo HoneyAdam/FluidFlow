@@ -285,6 +285,7 @@ export const ControlPanel = forwardRef<ControlPanelRef, ControlPanelProps>(({
   const { handleInspectEditRequest } = useInspectEdit({
     files,
     selectedModel,
+    projectId: currentProject?.id,
     generateSystemInstruction,
     setStreamingStatus,
     setIsGenerating,
@@ -734,7 +735,12 @@ Fix the error in src/App.tsx.`;
                 if (!activeConfig?.models?.length) {
                   return <option value={selectedModel}>{selectedModel || 'No models'}</option>;
                 }
-                return activeConfig.models.map(model => (
+                // Filter to tool-calling models only
+                const toolCallingModels = activeConfig.models.filter(m => m.supportsToolCalling);
+                if (toolCallingModels.length === 0) {
+                  return <option value={selectedModel}>No tool-calling models</option>;
+                }
+                return toolCallingModels.map(model => (
                   <option key={model.id} value={model.id}>
                     {model.name}
                   </option>

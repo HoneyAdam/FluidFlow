@@ -9,6 +9,13 @@ import type { ToolResult } from '../types';
 import { projectApi } from '../../api/projects';
 import { debugLog } from '../../../hooks/useDebugStore';
 
+// UUID v4 validation (same as server-side validation)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidProjectId(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
 /**
  * Execute a project file tool
  */
@@ -20,12 +27,19 @@ export async function executeProjectTool(
   const { projectId, allowWrites = false } = context;
 
   if (!projectId) {
-    return {
-      id: '',
-      name: toolName,
-      success: false,
-      error: 'No project ID provided',
-    };
+    const error = 'No project ID provided';
+    debugLog.toolCall('generation', {
+      toolCallInfo: { toolName, arguments: args, result: null, success: false, error },
+    });
+    return { id: '', name: toolName, success: false, error };
+  }
+
+  if (!isValidProjectId(projectId)) {
+    const error = `Invalid project ID format: ${projectId}`;
+    debugLog.toolCall('generation', {
+      toolCallInfo: { toolName, arguments: args, result: null, success: false, error },
+    });
+    return { id: '', name: toolName, success: false, error };
   }
 
   try {
@@ -183,6 +197,20 @@ export async function executeProjectTool(
  * Create a tool executor for project operations
  */
 export function createProjectToolExecutor(projectId: string, allowWrites = false) {
+  // Validate projectId format before creating executor
+  if (!isValidProjectId(projectId)) {
+    console.warn(`[ToolExecutor] Invalid project ID format: ${projectId}`);
+    // Return a dummy executor that always fails
+    return async (toolName: string, _args: Record<string, unknown>): Promise<ToolResult> => {
+      return {
+        id: '',
+        name: toolName,
+        success: false,
+        error: `Invalid project ID format: ${projectId}`,
+      };
+    };
+  }
+
   return async (toolName: string, args: Record<string, unknown>): Promise<ToolResult> => {
     return executeProjectTool(toolName, args, { projectId, allowWrites });
   };
