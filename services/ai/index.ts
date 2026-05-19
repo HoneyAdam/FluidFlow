@@ -23,9 +23,15 @@ export * from './providers';
 // Re-export utilities
 export * from './utils/schemas';
 export * from './utils/jsonOutput';
+export * from './utils/toolUtils';
+export * from './utils/ToolCallHandler';
+export * from './modelsSync';
 
 // Re-export provider factory
 export { createProvider } from './providerFactory';
+
+// Re-export models sync service
+export * from './modelsSync';
 
 // Re-export storage functions
 export {

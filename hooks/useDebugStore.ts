@@ -6,7 +6,7 @@ const DEBUG_ENABLED_KEY = 'fluidflow_debug_enabled';
 
 // BUG-034 FIX: Define valid categories as a const array for validation
 // Note: 'git-commit', 'auto-commit', 'prompt-improver' skip prompt confirmation modal
-const VALID_CATEGORIES = ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'git-commit', 'auto-commit', 'prompt-improver', 'other'] as const;
+const VALID_CATEGORIES = ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'git-commit', 'auto-commit', 'prompt-improver', 'tool-call', 'other'] as const;
 type ValidCategory = typeof VALID_CATEGORIES[number];
 
 // BUG-034 FIX: Validate category and fallback to 'other' if invalid
@@ -34,8 +34,8 @@ const initialState: DebugState = {
   logs: [],
   maxLogs: MAX_LOGS,
   filter: {
-    types: ['request', 'response', 'stream', 'error', 'info'],
-    categories: ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'git-commit', 'auto-commit', 'prompt-improver', 'other'],
+    types: ['request', 'response', 'stream', 'error', 'info', 'tool-call'],
+    categories: ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'git-commit', 'auto-commit', 'prompt-improver', 'tool-call', 'other'],
     searchQuery: '',
   },
 };
@@ -138,6 +138,18 @@ export const debugLog = {
       type: 'info',
       category: validateCategory(category), // BUG-034 FIX
       response: message,
+      ...data,
+    });
+  },
+
+  // Tool call specific logging
+  toolCall: (category: DebugLogEntry['category'], data: Partial<DebugLogEntry>) => {
+    if (!globalDebugState.enabled) return;
+    addLog({
+      id: data.id || crypto.randomUUID(),
+      timestamp: Date.now(),
+      type: 'tool-call',
+      category: validateCategory(category),
       ...data,
     });
   },
