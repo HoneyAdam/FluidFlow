@@ -20,6 +20,7 @@ import {
   X,
   Eye,
   EyeOff,
+  Wrench,
 } from 'lucide-react';
 import { useDebugStore } from '@/hooks/useDebugStore';
 import type { DebugLogEntry } from '@/types';
@@ -151,6 +152,7 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
     stream: { icon: Radio, colorVar: 'var(--color-feature)', bgVar: 'var(--color-feature-subtle)' },
     error: { icon: AlertCircle, colorVar: 'var(--color-error)', bgVar: 'var(--color-error-subtle)' },
     info: { icon: Info, colorVar: 'var(--theme-text-muted)', bgVar: 'var(--theme-glass-100)' },
+    'tool-call': { icon: Wrench, colorVar: 'var(--color-warning)', bgVar: 'var(--color-warning-subtle)' },
   };
 
   const config = typeConfig[entry.type];
@@ -281,6 +283,60 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
             </div>
           )}
 
+          {/* Tool Call Info */}
+          {entry.type === 'tool-call' && entry.toolCallInfo && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Wrench size={14} style={{ color: 'var(--color-warning)' }} />
+                <span className="text-xs font-medium" style={{ color: 'var(--color-warning)' }}>
+                  Tool Call: {entry.toolCallInfo.toolName}
+                </span>
+                {entry.toolCallInfo.success !== undefined && (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded"
+                    style={{
+                      backgroundColor: entry.toolCallInfo.success ? 'var(--color-success-subtle)' : 'var(--color-error-subtle)',
+                      color: entry.toolCallInfo.success ? 'var(--color-success)' : 'var(--color-error)',
+                    }}
+                  >
+                    {entry.toolCallInfo.success ? 'Success' : 'Failed'}
+                  </span>
+                )}
+              </div>
+
+              {entry.toolCallInfo.arguments && Object.keys(entry.toolCallInfo.arguments).length > 0 && (
+                <div>
+                  <div className="text-xs mb-1 font-medium" style={{ color: 'var(--theme-text-muted)' }}>Arguments:</div>
+                  <div className="rounded p-2 text-xs font-mono overflow-auto max-h-48" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
+                    <JsonViewer data={entry.toolCallInfo.arguments} />
+                  </div>
+                </div>
+              )}
+
+              {entry.toolCallInfo.result && (
+                <div>
+                  <div className="text-xs mb-1 font-medium" style={{ color: 'var(--theme-text-muted)' }}>Result:</div>
+                  <div className="rounded p-2 text-xs font-mono overflow-auto max-h-48" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
+                    <JsonViewer data={entry.toolCallInfo.result} />
+                  </div>
+                </div>
+              )}
+
+              {entry.toolCallInfo.filesWritten && entry.toolCallInfo.filesWritten.length > 0 && (
+                <div>
+                  <div className="text-xs mb-1 font-medium" style={{ color: 'var(--color-success)' }}>Files Written:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {entry.toolCallInfo.filesWritten.map((file, i) => (
+                      <span key={i} className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}>
+                        {file}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {entry.tokenCount && (
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-xs">
@@ -375,8 +431,8 @@ export default function DebugPanel() {
     };
   }, [filteredLogs]);
 
-  const typeOptions: DebugLogEntry['type'][] = ['request', 'response', 'stream', 'error', 'info'];
-  const categoryOptions: DebugLogEntry['category'][] = ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'other'];
+  const typeOptions: DebugLogEntry['type'][] = ['request', 'response', 'stream', 'error', 'info', 'tool-call'];
+  const categoryOptions: DebugLogEntry['category'][] = ['generation', 'accessibility', 'quick-edit', 'auto-fix', 'git-commit', 'auto-commit', 'prompt-improver', 'tool-call', 'other'];
 
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--theme-surface-dark)' }}>

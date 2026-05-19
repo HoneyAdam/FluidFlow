@@ -49,17 +49,27 @@ export function parseToolArguments(rawArguments: string): Record<string, unknown
 
   // Handle streaming format where arguments come as partial strings
   const trimmed = rawArguments.trim();
-  if (trimmed.startsWith('{') && !trimmed.endsWith('}')) {
-    // Likely incomplete JSON - try to fix common issues
+
+  // Try fixing common issues
+  const fixes = [
+    // Add closing brace if missing
+    () => trimmed.endsWith('}') ? null : JSON.parse(trimmed + '}'),
+    // Remove trailing comma before closing brace
+    () => JSON.parse(trimmed.replace(/,(\s*[}\]])/g, '$1')),
+    // Try fixing escaped quotes inside strings
+    () => JSON.parse(trimmed.replace(/\\"/g, '"').replace(/""/g, '"')),
+  ];
+
+  for (const fix of fixes) {
     try {
-      // Add closing brace if missing
-      return JSON.parse(trimmed + '}');
+      return fix() as Record<string, unknown>;
     } catch {
-      // Still failed
+      // Try next fix
     }
   }
 
-  // Last resort: return empty object
+  // Last resort: return empty object but log warning
+  console.warn('[toolUtils] Failed to parse tool arguments:', rawArguments.substring(0, 100));
   return {};
 }
 

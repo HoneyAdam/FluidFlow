@@ -7,6 +7,7 @@
 
 import type { ToolResult } from '../types';
 import { projectApi } from '../../api/projects';
+import { debugLog } from '../../../hooks/useDebugStore';
 
 /**
  * Execute a project file tool
@@ -35,6 +36,14 @@ export async function executeProjectTool(
           return { id: '', name: toolName, success: false, error: 'Missing required parameter: path' };
         }
         const content = await projectApi.readFile(projectId, path);
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: { path },
+            result: { path, contentLength: content.length },
+            success: true,
+          },
+        });
         return { id: '', name: toolName, success: true, result: { path, content } };
       }
 
@@ -48,6 +57,15 @@ export async function executeProjectTool(
           return { id: '', name: toolName, success: false, error: 'Missing required parameters: path, content' };
         }
         await projectApi.saveFile(projectId, path, content);
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: { path, contentLength: content.length },
+            result: { path, written: true },
+            success: true,
+            filesWritten: [path],
+          },
+        });
         return { id: '', name: toolName, success: true, result: { path, written: true }, filesWritten: [path] };
       }
 
@@ -60,6 +78,15 @@ export async function executeProjectTool(
           return { id: '', name: toolName, success: false, error: 'Missing required parameter: path' };
         }
         await projectApi.deleteFile(projectId, path);
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: { path },
+            result: { path, deleted: true },
+            success: true,
+            filesWritten: [path],
+          },
+        });
         return { id: '', name: toolName, success: true, result: { path, deleted: true }, filesWritten: [path] };
       }
 
@@ -67,6 +94,14 @@ export async function executeProjectTool(
         // Get project to list all files
         const project = await projectApi.get(projectId);
         const files = Object.keys(project.files || {});
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: {},
+            result: { fileCount: files.length },
+            success: true,
+          },
+        });
         return { id: '', name: toolName, success: true, result: { files } };
       }
 
@@ -80,6 +115,14 @@ export async function executeProjectTool(
         const matchingFiles = Object.entries(project.files || {})
           .filter(([filePath]) => regex.test(filePath))
           .map(([filePath, content]) => ({ path: filePath, matches: (content as string).match(regex) || [] }));
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: { pattern },
+            result: { matchCount: matchingFiles.length },
+            success: true,
+          },
+        });
         return { id: '', name: toolName, success: true, result: { files: matchingFiles } };
       }
 
@@ -93,18 +136,45 @@ export async function executeProjectTool(
         }
         // Directories are created implicitly when files are written
         // We just return success if the path looks valid
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: { path },
+            result: { path, created: true },
+            success: true,
+          },
+        });
         return { id: '', name: toolName, success: true, result: { path, created: true } };
       }
 
       default:
+        debugLog.toolCall('generation', {
+          toolCallInfo: {
+            toolName,
+            arguments: args,
+            result: null,
+            success: false,
+            error: `Unknown tool: ${toolName}`,
+          },
+        });
         return { id: '', name: toolName, success: false, error: `Unknown tool: ${toolName}` };
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    debugLog.toolCall('generation', {
+      toolCallInfo: {
+        toolName,
+        arguments: args,
+        result: null,
+        success: false,
+        error: errorMessage,
+      },
+    });
     return {
       id: '',
       name: toolName,
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     };
   }
 }

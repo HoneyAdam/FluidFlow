@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Trash2, Check, Loader2, Server,
+  Plus, Trash2, Check, Loader2, Server, Monitor, Cpu,
   Eye, EyeOff, RefreshCw, ExternalLink,
   AlertCircle, CheckCircle2, Pencil, Download,
   Zap, Key, Link2
 } from 'lucide-react';
 import {
   ProviderConfig, ProviderType, DEFAULT_PROVIDERS, ModelOption,
-  getProviderManager
+  getProviderManager, applyKnownMetadataToAll,
+  fetchProvidersFromModelsDev, modelsDevProviderToConfig, clearProviderCache,
+  type ProviderMetadata
 } from '../../../services/ai';
 import { ProviderIcon } from '../../shared/ProviderIcon';
 import { SettingsToggle } from '../shared/SettingsToggle';
@@ -27,6 +29,10 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
   const [editingModels, setEditingModels] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [customModelInput, setCustomModelInput] = useState('');
+  const [modelsDevProviders, setModelsDevProviders] = useState<ProviderMetadata[]>([]);
+  const [loadingModelsDev, setLoadingModelsDev] = useState(false);
+  const [syncingModels, setSyncingModels] = useState(false);
+  const [providerSearch, setProviderSearch] = useState('');
 
   // Load providers on mount
   useEffect(() => {
@@ -86,6 +92,40 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
     setShowAddProvider(false);
   };
 
+  const addProviderFromModelsDev = (providerMetadata: ProviderMetadata) => {
+    const config = modelsDevProviderToConfig(providerMetadata);
+    const newProvider: ProviderConfig = {
+      id: `modelsdev-${providerMetadata.id}-${Date.now()}`,
+      ...config,
+      apiKey: '',
+      syncEnabled: true,
+    };
+    const manager = getProviderManager();
+    manager.addProvider(newProvider);
+    setProviders(manager.getConfigs());
+    setSelectedProviderId(newProvider.id);
+    setShowAddProvider(false);
+  };
+
+  const loadModelsDevProviders = async () => {
+    setLoadingModelsDev(true);
+    try {
+      const providers = await fetchProvidersFromModelsDev();
+      setModelsDevProviders(providers);
+    } catch (error) {
+      console.error('Failed to load models.dev providers:', error);
+    } finally {
+      setLoadingModelsDev(false);
+    }
+  };
+
+  const filteredModelsDevProviders = providerSearch
+    ? modelsDevProviders.filter(p =>
+        p.name.toLowerCase().includes(providerSearch.toLowerCase()) ||
+        (p.api && p.api.toLowerCase().includes(providerSearch.toLowerCase()))
+      )
+    : modelsDevProviders;
+
   const setActiveProvider = (id: string) => {
     const manager = getProviderManager();
     manager.setActiveProvider(id);
@@ -126,8 +166,11 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
       const manager = getProviderManager();
       const providerInstance = manager.getProvider(selectedProviderId);
       if (providerInstance?.listModels) {
-        const models = await providerInstance.listModels();
+        let models = await providerInstance.listModels();
         if (models.length > 0) {
+          // Apply known metadata enrichment (family, tool calling, pricing)
+          models = applyKnownMetadataToAll(models, provider.type);
+
           const existingIds = new Set(provider.models.map(m => m.id));
           const newModels = models.filter(m => !existingIds.has(m.id));
           const mergedModels = [...provider.models, ...newModels];
@@ -141,6 +184,55 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
       console.error('Failed to fetch models:', error);
     } finally {
       setFetchingModels(false);
+    }
+  };
+
+  const syncModelsFromModelsDev = async () => {
+    if (!selectedProviderId) return;
+    const provider = providers.find(p => p.id === selectedProviderId);
+    if (!provider || !provider.syncEnabled) return;
+
+    setSyncingModels(true);
+    try {
+      clearProviderCache(); // Force fresh fetch
+      const allProviders = await fetchProvidersFromModelsDev();
+
+      // Find matching provider in models.dev
+      const modelsDevProvider = allProviders.find(p =>
+        p.api && (p.api === provider.baseUrl || p.name.toLowerCase().includes(provider.name.toLowerCase()))
+      );
+
+      if (modelsDevProvider) {
+        const models = Object.values(modelsDevProvider.models).map(m => ({
+          id: m.id,
+          name: m.name.replace(/^[^:]+:\s*/, ''),
+          description: m.tool_call ? 'Tool calling supported' : 'No tool calling',
+          supportsVision: m.modalities?.input.includes('image') ?? false,
+          supportsStreaming: true,
+          supportsToolCalling: m.tool_call,
+          contextWindow: m.limit?.context,
+          maxOutput: m.limit?.output,
+          pricing: m.cost ? { input: m.cost.input, output: m.cost.output } : undefined,
+          releaseDate: m.release_date,
+        }));
+
+        if (models.length > 0) {
+          // Apply metadata enrichment
+          const enrichedModels = applyKnownMetadataToAll(models, provider.type);
+          const existingIds = new Set(provider.models.map(m => m.id));
+          const newModels = enrichedModels.filter(m => !existingIds.has(m.id));
+          const mergedModels = [...provider.models, ...newModels];
+
+          updateProvider(selectedProviderId, {
+            models: mergedModels,
+            defaultModel: provider.defaultModel || mergedModels[0].id
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync from models.dev:', error);
+    } finally {
+      setSyncingModels(false);
     }
   };
 
@@ -213,42 +305,134 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
         <div className="p-2" style={{ borderTop: '1px solid var(--theme-border-light)' }}>
           {showAddProvider ? (
             <div className="p-3 rounded-lg space-y-2" style={{ backgroundColor: 'var(--theme-glass-100)' }}>
-              <div className="grid grid-cols-2 gap-1">
-                {(Object.entries(DEFAULT_PROVIDERS) as [ProviderType, typeof DEFAULT_PROVIDERS.gemini][]).map(([type, config]) => (
-                  <button
-                    key={type}
-                    onClick={() => setNewProviderType(type)}
-                    className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors"
-                    style={{
-                      border: newProviderType === type ? '1px solid var(--theme-accent)' : '1px solid var(--theme-border-light)',
-                      backgroundColor: newProviderType === type ? 'var(--theme-accent-subtle)' : 'transparent'
-                    }}
-                  >
-                    <ProviderIcon type={type} className="w-4 h-4" />
-                    <span className="text-[9px]" style={{ color: 'var(--theme-text-muted)' }}>{config.name.split(' ')[0]}</span>
-                  </button>
-                ))}
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--theme-text-secondary)' }}>
+                Add Provider
               </div>
-              <div className="flex gap-1">
+
+              {/* Search */}
+              <input
+                type="text"
+                placeholder="Search providers..."
+                className="w-full px-2 py-1.5 text-xs rounded outline-none"
+                style={{
+                  backgroundColor: 'var(--theme-glass-200)',
+                  border: '1px solid var(--theme-border-light)',
+                  color: 'var(--theme-text-primary)'
+                }}
+                value={providerSearch}
+                onChange={(e) => setProviderSearch(e.target.value)}
+              />
+
+              {/* models.dev Providers */}
+              {loadingModelsDev ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--theme-accent)' }} />
+                  <span className="ml-2 text-xs" style={{ color: 'var(--theme-text-dim)' }}>Loading...</span>
+                </div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--theme-text-muted)' }}>
+                    From models.dev ({filteredModelsDevProviders.length})
+                  </div>
+                  {filteredModelsDevProviders.map(provider => (
+                    <button
+                      key={provider.id}
+                      onClick={() => addProviderFromModelsDev(provider)}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-left"
+                      style={{
+                        border: '1px solid var(--theme-border-light)',
+                        backgroundColor: 'var(--theme-glass-200)'
+                      }}
+                    >
+                      <ProviderIcon type="openrouter" className="w-4 h-4 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs truncate" style={{ color: 'var(--theme-text-primary)' }}>{provider.name}</div>
+                        <div className="text-[10px] truncate" style={{ color: 'var(--theme-text-dim)' }}>
+                          {Object.keys(provider.models).length} models
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  {!loadingModelsDev && modelsDevProviders.length === 0 && (
+                    <button
+                      onClick={loadModelsDevProviders}
+                      className="w-full py-2 text-xs rounded-lg"
+                      style={{ color: 'var(--theme-accent)' }}
+                    >
+                      Load models.dev providers
+                    </button>
+                  )}
+                  {!loadingModelsDev && providerSearch && filteredModelsDevProviders.length === 0 && (
+                    <p className="text-xs text-center py-2" style={{ color: 'var(--theme-text-dim)' }}>
+                      No providers found for "{providerSearch}"
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Local LLM Options */}
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)' }}>
+                  Local LLM
+                </div>
                 <button
-                  onClick={addProvider}
-                  className="flex-1 py-1.5 text-xs rounded transition-colors"
-                  style={{ backgroundColor: 'var(--color-success)', color: 'white' }}
+                  onClick={() => { setNewProviderType('ollama'); addProvider(); }}
+                  className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-left"
+                  style={{ border: '1px solid var(--theme-border-light)', backgroundColor: 'var(--theme-glass-200)' }}
                 >
-                  Add
+                  <Server className="w-4 h-4" style={{ color: 'var(--color-feature)' }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs" style={{ color: 'var(--theme-text-primary)' }}>Ollama</div>
+                    <div className="text-[10px]" style={{ color: 'var(--theme-text-dim)' }}>localhost:11434</div>
+                  </div>
                 </button>
                 <button
-                  onClick={() => setShowAddProvider(false)}
-                  className="px-3 py-1.5 text-xs rounded transition-colors"
-                  style={{ color: 'var(--theme-text-muted)' }}
+                  onClick={() => { setNewProviderType('lmstudio'); addProvider(); }}
+                  className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-left"
+                  style={{ border: '1px solid var(--theme-border-light)', backgroundColor: 'var(--theme-glass-200)' }}
                 >
-                  Cancel
+                  <Monitor className="w-4 h-4" style={{ color: 'var(--color-error)' }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs" style={{ color: 'var(--theme-text-primary)' }}>LM Studio</div>
+                    <div className="text-[10px]" style={{ color: 'var(--theme-text-dim)' }}>localhost:1234</div>
+                  </div>
                 </button>
               </div>
+
+              {/* Custom Provider */}
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)' }}>
+                  Custom
+                </div>
+                <button
+                  onClick={() => { setNewProviderType('custom'); addProvider(); }}
+                  className="w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-left"
+                  style={{ border: '1px solid var(--theme-border-light)', backgroundColor: 'var(--theme-glass-200)' }}
+                >
+                  <Cpu className="w-4 h-4" style={{ color: 'var(--color-warning)' }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs" style={{ color: 'var(--theme-text-primary)' }}>Custom Provider</div>
+                    <div className="text-[10px]" style={{ color: 'var(--theme-text-dim)' }}>Enter custom API endpoint</div>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowAddProvider(false)}
+                className="w-full py-1.5 text-xs rounded transition-colors"
+                style={{ color: 'var(--theme-text-muted)' }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
             <button
-              onClick={() => setShowAddProvider(true)}
+              onClick={() => {
+                setShowAddProvider(true);
+                if (modelsDevProviders.length === 0) {
+                  loadModelsDevProviders();
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-colors text-sm"
               style={{ color: 'var(--theme-text-muted)' }}
             >
@@ -384,17 +568,31 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
                   <Zap className="w-4 h-4" />
                   Default Model
                 </label>
-                {(selectedProvider.isLocal || selectedProvider.type === 'openrouter') && (
-                  <button
-                    onClick={fetchModels}
-                    disabled={fetchingModels}
-                    className="flex items-center gap-1.5 px-2 py-1 text-xs rounded transition-colors disabled:opacity-50"
-                    style={{ color: 'var(--theme-accent)' }}
-                  >
-                    {fetchingModels ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                    Fetch from Server
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {selectedProvider.syncEnabled && (
+                    <button
+                      onClick={syncModelsFromModelsDev}
+                      disabled={syncingModels}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs rounded transition-colors disabled:opacity-50"
+                      style={{ color: 'var(--color-success)' }}
+                      title="Sync from models.dev"
+                    >
+                      {syncingModels ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                      Sync
+                    </button>
+                  )}
+                  {(selectedProvider.isLocal || selectedProvider.type === 'openrouter') && (
+                    <button
+                      onClick={fetchModels}
+                      disabled={fetchingModels}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs rounded transition-colors disabled:opacity-50"
+                      style={{ color: 'var(--theme-accent)' }}
+                    >
+                      {fetchingModels ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                      Fetch
+                    </button>
+                  )}
+                </div>
               </div>
               <select
                 value={selectedProvider.defaultModel}
@@ -491,10 +689,23 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate" style={{ color: 'var(--theme-text-primary)' }}>{model.name}</div>
                           <div className="text-xs font-mono truncate" style={{ color: 'var(--theme-text-dim)' }}>{model.id}</div>
+                          {model.family && model.family !== 'unknown' && (
+                            <div className="text-[10px] truncate mt-0.5" style={{ color: 'var(--theme-text-dim)' }}>
+                              Family: {model.family}{model.group ? ` (${model.group})` : ''}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 ml-2 shrink-0">
                           {model.supportsVision && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--theme-ai-subtle)', color: 'var(--theme-ai-accent)' }}>V</span>
+                          )}
+                          {model.supportsToolCalling && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}>TC</span>
+                          )}
+                          {model.pricing && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--theme-glass-200)', color: 'var(--theme-text-dim)' }}>
+                              ${model.pricing.input?.toFixed(2) || '?'}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -517,13 +728,38 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
                   onChange={(checked) => updateProvider(selectedProvider.id, { toolCallingEnabled: checked })}
                 />
                 {selectedProvider.toolCallingEnabled && (
-                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-light)' }}>
+                  <div className="mt-3 pt-3 space-y-3" style={{ borderTop: '1px solid var(--theme-border-light)' }}>
                     <SettingsToggle
                       label="Allow Tool Writes"
                       description="Allow tools to modify project files"
                       checked={selectedProvider.allowToolWrites || false}
                       onChange={(checked) => updateProvider(selectedProvider.id, { allowToolWrites: checked })}
                     />
+                    <SettingsToggle
+                      label="Sync with models.dev"
+                      description="Sync model metadata and capabilities"
+                      checked={selectedProvider.syncEnabled || false}
+                      onChange={(checked) => updateProvider(selectedProvider.id, { syncEnabled: checked })}
+                    />
+                    {selectedProvider.syncEnabled && (
+                      <div className="pl-4">
+                        <label className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+                          models.dev API Key (optional)
+                        </label>
+                        <input
+                          type="password"
+                          className="w-full mt-1 px-3 py-1.5 rounded text-sm"
+                          style={{
+                            backgroundColor: 'var(--theme-glass-200)',
+                            border: '1px solid var(--theme-border-light)',
+                            color: 'var(--theme-text)',
+                          }}
+                          placeholder="Premium API key for enhanced sync"
+                          value={selectedProvider.syncApiKey || ''}
+                          onChange={(e) => updateProvider(selectedProvider.id, { syncApiKey: e.target.value })}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
