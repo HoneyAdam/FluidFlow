@@ -204,13 +204,8 @@ ${prompt}
           {
             prompt: finalPrompt,
             systemInstruction: systemInstruction + techStackInstruction,
-            responseFormat: 'json',
             images: images.length > 0 ? images : undefined,
             debugCategory: 'quick-edit',
-            responseSchema:
-              activeProvider?.type && supportsAdditionalProperties(activeProvider.type)
-                ? FILE_GENERATION_SCHEMA
-                : undefined,
             // Tool calling
             tools: PROJECT_TOOLS,
             toolExecutor,
@@ -261,35 +256,8 @@ ${prompt}
           return true;
         }
 
-        // Fallback: Parse JSON response if no tool calling was used
-        const { safeParseAIResponse } = await import('../utils/cleanCode');
-        const rawResponse = response.text || '';
-
-        const parsed = safeParseAIResponse<{
-          files?: Record<string, string>;
-          explanation?: string;
-        }>(rawResponse);
-
-        if (parsed?.files && Object.keys(parsed.files).length > 0) {
-          const newFiles = { ...files, ...parsed.files };
-
-          const assistantMessage: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            timestamp: Date.now(),
-            explanation: parsed.explanation || `🎯 Modified element: ${targetSelector}`,
-            files: parsed.files,
-            fileChanges: calculateFileChanges(files, newFiles),
-            snapshotFiles: { ...files },
-            model: currentModel,
-            provider: providerName,
-            tokenUsage: createTokenUsage(response?.usage, undefined, rawResponse, parsed.files),
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-
-          reviewChange(`Edit: ${element.ffId || element.tagName}`, newFiles);
-        }
-
+        // Tool calling succeeded but no files written - this is unexpected
+        console.warn('[InspectEdit] Tool calling completed but no files were written');
         return true;
       } catch (error) {
         console.error('[InspectEdit] Error:', error);

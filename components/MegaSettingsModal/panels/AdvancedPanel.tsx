@@ -1,32 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Settings2, Check, Info, FlaskConical } from 'lucide-react';
+import { Settings2, Check, Info } from 'lucide-react';
 import { SettingsSection } from '../shared';
-import { SettingsSelect } from '../shared/SettingsSelect';
-import { getFluidFlowConfig, type AIResponseFormat } from '../../../services/fluidflowConfig';
+import { getFluidFlowConfig } from '../../../services/fluidflowConfig';
 
 export const AdvancedPanel: React.FC = () => {
   const [editingRules, setEditingRules] = useState(false);
   const [rulesInput, setRulesInput] = useState('');
   const [savedRules, setSavedRules] = useState('');
 
-  // AI Response Format - default to marker
-  const [responseFormat, setResponseFormat] = useState<AIResponseFormat>('marker');
-
   useEffect(() => {
     const config = getFluidFlowConfig();
     const rules = config.getRules();
     setRulesInput(rules);
     setSavedRules(rules);
-
-    // Load response format
-    setResponseFormat(config.getResponseFormat());
   }, []);
-
-  const handleResponseFormatChange = (format: string) => {
-    const config = getFluidFlowConfig();
-    config.setResponseFormat(format as AIResponseFormat);
-    setResponseFormat(format as AIResponseFormat);
-  };
 
   const saveRules = () => {
     const config = getFluidFlowConfig();
@@ -145,103 +132,6 @@ export const AdvancedPanel: React.FC = () => {
               <div className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--theme-text-dim)' }}>{example.rule.split('\n')[0]}</div>
             </button>
           ))}
-        </div>
-      </SettingsSection>
-
-      {/* AI Response Format */}
-      <SettingsSection
-        title="AI Response Format"
-        description="Experimental: Choose how AI returns generated code"
-      >
-        {/* Experimental Badge */}
-        <div className="flex items-start gap-3 p-3 rounded-lg mb-4" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
-          <FlaskConical className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }} />
-          <div className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>
-            <span className="font-medium" style={{ color: 'var(--color-warning)' }}>Experimental Feature:</span> The marker format
-            is an alternative to JSON that may improve streaming reliability. Both formats are
-            automatically detected and parsed. Use this to A/B test which works better for your use case.
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <SettingsSelect
-            label="Response Format"
-            description="How AI should structure code in responses"
-            value={responseFormat}
-            options={[
-              {
-                value: 'json',
-                label: 'JSON (Default)',
-                description: 'Standard JSON format with escaped content. Supports diff mode.'
-              },
-              {
-                value: 'marker',
-                label: 'Marker (Experimental)',
-                description: 'HTML-style markers, no escaping needed. Diff mode disabled.'
-              },
-              {
-                value: 'tools',
-                label: 'Tool Calling',
-                description: 'AI uses tools directly to create/modify files'
-              }
-            ]}
-            onChange={handleResponseFormatChange}
-          />
-
-          {/* Marker format note */}
-          {responseFormat === 'marker' && (
-            <div className="flex items-start gap-2 p-2 rounded text-xs" style={{ backgroundColor: 'var(--color-info-subtle)', border: '1px solid var(--color-info-border)', color: 'var(--theme-text-muted)' }}>
-              <Info className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--color-info)' }} />
-              <span>
-                <span style={{ color: 'var(--color-info)' }}>Note:</span> Diff mode (search/replace) is JSON-only.
-                With marker format, updates use full file content.
-              </span>
-            </div>
-          )}
-
-          {/* Tool calling format note */}
-          {responseFormat === 'tools' && (
-            <div className="flex items-start gap-2 p-2 rounded text-xs" style={{ backgroundColor: 'var(--color-info-subtle)', border: '1px solid var(--color-info-border)', color: 'var(--theme-text-muted)' }}>
-              <Info className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--color-info)' }} />
-              <span>
-                <span style={{ color: 'var(--color-info)' }}>Note:</span> Tool calling requires a provider with tool calling enabled.
-                AI will use file operation tools directly instead of returning code in the response.
-              </span>
-            </div>
-          )}
-
-          {/* Format Details */}
-          <div className="grid grid-cols-2 gap-3">
-            <div
-              className="p-3 rounded-lg"
-              style={{
-                backgroundColor: responseFormat === 'json' ? 'var(--color-info-subtle)' : 'var(--theme-glass-100)',
-                border: responseFormat === 'json' ? '1px solid var(--color-info-border)' : '1px solid var(--theme-border-light)'
-              }}
-            >
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--theme-text-primary)' }}>JSON Format</div>
-              <pre className="text-[10px] font-mono overflow-hidden" style={{ color: 'var(--theme-text-dim)' }}>
-{`// PLAN: {"create":[...]}
-{"files":{"src/App.tsx":"..."}}`}
-              </pre>
-            </div>
-            <div
-              className="p-3 rounded-lg"
-              style={{
-                backgroundColor: responseFormat === 'marker' ? 'var(--color-info-subtle)' : 'var(--theme-glass-100)',
-                border: responseFormat === 'marker' ? '1px solid var(--color-info-border)' : '1px solid var(--theme-border-light)'
-              }}
-            >
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--theme-text-primary)' }}>Marker Format</div>
-              <pre className="text-[10px] font-mono overflow-hidden" style={{ color: 'var(--theme-text-dim)' }}>
-{`<!-- PLAN -->
-create: src/App.tsx
-<!-- FILE:src/App.tsx -->
-...code...
-<!-- /FILE:src/App.tsx -->`}
-              </pre>
-            </div>
-          </div>
         </div>
       </SettingsSection>
     </div>
