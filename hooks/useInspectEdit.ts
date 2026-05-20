@@ -209,7 +209,7 @@ ${prompt}
             // Tool calling
             tools: PROJECT_TOOLS,
             toolExecutor,
-            toolChoice: 'auto',
+            toolChoice: 'required',
             allowToolWrites: activeProvider?.allowToolWrites ?? false,
             projectId,
           },

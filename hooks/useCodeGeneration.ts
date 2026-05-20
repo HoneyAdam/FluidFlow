@@ -218,7 +218,7 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
         toolExecutor: projectId
           ? createProjectToolExecutor(projectId, activeProvider?.allowToolWrites ?? true)
           : undefined,
-        toolChoice: 'auto', // Use 'auto' to let model decide when to call tools
+        toolChoice: 'required', // Force tool calls on the initial request; agentic follow-ups switch to 'auto'
         allowToolWrites: activeProvider?.allowToolWrites ?? false,
         projectId,
       };
