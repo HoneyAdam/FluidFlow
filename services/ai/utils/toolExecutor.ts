@@ -15,7 +15,7 @@ import { formatToolError } from './toolUtils';
 export const PROJECT_TOOLS: AIToolDefinition[] = [
   {
     name: 'read_file',
-    description: 'Read the contents of a file from the project',
+    description: 'Read the current contents of a file. Always call this BEFORE write_file on any existing file so you can preserve working code. Do not call more than twice on the same path.',
     parameters: {
       type: 'object',
       properties: {
@@ -26,19 +26,19 @@ export const PROJECT_TOOLS: AIToolDefinition[] = [
   },
   {
     name: 'write_file',
-    description: 'Write content to a file in the project',
+    description: 'Write the FULL content of a file. For EXISTING files you must first call read_file and then write the merged result — never blind-overwrite. For NEW files you may write directly. Provide the complete file content, not a diff.',
     parameters: {
       type: 'object',
       properties: {
         path: { type: 'string', description: 'Relative path to the file' },
-        content: { type: 'string', description: 'Content to write' }
+        content: { type: 'string', description: 'Full file content (not a diff)' }
       },
       required: ['path', 'content']
     }
   },
   {
     name: 'delete_file',
-    description: 'Delete a file from the project',
+    description: 'Delete a file from the project. Use only when the user explicitly asked to remove the file.',
     parameters: {
       type: 'object',
       properties: {
@@ -49,7 +49,7 @@ export const PROJECT_TOOLS: AIToolDefinition[] = [
   },
   {
     name: 'list_files',
-    description: 'List all files in the project',
+    description: 'List all files in the project. Call this at most ONCE per task to understand the project structure.',
     parameters: {
       type: 'object',
       properties: {

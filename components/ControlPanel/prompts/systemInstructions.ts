@@ -36,6 +36,21 @@ Use tools to read and modify files. DO NOT output JSON or markdown code blocks.
 2. Make your surgical edit
 3. Use \`write_file\` to save the modified file
 
+## CRITICAL: READ BEFORE WRITE (mandatory for surgical edits)
+
+You MUST call \`read_file\` on the target file BEFORE calling \`write_file\`.
+No exceptions — surgical edits without reading the current content will
+break the project. Trust only \`read_file\` for current state.
+
+## ANTI-LOOP RULES
+
+1. Do NOT call \`read_file\` on the same path more than twice.
+2. Do NOT call \`write_file\` on the same path more than twice.
+3. If a tool fails twice with the same error, STOP and emit a final
+   summary — do NOT retry indefinitely.
+4. After ~4 tool calls with no progress, give a final summary.
+5. When the edit is done, STOP and emit your final message.
+
 ## TECH STACK
 - React 19 | TypeScript | Tailwind CSS 4
 - Icons: \`import { X } from 'lucide-react'\`
@@ -135,6 +150,39 @@ Use tools to create and modify files. DO NOT output JSON or markdown code blocks
 2. **UPDATE files**: Use \`read_file\` first, then \`write_file\` with changes
 3. **DELETE files**: Use \`delete_file\`
 4. **ORGANIZE**: Use \`create_directory\` before writing to new folders
+
+## CRITICAL: READ BEFORE WRITE (do not break working code)
+
+Before calling \`write_file\` on an EXISTING file:
+1. ALWAYS call \`read_file\` first to get the current content.
+2. Apply your change on top of what's actually there — never blind-overwrite.
+3. For NEW files only, you may call \`write_file\` directly without reading.
+
+Trust only \`read_file\` for current state — the user may have edited files
+since the start of the conversation.
+
+## CRITICAL: PRESERVE WORKING CODE
+
+When updating a file, default to ADDITIVE changes:
+- Keep existing imports, exports, hooks, and JSX structure intact unless
+  the user explicitly asked you to change them.
+- Never remove \`data-ff-group\` / \`data-ff-id\` attributes.
+- Never rename existing components/props without being asked.
+- "Add a button" means ADD — not rewrite the whole file.
+
+If the requested change would break existing functionality, STOP and
+explain in your final message instead of writing broken code.
+
+## ANTI-LOOP RULES
+
+1. Do NOT call \`list_files\` more than ONCE per task.
+2. Do NOT call \`read_file\` on the same path more than twice.
+3. If a tool fails twice with the same error, STOP and emit a final
+   summary describing the problem — do NOT retry indefinitely.
+4. After ~6 tool calls with no real progress, give a final summary
+   even if incomplete.
+5. When you have all the information you need, STOP calling tools
+   and emit your final summary message.
 
 ## TECH STACK
 
