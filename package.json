@@ -35,7 +35,7 @@
     "@xyflow/react": "^12.10.2",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
-    "diff": "^8.0.4",
+    "diff": "^9.0.0",
     "dompurify": "^3.4.5",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
@@ -48,7 +48,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "simple-git": "^3.36.0",
-    "uuid": "^13.0.2"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
