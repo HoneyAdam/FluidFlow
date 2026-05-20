@@ -1,15 +1,9 @@
 /**
  * Ollama Tool Calling - Integration Test
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OllamaProvider } from '../../../services/ai/providers/ollama';
 import { ProviderConfig } from '../../../services/ai/types';
-
-// Mock fetch - preserve existing fetch or use no-op
-const originalFetch = global.fetch;
-const noOpFetch: typeof fetch = (() => Promise.resolve()) as unknown as typeof fetch;
-global.fetch = originalFetch || noOpFetch;
-const mockFetch = global.fetch;
 
 describe('OllamaProvider Tool Calling', () => {
   let provider: OllamaProvider;
@@ -56,7 +50,8 @@ describe('OllamaProvider Tool Calling', () => {
         eval_count: 5,
       }),
     };
-    global.fetch = async () => mockResponse as Response;
+    const fetchSpy = vi.fn(async (..._args: unknown[]) => mockResponse as Response);
+    global.fetch = fetchSpy as unknown as typeof fetch;
 
     const toolExecutor = async () => ({
       success: true,
@@ -65,7 +60,7 @@ describe('OllamaProvider Tool Calling', () => {
       name: 'write_file',
     });
 
-    const response = await provider.generate({
+    await provider.generate({
       prompt: 'Create a file',
       responseFormat: 'text',
       tools: [{
@@ -77,12 +72,14 @@ describe('OllamaProvider Tool Calling', () => {
     }, 'llama3');
 
     // First call should be to /api/chat (with tools)
-    expect(mockFetch).toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalled();
+    const firstCallUrl = String(fetchSpy.mock.calls[0]?.[0] ?? '');
+    expect(firstCallUrl).toContain('/api/chat');
   });
 
   it('should detect and execute tool calls', async () => {
     let callCount = 0;
-    global.fetch = async (url: string) => {
+    global.fetch = async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         // First call returns tool calls
@@ -113,7 +110,13 @@ describe('OllamaProvider Tool Calling', () => {
     };
 
     const toolExecutor = async (name: string, args: Record<string, unknown>) => {
-      return { success: true, result: { path: args.path, written: true }, id: '1', name };
+      return {
+        success: true,
+        result: { path: args.path, written: true },
+        id: '1',
+        name,
+        filesWritten: [String(args.path)],
+      };
     };
 
     const response = await provider.generate({
