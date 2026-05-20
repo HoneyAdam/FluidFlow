@@ -33,12 +33,16 @@ import { parseToolArguments, formatToolError } from '../../utils/toolUtils';
 // Types (duplicated here to avoid circular imports)
 // ============================================================================
 
+type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-   
+  content: string | ContentPart[];
+
   tool_call_id?: string;
-   
+
   name?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tool_calls?: any[];
@@ -453,8 +457,20 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       }
     }
 
-    // Add current prompt
-    messages.push({ role: 'user', content: request.prompt });
+    // Add current prompt — wrap as multi-part content when images are attached
+    if (request.images && request.images.length > 0) {
+      const parts: ContentPart[] = [];
+      for (const img of request.images) {
+        parts.push({
+          type: 'image_url',
+          image_url: { url: `data:${img.mimeType};base64,${img.data}` },
+        });
+      }
+      parts.push({ type: 'text', text: request.prompt });
+      messages.push({ role: 'user', content: parts });
+    } else {
+      messages.push({ role: 'user', content: request.prompt });
+    }
 
     return messages;
   }
