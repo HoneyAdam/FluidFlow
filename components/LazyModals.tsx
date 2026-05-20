@@ -7,6 +7,7 @@
  * Bundle size savings: ~80KB from initial load
  */
 
+/* eslint-disable react-refresh/only-export-components -- centralized lazy modal registry: trades HMR for single source of truth */
 import React, { lazy, Suspense, ComponentType } from 'react';
 import { Loader2 } from 'lucide-react';
 

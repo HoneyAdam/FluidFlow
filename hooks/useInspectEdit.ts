@@ -222,13 +222,13 @@ ${prompt}
         });
 
         // If tool calling was used and files were written, handle them directly
-        if (response.filesWritten && response.filesWritten.length > 0) {
+        if (response.filesWritten && response.filesWritten.length > 0 && projectId) {
           // Files were written via tool calling - we need to read them back
           const { projectApi } = await import('../services/projectApi');
           const newFiles: FileSystem = { ...files };
           for (const filePath of response.filesWritten) {
             try {
-              const content = await projectApi.readFile(projectId!, filePath);
+              const content = await projectApi.readFile(projectId, filePath);
               newFiles[filePath] = content;
             } catch (e) {
               console.warn(`[InspectEdit] Could not read file ${filePath}:`, e);
