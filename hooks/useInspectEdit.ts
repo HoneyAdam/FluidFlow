@@ -10,7 +10,6 @@ import { FileSystem, ChatMessage } from '../types';
 import { generateContextForPrompt, generateCodeMap } from '../utils/codemap';
 import { debugLog } from './useDebugStore';
 import { getProviderManager } from '../services/ai';
-import { FILE_GENERATION_SCHEMA, supportsAdditionalProperties } from '../services/ai/utils/schemas';
 import { InspectedElement, EditScope } from '../components/PreviewPanel/ComponentInspector';
 import { buildInspectEditInstruction } from '../components/ControlPanel/prompts';
 import { calculateFileChanges, createTokenUsage } from '../utils/generationUtils';

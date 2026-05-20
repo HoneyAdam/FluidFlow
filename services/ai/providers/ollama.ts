@@ -426,7 +426,7 @@ export class OllamaProvider implements AIProvider {
     const decoder = new TextDecoder();
     let buffer = '';
     let fullText = '';
-    let accumulatedToolCalls: Array<{ name: string; arguments: string }> = [];
+    const accumulatedToolCalls: Array<{ name: string; arguments: string }> = [];
     let hasToolCalls = false;
 
     try {

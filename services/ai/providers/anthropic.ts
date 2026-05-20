@@ -420,7 +420,7 @@ export class AnthropicProvider implements AIProvider {
     const decoder = new TextDecoder();
     let buffer = '';
     let fullText = '';
-    let accumulatedToolCalls: Map<string, { name: string; arguments: string }> = new Map();
+    const accumulatedToolCalls: Map<string, { name: string; arguments: string }> = new Map();
     let currentToolId: string | null = null;
     let currentToolName: string | null = null;
     let toolCallsComplete = false;

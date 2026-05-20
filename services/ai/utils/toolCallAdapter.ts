@@ -5,7 +5,7 @@
  * This adapter provides a unified interface for tool calling in streaming mode.
  */
 
-import type { StreamChunk, AIToolDefinition, ToolExecutor, ToolResult } from '../types';
+import type { AIToolDefinition, ToolResult } from '../types';
 
 // ============================================================================
 // Adapter Types

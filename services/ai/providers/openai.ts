@@ -1,7 +1,6 @@
 import { AIProvider, ProviderConfig, GenerationRequest, GenerationResponse, StreamChunk, ModelOption } from '../types';
 import { fetchWithTimeout, TIMEOUT_TEST_CONNECTION, TIMEOUT_GENERATE, TIMEOUT_LIST_MODELS } from '../utils/fetchWithTimeout';
 import { throwIfNotOk } from '../utils/errorHandling';
-import { createEstimatedUsage } from '../utils/streamParser';
 import { OpenAICompatibleProvider } from './base/OpenAICompatibleProvider';
 
 type ContentPart =

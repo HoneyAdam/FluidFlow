@@ -68,7 +68,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       request: GenerationRequest,
       currentModel: string,
       genRequestId: string,
-      genStartTime: number,
+      _genStartTime: number,
     ): Promise<StreamingResult> => {
       const manager = getProviderManager();
       fullTextRef.current = '';
