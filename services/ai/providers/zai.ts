@@ -120,8 +120,6 @@ export class ZAIProvider implements AIProvider {
           parameters: t.parameters || { type: 'object', properties: {} },
         },
       }));
-      // Use 'auto' to let model decide when to call tools
-      requestParams.tool_choice = 'auto';
     }
 
     try {
