@@ -37,6 +37,75 @@ type ContentPart =
   | { type: 'text'; text: string }
   | { type: 'image_url'; image_url: { url: string } };
 
+// OpenAI Tool Calling — wire-format types.
+// Some providers send tool name/arguments at the top level instead of under
+// `function`, so both shapes are optional. Callers must defensively read both.
+interface OpenAIToolCallFunction {
+  name?: string;
+  arguments?: string;
+}
+
+export interface OpenAIToolCall {
+  id?: string;
+  type?: 'function';
+  function?: OpenAIToolCallFunction;
+  // Fallback shape used by some providers
+  name?: string;
+  arguments?: string;
+}
+
+interface OpenAIToolFunction {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface OpenAITool {
+  type: 'function';
+  function: OpenAIToolFunction;
+}
+
+export type OpenAIToolChoice =
+  | 'auto'
+  | 'none'
+  | 'required'
+  | { type: 'function'; function: { name: string } };
+
+export interface OpenAIResponseFormat {
+  type: 'json_object' | 'json_schema' | 'text';
+  json_schema?: {
+    name: string;
+    strict?: boolean;
+    schema: Record<string, unknown>;
+  };
+}
+
+interface OpenAIResponseMessage {
+  role?: 'assistant' | 'system' | 'user' | 'tool';
+  content?: string | null;
+  tool_calls?: OpenAIToolCall[];
+  name?: string;
+  tool_call_id?: string;
+}
+
+interface OpenAIChoice {
+  index?: number;
+  message?: OpenAIResponseMessage;
+  finish_reason?: string;
+  delta?: Partial<OpenAIResponseMessage>;
+}
+
+export interface OpenAICompletionResponse {
+  id?: string;
+  model?: string;
+  choices?: OpenAIChoice[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+}
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string | ContentPart[];
@@ -44,8 +113,7 @@ interface ChatMessage {
   tool_call_id?: string;
 
   name?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tool_calls?: any[];
+  tool_calls?: OpenAIToolCall[];
 }
 
 interface ChatCompletionRequest {
@@ -55,12 +123,9 @@ interface ChatCompletionRequest {
   temperature?: number;
   stream?: boolean;
   stream_options?: { include_usage: boolean };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  response_format?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tools?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tool_choice?: any;
+  response_format?: OpenAIResponseFormat;
+  tools?: OpenAITool[];
+  tool_choice?: OpenAIToolChoice;
 }
 
 // ============================================================================
@@ -506,7 +571,10 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       console.log(`[OpenAICompatibleProvider] Prepared ${preparedTools.tools.length} tools for request`);
       body.tools = preparedTools.tools;
       if (options.toolChoice) {
-        body.tool_choice = options.toolChoice;
+        // Normalize { type: 'function', name } shape to OpenAI spec { type: 'function', function: { name } }
+        body.tool_choice = typeof options.toolChoice === 'object'
+          ? { type: 'function', function: { name: options.toolChoice.name } }
+          : options.toolChoice;
       }
     }
 
@@ -552,18 +620,32 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
   // ========================================================================
 
   /**
+   * Normalize a wire-format OpenAIResponseMessage (with optional role/content)
+   * into the internal ChatMessage shape (required role, defined content).
+   */
+  private toChatMessage(m: OpenAIResponseMessage): ChatMessage {
+    const msg: ChatMessage = {
+      role: m.role ?? 'assistant',
+      content: m.content ?? '',
+    };
+    if (m.tool_calls) msg.tool_calls = m.tool_calls;
+    if (m.name) msg.name = m.name;
+    if (m.tool_call_id) msg.tool_call_id = m.tool_call_id;
+    return msg;
+  }
+
+  /**
    * Convert AIToolDefinition[] to OpenAI tools format
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected prepareToolsForRequest(tools?: AIToolDefinition[]): { tools: any[]; toolMap: Map<string, string> } | null {
+  protected prepareToolsForRequest(tools?: AIToolDefinition[]): { tools: OpenAITool[]; toolMap: Map<string, string> } | null {
     if (!tools || tools.length === 0) return null;
 
     const toolMap = new Map<string, string>();
-    const openaiTools = tools.map((tool) => {
+    const openaiTools: OpenAITool[] = tools.map((tool) => {
       const name = tool.name;
       toolMap.set(name, name);
       return {
-        type: 'function',
+        type: 'function' as const,
         function: {
           name: tool.name,
           description: tool.description || '',
@@ -685,12 +767,12 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
    * Handle tool calls in a response, execute them, and return updated messages
    */
   protected async handleToolCalls(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    responseData: any,
+    responseData: OpenAICompletionResponse,
     toolExecutor?: ToolExecutor,
     maxIterations = 5
   ): Promise<{ messages: ChatMessage[]; text: string; finishReason?: string }> {
-    const messages = [...(responseData.choices?.[0]?.message ? [responseData.choices[0].message] : [])];
+    const initialMessage = responseData.choices?.[0]?.message;
+    const messages: ChatMessage[] = initialMessage ? [this.toChatMessage(initialMessage)] : [];
     let text = responseData.choices?.[0]?.message?.content || '';
     let finishReason = responseData.choices?.[0]?.finish_reason;
 
@@ -727,7 +809,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       const followUpData = await followUpResponse.json();
       const followUpMessage = followUpData.choices?.[0]?.message;
       if (followUpMessage) {
-        messages.push(followUpMessage);
+        messages.push(this.toChatMessage(followUpMessage));
         text = followUpMessage.content || text;
         finishReason = followUpData.choices?.[0]?.finish_reason;
       }
@@ -742,14 +824,13 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
    * Handle tool calls with results tracking (files written)
    */
   protected async handleToolCallsWithResults(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    responseData: any,
+    responseData: OpenAICompletionResponse,
     toolExecutor?: ToolExecutor,
     maxIterations = 5,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools?: any[]
+    tools?: OpenAITool[]
   ): Promise<{ messages: ChatMessage[]; text: string; finishReason?: string; filesWritten: string[] }> {
-    const messages = [...(responseData.choices?.[0]?.message ? [responseData.choices[0].message] : [])];
+    const initialMessage = responseData.choices?.[0]?.message;
+    const messages: ChatMessage[] = initialMessage ? [this.toChatMessage(initialMessage)] : [];
     let text = responseData.choices?.[0]?.message?.content || '';
     let finishReason = responseData.choices?.[0]?.finish_reason;
     const filesWritten: string[] = [];
@@ -796,7 +877,7 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
       const followUpData = await followUpResponse.json();
       const followUpMessage = followUpData.choices?.[0]?.message;
       if (followUpMessage) {
-        messages.push(followUpMessage);
+        messages.push(this.toChatMessage(followUpMessage));
         text = followUpMessage.content || text;
         finishReason = followUpData.choices?.[0]?.finish_reason;
       }
