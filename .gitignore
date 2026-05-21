@@ -36,3 +36,9 @@ bug_*.*
 coverage/
 
 .dfmt/
+
+# Local HTTPS dev certificates (Vite basic-ssl writes here)
+.certs/
+
+# Security scan output
+security-report/
