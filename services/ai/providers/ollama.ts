@@ -85,7 +85,7 @@ export class OllamaProvider implements AIProvider {
     }
 
     // Use /api/generate for simple requests (no tools)
-    let prompt = '';
+    let prompt: string;
 
     // Include conversation history in prompt
     if (request.conversationHistory && request.conversationHistory.length > 0) {
@@ -313,7 +313,7 @@ export class OllamaProvider implements AIProvider {
     }
 
     // Use /api/generate for simple streaming (no tools)
-    let prompt = '';
+    let prompt: string;
 
     if (request.conversationHistory && request.conversationHistory.length > 0) {
       const historyText = request.conversationHistory

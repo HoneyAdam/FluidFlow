@@ -94,7 +94,6 @@ export class BatchGenerator {
     const parseResults: ParseResult[] = [];
     const failedFiles: string[] = [];
     const recoveredFiles: string[] = [];
-    let currentBatchNum = 0;
     const totalBatches = Math.ceil(allFiles.length / opts.maxFilesPerBatch);
 
     console.log(`[BatchGenerator] Starting batch generation: ${allFiles.length} files in ${totalBatches} batches`);
@@ -135,7 +134,7 @@ export class BatchGenerator {
     if (firstBatchResult.files) {
       Object.assign(completedFiles, firstBatchResult.files);
     }
-    currentBatchNum = 1;
+    const currentBatchNum = 1;
 
     // Check if we need more batches
     const remainingFiles = firstBatchResult.remainingFiles ||

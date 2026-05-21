@@ -304,7 +304,7 @@ export async function generateStyleGuide(
   try {
     parsed = JSON.parse(jsonMatch[0]);
   } catch (e) {
-    throw new Error(`Failed to parse style guide JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`);
+    throw new Error(`Failed to parse style guide JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`, { cause: e });
   }
   onProgress?.('Style guide complete!');
 
@@ -381,7 +381,7 @@ export async function generateProjectSummary(
   try {
     parsed = JSON.parse(jsonMatch[0]);
   } catch (e) {
-    throw new Error(`Failed to parse project summary JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`);
+    throw new Error(`Failed to parse project summary JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`, { cause: e });
   }
   onProgress?.('Project summary complete!');
 

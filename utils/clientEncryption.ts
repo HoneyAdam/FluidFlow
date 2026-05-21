@@ -147,7 +147,7 @@ export async function encrypt(plaintext: string): Promise<string> {
     // BUG-003 fix: Log detailed error and re-throw for unexpected failures
     // This ensures callers know encryption failed rather than silently storing plaintext
     console.error('[Encryption] Client-side encryption failed:', error);
-    throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`, { cause: error });
   }
 }
 
@@ -203,7 +203,7 @@ export async function decrypt(encryptedValue: string): Promise<string> {
     // BUG-003 fix: Log detailed error and throw instead of returning empty string
     // This prevents data loss and makes failures explicit
     console.error('[Encryption] Client-side decryption failed:', error);
-    throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`, { cause: error });
   }
 }
 

@@ -22,8 +22,14 @@ export default tseslint.config(
       'react-refresh': reactRefresh,
     },
     rules: {
-      // React specific rules
-      ...reactHooks.configs.recommended.rules,
+      // React Hooks: keep only the v5-era stable rules. eslint-plugin-react-hooks
+      // v6+ ships additional React Compiler rules (purity, set-state-in-effect,
+      // refs, immutability, static-components, preserve-manual-memoization,
+      // error-boundaries) that flag legitimate-but-flagged patterns across the
+      // codebase. Adopting them is a multi-file refactor tracked separately;
+      // for now we explicitly enable the same surface area as the v5 preset.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

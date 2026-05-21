@@ -119,7 +119,7 @@ export function parseMultiFileResponse(
     if (e instanceof Error) {
       throw e;
     }
-    throw new Error('Failed to parse model response. Try a different model.');
+    throw new Error('Failed to parse model response. Try a different model.', { cause: e });
   }
 }
 

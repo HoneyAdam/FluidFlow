@@ -422,7 +422,9 @@ export class AnthropicProvider implements AIProvider {
     let fullText = '';
     const accumulatedToolCalls: Map<string, { name: string; arguments: string }> = new Map();
     let currentToolId: string | null = null;
-    let currentToolName: string | null = null;
+    // currentToolName is assigned alongside currentToolId in the tool_use branch
+    // and only read in that same branch, so it doesn't need an initial value.
+    let currentToolName: string;
     let toolCallsComplete = false;
 
     try {

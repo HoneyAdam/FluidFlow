@@ -268,7 +268,6 @@ export function parseJsonResponse<T = unknown>(
 
     // Fix trailing commas (common LLM mistake)
     fixedText = fixedText.replace(/,(\s*[}\]])/g, '$1');
-    neededCleanup = true;
 
     // Fix unquoted keys (rare but possible)
     fixedText = fixedText.replace(/(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');

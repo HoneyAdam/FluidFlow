@@ -74,7 +74,6 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       fullTextRef.current = '';
       let fullText = '';
       let chunkCount = 0;
-      let streamResponse: GenerationResponse | null = null;
 
       // Create initial stream log entry
       const streamLogId = `stream-${genRequestId}`;
@@ -92,7 +91,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
       });
 
       // Use streaming API - tool calling handles file operations
-      streamResponse = await manager.generateStream(
+      const streamResponse: GenerationResponse | null = await manager.generateStream(
         request,
         (chunk) => {
           const chunkText = chunk.text || '';

@@ -82,7 +82,7 @@ export async function apiCall<T>(
 
       // Don't retry on abort (timeout) or if it's the last attempt
       if (lastError.name === 'AbortError') {
-        throw new Error(`Request timeout after ${timeout || DEFAULT_TIMEOUT}ms`);
+        throw new Error(`Request timeout after ${timeout || DEFAULT_TIMEOUT}ms`, { cause: error });
       }
 
       if (attempt < retries) {

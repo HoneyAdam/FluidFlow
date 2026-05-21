@@ -225,7 +225,7 @@ export class ZAIProvider implements AIProvider {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[ZAI] Generate failed:', message);
-      throw new Error(`ZAI API error: ${message}`);
+      throw new Error(`ZAI API error: ${message}`, { cause: error });
     }
   }
 
@@ -427,7 +427,7 @@ export class ZAIProvider implements AIProvider {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[ZAI] Stream failed:', message);
-      throw new Error(`ZAI API error: ${message}`);
+      throw new Error(`ZAI API error: ${message}`, { cause: error });
     }
   }
 }
