@@ -2,8 +2,9 @@ import React from 'react';
 import {
   Search, Loader2, Check, AlertTriangle, Lock, Globe,
   Clock, RefreshCw, Download, FolderGit, ChevronRight,
-  Plus, Link2, Github,
+  Plus, Link2,
 } from 'lucide-react';
+import { Github } from '../icons/BrandIcons';
 import { formatDate } from './utils';
 import type { GitHubRepo } from './types';
 import type { UseGitHubModalReturn } from './useGitHubModal';

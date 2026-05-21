@@ -7,9 +7,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Github, X, Search, Loader2, Check, AlertTriangle, Lock, Globe,
+  X, Search, Loader2, Check, AlertTriangle, Lock, Globe,
   Clock, RefreshCw, Download, FolderGit, ExternalLink, ChevronRight
 } from 'lucide-react';
+import { Github } from './icons/BrandIcons';
 import { githubApi } from '@/services/api/github';
 import { settingsApi } from '@/services/api/settings';
 import type { ProjectMeta } from '@/services/projectApi';

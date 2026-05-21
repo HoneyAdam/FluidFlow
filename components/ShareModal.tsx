@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
-import { Link2, Copy, Check, Twitter, Linkedin, Mail, Loader2 } from 'lucide-react';
+import { Link2, Copy, Check, Mail, Loader2 } from 'lucide-react';
+import { Twitter, Linkedin } from './icons/BrandIcons';
 import { FileSystem } from '../types';
 import { BaseModal, ModalContent } from './shared/BaseModal';
 

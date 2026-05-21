@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   FolderOpen, Plus, Trash2, Copy, Clock, GitBranch, CloudOff, RefreshCw,
-  Search, MoreVertical, Check, AlertCircle, FolderPlus, Loader2, Github
+  Search, MoreVertical, Check, AlertCircle, FolderPlus, Loader2
 } from 'lucide-react';
+import { Github } from './icons/BrandIcons';
 import type { ProjectMeta } from '@/services/projectApi';
 import { BaseModal, ConfirmModal } from './shared/BaseModal';
 import { GitHubImportModal } from './GitHubImportModal';

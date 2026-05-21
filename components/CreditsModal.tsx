@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X as XIcon, Github, Mail, Star, ExternalLink, Heart, Sparkles, Code, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X as XIcon, Mail, Star, ExternalLink, Heart, Sparkles, Code, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Github } from './icons/BrandIcons';
 import { APP_VERSION } from '../services/version';
 import { STORAGE_KEYS } from '../constants/storage';
 

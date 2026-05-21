@@ -9,9 +9,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TOAST_DURATION_MS } from '../../constants/timing';
 import {
   FolderOpen, Plus, Trash2, Copy, Clock, GitBranch, RefreshCw,
-  Search, MoreVertical, Check, AlertCircle, FolderPlus, Loader2, Github,
+  Search, MoreVertical, Check, AlertCircle, FolderPlus, Loader2,
   FolderGit, Upload, Pencil, X, Package, Sparkles, ZoomIn
 } from 'lucide-react';
+import { Github } from '../icons/BrandIcons';
 import type { ProjectMeta } from '@/services/projectApi';
 import { projectApi } from '@/services/projectApi';
 import { githubApi } from '@/services/api/github';

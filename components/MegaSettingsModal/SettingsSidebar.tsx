@@ -1,8 +1,9 @@
 import React from 'react';
 import {
   Cpu, MessageSquare, Package, FolderOpen, Code,
-  Palette, Bug, Settings2, Github, Info, FileText, BarChart3
+  Palette, Bug, Settings2, Info, FileText, BarChart3
 } from 'lucide-react';
+import { Github } from '../icons/BrandIcons';
 import { SettingsCategory, SettingsCategoryConfig } from './types';
 
 interface SettingsSidebarProps {

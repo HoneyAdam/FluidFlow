@@ -14,10 +14,10 @@ import {
   Trash2,
   Shield,
   AlertTriangle,
-  Github,
   Heart,
   Zap,
 } from 'lucide-react';
+import { Github } from '../../icons/BrandIcons';
 import { SettingsSection } from '../shared';
 import {
   APP_VERSION,

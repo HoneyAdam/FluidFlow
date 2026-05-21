@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ERROR_DISPLAY_DURATION_MS } from '../../../constants/timing';
-import { Github, Check, Info, Loader2, CloudUpload, Eye, EyeOff, FileJson, MessageSquare, Shield, ExternalLink } from 'lucide-react';
+import { Check, Info, Loader2, CloudUpload, Eye, EyeOff, FileJson, MessageSquare, Shield, ExternalLink } from 'lucide-react';
+import { Github } from '../../icons/BrandIcons';
 import { SettingsSection } from '../shared';
 import { SettingsToggle } from '../shared/SettingsToggle';
 import { settingsApi } from '../../../services/api/settings';

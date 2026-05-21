@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { COPY_FEEDBACK_RESET_MS } from '../constants/timing';
-import { Rocket, Copy, Check, ExternalLink, Terminal, Github } from 'lucide-react';
+import { Rocket, Copy, Check, ExternalLink, Terminal } from 'lucide-react';
+import { Github } from './icons/BrandIcons';
 import { FileSystem } from '../types';
 import { BaseModal } from './shared/BaseModal';
 

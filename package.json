@@ -40,7 +40,7 @@
     "file-saver": "^2.0.5",
     "helmet": "^8.1.0",
     "jszip": "^3.10.1",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.16.0",
     "monaco-editor": "^0.55.1",
     "openai": "^6.38.0",
     "react": "^19.2.6",

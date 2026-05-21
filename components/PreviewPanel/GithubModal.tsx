@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Github, X, Check, AlertTriangle, ExternalLink, Loader2, Plus, Link2 } from 'lucide-react';
+import { X, Check, AlertTriangle, ExternalLink, Loader2, Plus, Link2 } from 'lucide-react';
+import { Github } from '../icons/BrandIcons';
 import { PushResult } from '../../types';
 
 type PushMode = 'create' | 'existing';

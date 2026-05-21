@@ -4,8 +4,9 @@ import {
   GitBranch, GitCommit, Check, X, Plus, RefreshCw, Loader2,
   FileText, FilePlus, FileX, ChevronDown, ChevronUp,
   AlertCircle, Clock, AlertTriangle, Sparkles, RotateCcw,
-  Github, Upload
+  Upload
 } from 'lucide-react';
+import { Github } from '../icons/BrandIcons';
 import { GitStatus, GitCommit as GitCommitType, CommitDetails, gitApi } from '@/services/projectApi';
 import { FileSystem } from '@/types';
 import { getProviderManager } from '@/services/ai';
