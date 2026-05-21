@@ -327,10 +327,10 @@ router.get('/', async (req, res) => {
       ...settings,
       aiProviders: settings.aiProviders.map(maskProviderConfig)
     };
-    res.json(safeSettings);
+    return res.json(safeSettings);
   } catch (error) {
     console.error('Get settings error:', error);
-    res.status(500).json({ error: 'Failed to get settings' });
+    return res.status(500).json({ error: 'Failed to get settings' });
   }
 });
 
@@ -397,10 +397,10 @@ router.put('/', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'Settings saved', updatedAt });
+    return res.json({ message: 'Settings saved', updatedAt });
   } catch (error) {
     console.error('Update settings error:', error);
-    res.status(500).json({ error: 'Failed to update settings' });
+    return res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 
@@ -410,13 +410,13 @@ router.put('/', async (req, res) => {
 router.get('/ai-providers', async (req, res) => {
   try {
     const settings = await loadSettings();
-    res.json({
+    return res.json({
       providers: settings.aiProviders.map(maskProviderConfig),
       activeId: settings.activeProviderId
     });
   } catch (error) {
     console.error('Get AI providers error:', error);
-    res.status(500).json({ error: 'Failed to get AI providers' });
+    return res.status(500).json({ error: 'Failed to get AI providers' });
   }
 });
 
@@ -471,10 +471,10 @@ router.put('/ai-providers', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'AI providers saved', updatedAt });
+    return res.json({ message: 'AI providers saved', updatedAt });
   } catch (error) {
     console.error('Save AI providers error:', error);
-    res.status(500).json({ error: 'Failed to save AI providers' });
+    return res.status(500).json({ error: 'Failed to save AI providers' });
   }
 });
 
@@ -484,10 +484,10 @@ router.put('/ai-providers', async (req, res) => {
 router.get('/snippets', async (req, res) => {
   try {
     const settings = await loadSettings();
-    res.json(settings.customSnippets);
+    return res.json(settings.customSnippets);
   } catch (error) {
     console.error('Get snippets error:', error);
-    res.status(500).json({ error: 'Failed to get snippets' });
+    return res.status(500).json({ error: 'Failed to get snippets' });
   }
 });
 
@@ -522,10 +522,10 @@ router.put('/snippets', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'Snippets saved', updatedAt });
+    return res.json({ message: 'Snippets saved', updatedAt });
   } catch (error) {
     console.error('Save snippets error:', error);
-    res.status(500).json({ error: 'Failed to save snippets' });
+    return res.status(500).json({ error: 'Failed to save snippets' });
   }
 });
 
@@ -563,12 +563,12 @@ router.post('/snippets', async (req, res) => {
       return snippet;
     });
 
-    res.status(201).json(newSnippet);
+    return res.status(201).json(newSnippet);
   } catch (error: unknown) {
     console.error('Add snippet error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to add snippet';
     const isLimitError = errorMessage.includes('limit');
-    res.status(isLimitError ? 400 : 500).json({ error: errorMessage });
+    return res.status(isLimitError ? 400 : 500).json({ error: errorMessage });
   }
 });
 
@@ -583,10 +583,10 @@ router.delete('/snippets/:id', async (req, res) => {
       await saveSettings(settings);
     });
 
-    res.json({ message: 'Snippet deleted' });
+    return res.json({ message: 'Snippet deleted' });
   } catch (error) {
     console.error('Delete snippet error:', error);
-    res.status(500).json({ error: 'Failed to delete snippet' });
+    return res.status(500).json({ error: 'Failed to delete snippet' });
   }
 });
 
@@ -596,10 +596,10 @@ router.delete('/snippets/:id', async (req, res) => {
 router.get('/webcontainer', async (req, res) => {
   try {
     const settings = await loadSettings();
-    res.json(settings.webContainer || DEFAULT_WEBCONTAINER_SETTINGS);
+    return res.json(settings.webContainer || DEFAULT_WEBCONTAINER_SETTINGS);
   } catch (error) {
     console.error('Get WebContainer settings error:', error);
-    res.status(500).json({ error: 'Failed to get WebContainer settings' });
+    return res.status(500).json({ error: 'Failed to get WebContainer settings' });
   }
 });
 
@@ -621,10 +621,10 @@ router.put('/webcontainer', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'WebContainer settings saved', updatedAt });
+    return res.json({ message: 'WebContainer settings saved', updatedAt });
   } catch (error) {
     console.error('Save WebContainer settings error:', error);
-    res.status(500).json({ error: 'Failed to save WebContainer settings' });
+    return res.status(500).json({ error: 'Failed to save WebContainer settings' });
   }
 });
 
@@ -637,13 +637,13 @@ router.get('/github-backup', async (req, res) => {
     const backupSettings = settings.githubBackup || DEFAULT_GITHUB_BACKUP_SETTINGS;
 
     // Mask token before sending
-    res.json({
+    return res.json({
       ...backupSettings,
       token: backupSettings.token ? maskApiKey(backupSettings.token) : undefined,
     });
   } catch (error) {
     console.error('Get GitHub Backup settings error:', error);
-    res.status(500).json({ error: 'Failed to get GitHub Backup settings' });
+    return res.status(500).json({ error: 'Failed to get GitHub Backup settings' });
   }
 });
 
@@ -681,10 +681,10 @@ router.put('/github-backup', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'GitHub Backup settings saved', updatedAt });
+    return res.json({ message: 'GitHub Backup settings saved', updatedAt });
   } catch (error) {
     console.error('Save GitHub Backup settings error:', error);
-    res.status(500).json({ error: 'Failed to save GitHub Backup settings' });
+    return res.status(500).json({ error: 'Failed to save GitHub Backup settings' });
   }
 });
 
@@ -705,10 +705,10 @@ router.post('/github-backup/update-status', async (req, res) => {
       return settings.updatedAt;
     });
 
-    res.json({ message: 'Backup status updated', updatedAt });
+    return res.json({ message: 'Backup status updated', updatedAt });
   } catch (error) {
     console.error('Update backup status error:', error);
-    res.status(500).json({ error: 'Failed to update backup status' });
+    return res.status(500).json({ error: 'Failed to update backup status' });
   }
 });
 
@@ -730,10 +730,10 @@ router.get('/github-backup/token', async (req, res) => {
       return res.status(404).json({ error: 'No token configured' });
     }
 
-    res.json({ token: backupSettings.token });
+    return res.json({ token: backupSettings.token });
   } catch (error) {
     console.error('Get GitHub Backup token error:', error);
-    res.status(500).json({ error: 'Failed to get token' });
+    return res.status(500).json({ error: 'Failed to get token' });
   }
 });
 

@@ -138,10 +138,10 @@ dist/
       await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
     }
 
-    res.json({ message: 'Git initialized', initialized: true });
+    return res.json({ message: 'Git initialized', initialized: true });
   } catch (error) {
     console.error('Git init error:', error);
-    res.status(500).json({ error: 'Failed to initialize git' });
+    return res.status(500).json({ error: 'Failed to initialize git' });
   }
 });
 
@@ -169,7 +169,7 @@ router.get('/:id/status', async (req, res) => {
     const status = await git.status();
     const branch = await git.branchLocal();
 
-    res.json({
+    return res.json({
       initialized: true,
       branch: branch.current,
       clean: status.isClean(),
@@ -205,7 +205,7 @@ router.get('/:id/status', async (req, res) => {
     }
 
     // Other git errors: 500 Internal Server Error
-    res.status(500).json({
+    return res.status(500).json({
       initialized: true,
       error: 'Failed to get git status',
       message: errorMessage
@@ -241,7 +241,7 @@ router.get('/:id/log', async (req, res) => {
     const git: SimpleGit = createGit(filesDir);
     const log = await git.log({ maxCount: parsedLimit });
 
-    res.json({
+    return res.json({
       initialized: true,
       commits: log.all.map(commit => ({
         hash: commit.hash,
@@ -254,7 +254,7 @@ router.get('/:id/log', async (req, res) => {
     });
   } catch (error) {
     console.error('Git log error:', error);
-    res.status(500).json({ error: 'Failed to get git log' });
+    return res.status(500).json({ error: 'Failed to get git log' });
   }
 });
 
@@ -313,7 +313,7 @@ router.post('/:id/commit', async (req, res) => {
       await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
     }
 
-    res.json({
+    return res.json({
       message: 'Committed successfully',
       commit: {
         hash: commitResult.commit,
@@ -322,7 +322,7 @@ router.post('/:id/commit', async (req, res) => {
     });
   } catch (error) {
     console.error('Git commit error:', error);
-    res.status(500).json({ error: 'Failed to commit' });
+    return res.status(500).json({ error: 'Failed to commit' });
   }
 });
 
@@ -352,10 +352,10 @@ router.get('/:id/diff', async (req, res) => {
       ? await git.diff(['--cached'])
       : await git.diff();
 
-    res.json({ diff });
+    return res.json({ diff });
   } catch (error) {
     console.error('Git diff error:', error);
-    res.status(500).json({ error: 'Failed to get diff' });
+    return res.status(500).json({ error: 'Failed to get diff' });
   }
 });
 
@@ -408,7 +408,7 @@ router.post('/:id/checkout', async (req, res) => {
       await git.checkout(commit);
     }
 
-    res.json({ message: `Checked out to ${commit}` });
+    return res.json({ message: `Checked out to ${commit}` });
   } catch (error) {
     console.error('Git checkout error:', error);
 
@@ -438,7 +438,7 @@ router.post('/:id/checkout', async (req, res) => {
       });
     }
 
-    res.status(500).json({ error: 'Failed to checkout', message: errorMessage });
+    return res.status(500).json({ error: 'Failed to checkout', message: errorMessage });
   }
 });
 
@@ -480,10 +480,10 @@ router.post('/:id/branch', async (req, res) => {
       await git.branch([name]);
     }
 
-    res.json({ message: `Branch '${name}' created`, checkout });
+    return res.json({ message: `Branch '${name}' created`, checkout });
   } catch (error) {
     console.error('Git branch error:', error);
-    res.status(500).json({ error: 'Failed to create branch' });
+    return res.status(500).json({ error: 'Failed to create branch' });
   }
 });
 
@@ -510,14 +510,14 @@ router.get('/:id/branches', async (req, res) => {
     const git: SimpleGit = createGit(filesDir);
     const branches = await git.branchLocal();
 
-    res.json({
+    return res.json({
       initialized: true,
       current: branches.current,
       branches: branches.all
     });
   } catch (error) {
     console.error('Git branches error:', error);
-    res.status(500).json({ error: 'Failed to list branches' });
+    return res.status(500).json({ error: 'Failed to list branches' });
   }
 });
 
@@ -593,7 +593,7 @@ router.get('/:id/commit/:hash', async (req, res) => {
     const insertions = parseInt((statLine.match(/(\d+) insertion/) || ['0', '0'])[1]);
     const deletions = parseInt((statLine.match(/(\d+) deletion/) || ['0', '0'])[1]);
 
-    res.json({
+    return res.json({
       hash: fullHash,
       hashShort: shortHash,
       message: subject,
@@ -610,7 +610,7 @@ router.get('/:id/commit/:hash', async (req, res) => {
     });
   } catch (error) {
     console.error('Git commit details error:', error);
-    res.status(500).json({ error: 'Failed to get commit details' });
+    return res.status(500).json({ error: 'Failed to get commit details' });
   }
 });
 
@@ -652,10 +652,10 @@ router.get('/:id/commit/:hash/diff', async (req, res) => {
 
     const diff = await git.diff(args);
 
-    res.json({ diff, hash, file: file || null });
+    return res.json({ diff, hash, file: file || null });
   } catch (error) {
     console.error('Git commit diff error:', error);
-    res.status(500).json({ error: 'Failed to get commit diff' });
+    return res.status(500).json({ error: 'Failed to get commit diff' });
   }
 });
 
@@ -696,14 +696,14 @@ router.get('/:id/commit/:hash/file', async (req, res) => {
 
     try {
       const content = await git.show([`${hash}:${sanitizedPath}`]);
-      res.json({ content, path: sanitizedPath, hash });
+      return res.json({ content, path: sanitizedPath, hash });
     } catch {
       // File might not exist at this commit
-      res.json({ content: null, path: filePath, hash, notFound: true });
+      return res.json({ content: null, path: filePath, hash, notFound: true });
     }
   } catch (error) {
     console.error('Git file content error:', error);
-    res.status(500).json({ error: 'Failed to get file content' });
+    return res.status(500).json({ error: 'Failed to get file content' });
   }
 });
 

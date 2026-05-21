@@ -331,9 +331,9 @@ router.get('/', async (req, res) => {
 
     // Sort by updatedAt descending
     projects.sort((a, b) => b.updatedAt - a.updatedAt);
-    res.json(projects);
+    return res.json(projects);
   } catch (_error) {
-    res.status(500).json({ error: 'Failed to list projects' });
+    return res.status(500).json({ error: 'Failed to list projects' });
   }
 });
 
@@ -462,9 +462,9 @@ npm-debug.log*
       await readFilesRecursively(filesDir);
     }
 
-    res.json({ ...meta, files });
+    return res.json({ ...meta, files });
   } catch (_error) {
-    res.status(500).json({ error: 'Failed to get project' });
+    return res.status(500).json({ error: 'Failed to get project' });
   }
 });
 
@@ -566,10 +566,10 @@ router.post('/', async (req, res) => {
       }
     }
 
-    res.status(201).json({ ...meta, files: files || {} });
+    return res.status(201).json({ ...meta, files: files || {} });
   } catch (_error) {
     console.error('Create project error:', _error);
-    res.status(500).json({ error: 'Failed to create project' });
+    return res.status(500).json({ error: 'Failed to create project' });
   }
 });
 
@@ -788,10 +788,10 @@ router.put('/:id', async (req, res) => {
       return res.json({ ...result.meta, ...result });
     }
 
-    res.json({ ...result.meta, message: result.message });
+    return res.json({ ...result.meta, message: result.message });
   } catch (_error) {
     console.error('Update project error:', _error);
-    res.status(500).json({ error: 'Failed to update project' });
+    return res.status(500).json({ error: 'Failed to update project' });
   }
 });
 
@@ -812,9 +812,9 @@ router.delete('/:id', async (req, res) => {
     }
 
     await fs.rm(projectPath, { recursive: true });
-    res.json({ message: 'Project deleted', id });
+    return res.json({ message: 'Project deleted', id });
   } catch (_error) {
-    res.status(500).json({ error: 'Failed to delete project' });
+    return res.status(500).json({ error: 'Failed to delete project' });
   }
 });
 
@@ -848,7 +848,7 @@ router.delete('/:id/node_modules', async (req, res) => {
 
     console.log(`[Projects] Deleted node_modules for project ${id} (${Math.round(sizeBefore / 1024 / 1024)}MB freed)`);
 
-    res.json({
+    return res.json({
       message: 'node_modules deleted',
       id,
       freedBytes: sizeBefore,
@@ -856,7 +856,7 @@ router.delete('/:id/node_modules', async (req, res) => {
     });
   } catch (_error) {
     console.error('Delete node_modules error:', _error);
-    res.status(500).json({ error: 'Failed to delete node_modules' });
+    return res.status(500).json({ error: 'Failed to delete node_modules' });
   }
 });
 
@@ -909,9 +909,9 @@ router.post('/:id/duplicate', async (req, res) => {
       await fs.rm(gitDir, { recursive: true });
     }
 
-    res.status(201).json(newMeta);
+    return res.status(201).json(newMeta);
   } catch (_error) {
-    res.status(500).json({ error: 'Failed to duplicate project' });
+    return res.status(500).json({ error: 'Failed to duplicate project' });
   }
 });
 
@@ -944,14 +944,14 @@ router.get('/:id/context', async (req, res) => {
 
     if (existsSync(contextPath)) {
       const context = await safeReadJson<ProjectContext>(contextPath, defaultContext);
-      res.json(context);
+      return res.json(context);
     } else {
       // Return empty context if not exists
-      res.json(defaultContext);
+      return res.json(defaultContext);
     }
   } catch (_error) {
     console.error('Get context error:', _error);
-    res.status(500).json({ error: 'Failed to get project context' });
+    return res.status(500).json({ error: 'Failed to get project context' });
   }
 });
 
@@ -966,7 +966,7 @@ router.put('/:id/context', async (req, res) => {
     }
 
     const savedAt = await saveProjectContext(id, req.body as Partial<ProjectContext>);
-    res.json({ message: 'Context saved', savedAt });
+    return res.json({ message: 'Context saved', savedAt });
   } catch (_error) {
     console.error('Save context error:', _error);
     if (_error instanceof Error && _error.message === 'PROJECT_NOT_FOUND') {
@@ -975,7 +975,7 @@ router.put('/:id/context', async (req, res) => {
     if (_error instanceof Error && _error.message === 'CONTEXT_TOO_LARGE') {
       return res.status(413).json({ error: 'Project context payload too large' });
     }
-    res.status(500).json({ error: 'Failed to save project context' });
+    return res.status(500).json({ error: 'Failed to save project context' });
   }
 });
 
@@ -990,7 +990,7 @@ router.post('/:id/context', async (req, res) => {
     }
 
     const savedAt = await saveProjectContext(id, req.body as Partial<ProjectContext>);
-    res.json({ message: 'Context saved', savedAt });
+    return res.json({ message: 'Context saved', savedAt });
   } catch (_error) {
     console.error('Save context error:', _error);
     if (_error instanceof Error && _error.message === 'PROJECT_NOT_FOUND') {
@@ -999,7 +999,7 @@ router.post('/:id/context', async (req, res) => {
     if (_error instanceof Error && _error.message === 'CONTEXT_TOO_LARGE') {
       return res.status(413).json({ error: 'Project context payload too large' });
     }
-    res.status(500).json({ error: 'Failed to save project context' });
+    return res.status(500).json({ error: 'Failed to save project context' });
   }
 });
 
@@ -1019,10 +1019,10 @@ router.delete('/:id/context', async (req, res) => {
       await fs.unlink(contextPath);
     }
 
-    res.json({ message: 'Context cleared' });
+    return res.json({ message: 'Context cleared' });
   } catch (_error) {
     console.error('Clear context error:', _error);
-    res.status(500).json({ error: 'Failed to clear project context' });
+    return res.status(500).json({ error: 'Failed to clear project context' });
   }
 });
 
@@ -1081,15 +1081,15 @@ router.get('/:id/file', async (req, res) => {
       const mimeType = mimeTypes[ext] || 'application/octet-stream';
       const base64 = binaryData.toString('base64');
       const content = `data:${mimeType};base64,${base64}`;
-      res.json({ content, path: sanitizedPath });
+      return res.json({ content, path: sanitizedPath });
     } else {
       // Read as text
       const content = await fs.readFile(fullPath, 'utf-8');
-      res.json({ content, path: sanitizedPath });
+      return res.json({ content, path: sanitizedPath });
     }
   } catch (error) {
     console.error('Read file error:', error);
-    res.status(500).json({ error: 'Failed to read file' });
+    return res.status(500).json({ error: 'Failed to read file' });
   }
 });
 
@@ -1144,10 +1144,10 @@ router.put('/:id/file', async (req, res) => {
       await fs.writeFile(fullPath, content, 'utf-8');
     }
 
-    res.json({ message: 'File saved', path: sanitizedPath });
+    return res.json({ message: 'File saved', path: sanitizedPath });
   } catch (error) {
     console.error('Save file error:', error);
-    res.status(500).json({ error: 'Failed to save file' });
+    return res.status(500).json({ error: 'Failed to save file' });
   }
 });
 
@@ -1178,10 +1178,10 @@ router.delete('/:id/file', async (req, res) => {
       await fs.unlink(fullPath);
     }
 
-    res.json({ message: 'File deleted', path: sanitizedPath });
+    return res.json({ message: 'File deleted', path: sanitizedPath });
   } catch (error) {
     console.error('Delete file error:', error);
-    res.status(500).json({ error: 'Failed to delete file' });
+    return res.status(500).json({ error: 'Failed to delete file' });
   }
 });
 

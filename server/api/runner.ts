@@ -692,7 +692,7 @@ router.get('/', (req, res) => {
     errorLogsCount: info.errorLogs.length
   }));
 
-  res.json(projects);
+  return res.json(projects);
 });
 
 // Get specific running project status
@@ -704,7 +704,7 @@ router.get('/:id', (req, res) => {
     return res.json({ status: 'stopped', running: false });
   }
 
-  res.json({
+  return res.json({
     projectId: running.projectId,
     port: running.port,
     status: running.status,
@@ -916,7 +916,7 @@ router.post('/:id/start', async (req, res) => {
     }
   }
 
-  res.json({
+  return res.json({
     message: needsInstall ? 'Installing dependencies...' : 'Starting dev server...',
     port,
     url: runningProject.url,
@@ -962,7 +962,7 @@ router.post('/:id/stop', (req, res) => {
     }
   }, 5000);
 
-  res.json({ message: 'Project stopped', status: 'stopped' });
+  return res.json({ message: 'Project stopped', status: 'stopped' });
 });
 
 // Get logs for a project (streaming-friendly)
@@ -978,7 +978,7 @@ router.get('/:id/logs', (req, res) => {
   // If 'since' is provided, only return logs after that index
   const sinceIndex = since ? parseInt(since as string, 10) : 0;
 
-  res.json({
+  return res.json({
     logs: running.logs.slice(sinceIndex),
     errorLogs: running.errorLogs,
     status: running.status,
@@ -1060,13 +1060,13 @@ router.post('/stop-all', (req, res) => {
   cleanupOrphanProcesses();
 
   console.log(`[Runner] Stopped all projects: ${stopped.join(', ')}`);
-  res.json({ message: `Stopped ${stopped.length} projects`, stopped });
+  return res.json({ message: `Stopped ${stopped.length} projects`, stopped });
 });
 
 // Cleanup orphans endpoint (manual trigger)
 router.post('/cleanup', (req, res) => {
   cleanupOrphanProcesses();
-  res.json({ message: 'Orphan processes cleaned up' });
+  return res.json({ message: 'Orphan processes cleaned up' });
 });
 
 /**

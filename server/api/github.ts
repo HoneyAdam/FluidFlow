@@ -216,10 +216,10 @@ router.post('/:id/remote', async (req, res) => {
       await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
     }
 
-    res.json({ message: `Remote '${name}' set to ${url}` });
+    return res.json({ message: `Remote '${name}' set to ${url}` });
   } catch (error) {
     console.error('Set remote error:', error);
-    res.status(500).json({ error: 'Failed to set remote' });
+    return res.status(500).json({ error: 'Failed to set remote' });
   }
 });
 
@@ -243,7 +243,7 @@ router.get('/:id/remote', async (req, res) => {
     const git: SimpleGit = createGit(filesDir);
     const remotes = await git.getRemotes(true);
 
-    res.json({
+    return res.json({
       initialized: true,
       remotes: remotes.map(r => ({
         name: r.name,
@@ -253,7 +253,7 @@ router.get('/:id/remote', async (req, res) => {
     });
   } catch (error) {
     console.error('Get remotes error:', error);
-    res.status(500).json({ error: 'Failed to get remotes' });
+    return res.status(500).json({ error: 'Failed to get remotes' });
   }
 });
 
@@ -332,7 +332,7 @@ router.post('/:id/backup-push', rateLimitMiddleware, async (req, res) => {
         await git.remote(['set-url', 'origin', originalUrl]);
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: `Backed up to ${branch}`,
         branch,
@@ -356,7 +356,7 @@ router.post('/:id/backup-push', rateLimitMiddleware, async (req, res) => {
       });
     }
 
-    res.status(500).json({ error: 'Failed to push backup' });
+    return res.status(500).json({ error: 'Failed to push backup' });
   }
 });
 
@@ -472,7 +472,7 @@ router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
       await git.remote(['set-url', remote, originalRemoteUrl]);
     }
 
-    res.json({
+    return res.json({
       message: `Pushed to ${remote}/${currentBranch}`,
       remote,
       branch: currentBranch
@@ -509,7 +509,7 @@ router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
         error: 'No upstream branch configured. The push will set up tracking automatically.'
       });
     }
-    res.status(500).json({ error: `Push failed: ${errorMessage}` });
+    return res.status(500).json({ error: `Push failed: ${errorMessage}` });
   }
 });
 
@@ -535,14 +535,14 @@ router.post('/:id/pull', async (req, res) => {
     const currentBranch = branch || (await git.branchLocal()).current;
     const result = await git.pull(remote, currentBranch);
 
-    res.json({
+    return res.json({
       message: 'Pulled successfully',
       summary: result.summary
     });
   } catch (error: unknown) {
     // BUG-005 FIX: Log full error server-side, return sanitized message to client
     console.error('Pull error:', error);
-    res.status(500).json({ error: 'Failed to pull from remote repository' });
+    return res.status(500).json({ error: 'Failed to pull from remote repository' });
   }
 });
 
@@ -568,11 +568,11 @@ router.post('/:id/fetch', async (req, res) => {
     const fetchOptions = prune ? ['--prune'] : [];
     await git.fetch(remote, undefined, fetchOptions);
 
-    res.json({ message: `Fetched from ${remote}` });
+    return res.json({ message: `Fetched from ${remote}` });
   } catch (error: unknown) {
     // BUG-005 FIX: Log full error server-side, return sanitized message to client
     console.error('Fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch from remote repository' });
+    return res.status(500).json({ error: 'Failed to fetch from remote repository' });
   }
 });
 
@@ -663,14 +663,14 @@ router.post('/clone', rateLimitMiddleware, async (req, res) => {
 
     await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Repository cloned successfully',
       project: meta
     });
   } catch (error: unknown) {
     // BUG-005 FIX: Log full error server-side, return sanitized message to client
     console.error('Clone error:', error);
-    res.status(500).json({ error: 'Failed to clone repository' });
+    return res.status(500).json({ error: 'Failed to clone repository' });
   }
 });
 
@@ -763,7 +763,7 @@ router.post('/:id/create-repo', rateLimitMiddleware, async (req, res) => {
       await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'GitHub repository created',
       repository: {
         name: repo.name,
@@ -776,7 +776,7 @@ router.post('/:id/create-repo', rateLimitMiddleware, async (req, res) => {
   } catch (error: unknown) {
     // BUG-005 FIX: Log full error server-side, return sanitized message to client
     console.error('Create repo error:', error);
-    res.status(500).json({ error: 'Failed to create GitHub repository' });
+    return res.status(500).json({ error: 'Failed to create GitHub repository' });
   }
 });
 
@@ -807,7 +807,7 @@ router.post('/verify-token', rateLimitMiddleware, async (req, res) => {
 
     const user = await response.json();
 
-    res.json({
+    return res.json({
       valid: true,
       user: {
         login: user.login,
@@ -818,7 +818,7 @@ router.post('/verify-token', rateLimitMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Verify token error:', error);
-    res.status(500).json({ error: 'Failed to verify token' });
+    return res.status(500).json({ error: 'Failed to verify token' });
   }
 });
 
@@ -924,7 +924,7 @@ router.post('/import', rateLimitMiddleware, async (req, res) => {
 
     await fs.writeFile(getMetaPath(id), JSON.stringify(meta, null, 2));
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Project imported successfully',
       project: meta,
       restored: {
@@ -944,7 +944,7 @@ router.post('/import', rateLimitMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Repository not found. Check the URL or your access permissions.' });
     }
 
-    res.status(500).json({ error: 'Failed to import repository' });
+    return res.status(500).json({ error: 'Failed to import repository' });
   }
 });
 
@@ -1021,10 +1021,10 @@ router.get('/repos', rateLimitMiddleware, async (req, res) => {
       })
     );
 
-    res.json({ repos: reposWithInfo });
+    return res.json({ repos: reposWithInfo });
   } catch (error) {
     console.error('List repos error:', error);
-    res.status(500).json({ error: 'Failed to list repositories' });
+    return res.status(500).json({ error: 'Failed to list repositories' });
   }
 });
 
