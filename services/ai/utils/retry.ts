@@ -74,12 +74,18 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       return;
     }
 
-    const timeout = setTimeout(resolve, ms);
-
-    signal?.addEventListener('abort', () => {
+    const onAbort = (): void => {
       clearTimeout(timeout);
       reject(new DOMException('Aborted', 'AbortError'));
-    });
+    };
+
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+
+    // { once: true } auto-removes if abort fires; explicit removeEventListener above handles normal completion.
+    signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
 
