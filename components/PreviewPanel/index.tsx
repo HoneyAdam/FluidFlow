@@ -757,11 +757,13 @@ export const PreviewPanel = memo(function PreviewPanel({
   const downloadCode = () => {
     const element = document.createElement('a');
     const file = new Blob([files[activeFile] || ''], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    element.href = url;
     element.download = activeFile.split('/').pop() || 'file.txt';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    URL.revokeObjectURL(url);
   };
 
   return (
