@@ -10,6 +10,7 @@ import { FileSystem, ChatMessage } from '../types';
 import { generateContextForPrompt, generateCodeMap } from '../utils/codemap';
 import { debugLog } from './useDebugStore';
 import { getProviderManager } from '../services/ai';
+import { projectApi } from '../services/projectApi';
 import { InspectedElement, EditScope } from '../components/PreviewPanel/ComponentInspector';
 import { buildInspectEditInstruction } from '../components/ControlPanel/prompts';
 import { calculateFileChanges, createTokenUsage } from '../utils/generationUtils';
@@ -224,7 +225,6 @@ ${prompt}
         // If tool calling was used and files were written, handle them directly
         if (response.filesWritten && response.filesWritten.length > 0 && projectId) {
           // Files were written via tool calling - we need to read them back
-          const { projectApi } = await import('../services/projectApi');
           const newFiles: FileSystem = { ...files };
           for (const filePath of response.filesWritten) {
             try {
