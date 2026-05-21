@@ -93,24 +93,29 @@ export function useAIHistory(projectId: string | null): UseAIHistoryReturn {
   }, [saveWithLock]);
 
   // Load history from backend when project changes
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     console.log(`[AIHistory] useEffect triggered - projectId: ${projectId}, loadedRef: ${loadedProjectRef.current}`);
 
     if (!projectId) {
       console.log('[AIHistory] No projectId, skipping load');
-      return;
+      return undefined;
     }
 
     if (projectId === loadedProjectRef.current) {
       console.log('[AIHistory] Already loaded for this project, skipping');
-      return;
+      return undefined;
     }
+
+    // Race guard: if the user switches projects mid-load, the older request's
+    // response must NOT clobber the newer project's state.
+    let cancelled = false;
 
     const loadHistory = async () => {
       console.log(`[AIHistory] Loading history for project: ${projectId}`);
       setIsLoading(true);
       try {
         const context = await projectApi.getContext(projectId);
+        if (cancelled) return;
         console.log(`[AIHistory] Got context:`, {
           hasAiHistory: !!context.aiHistory,
           aiHistoryLength: context.aiHistory?.length || 0,
@@ -126,14 +131,16 @@ export function useAIHistory(projectId: string | null): UseAIHistoryReturn {
         }
         loadedProjectRef.current = projectId;
       } catch (error) {
+        if (cancelled) return;
         console.error('[AIHistory] Failed to load:', error);
         setHistory([]);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadHistory();
+    return () => { cancelled = true; };
   }, [projectId]);
 
   // Debounced save to backend (fallback for failed immediate saves)
