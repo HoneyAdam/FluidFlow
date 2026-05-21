@@ -133,9 +133,9 @@ export function useSandboxBridge({
     const messages = [...messageQueue.current];
     messageQueue.current = [];
 
-    // Send each message
+    // Send each message. Parent origin is correct target (allow-same-origin sandbox).
     messages.forEach((msg) => {
-      iframeRef.current?.contentWindow?.postMessage(msg.payload, '*');
+      iframeRef.current?.contentWindow?.postMessage(msg.payload, window.location.origin);
     });
   }, [iframeRef]);
 
@@ -163,7 +163,7 @@ export function useSandboxBridge({
   const sendMessage = useCallback(
     (type: ParentMessageType, payload: Record<string, unknown> = {}) => {
       if (!iframeRef.current?.contentWindow) return;
-      iframeRef.current.contentWindow.postMessage({ ...payload, type }, '*');
+      iframeRef.current.contentWindow.postMessage({ ...payload, type }, window.location.origin);
     },
     [iframeRef]
   );

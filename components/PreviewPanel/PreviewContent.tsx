@@ -331,10 +331,13 @@ export const PreviewContent = memo(function PreviewContent(props: PreviewContent
 
     return () => {
       // Send cleanup message to iframe before revoking URL
-      // This allows sandbox to revoke its internal blob URLs
+      // This allows sandbox to revoke its internal blob URLs.
+      // Iframe runs with `allow-same-origin`, so parent's origin is the
+      // correct postMessage target — never use '*' (would expose the
+      // message to any listener including injected third-party frames).
       if (iframe?.contentWindow) {
         try {
-          iframe.contentWindow.postMessage({ type: 'CLEANUP_BLOB_URLS' }, '*');
+          iframe.contentWindow.postMessage({ type: 'CLEANUP_BLOB_URLS' }, window.location.origin);
         } catch {
           // Ignore errors if iframe is already destroyed
         }

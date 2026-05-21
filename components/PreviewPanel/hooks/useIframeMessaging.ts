@@ -128,22 +128,25 @@ export function useIframeMessaging({
     return () => window.removeEventListener('message', handleMessage);
   }, [isInspectEditing, onProcessError, setLogs]);
 
-  // Navigation helpers
+  // Navigation helpers.
+  // Iframe runs with `allow-same-origin`, so parent's origin is the correct
+  // postMessage target. Never use '*' — that broadcasts to any frame the
+  // iframe was later transferred to.
   const navigateToUrl = useCallback((url: string) => {
     if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: 'NAVIGATE', url }, '*');
+      iframeRef.current.contentWindow.postMessage({ type: 'NAVIGATE', url }, window.location.origin);
     }
   }, []);
 
   const goBack = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: 'GO_BACK' }, '*');
+      iframeRef.current.contentWindow.postMessage({ type: 'GO_BACK' }, window.location.origin);
     }
   }, []);
 
   const goForward = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: 'GO_FORWARD' }, '*');
+      iframeRef.current.contentWindow.postMessage({ type: 'GO_FORWARD' }, window.location.origin);
     }
   }, []);
 

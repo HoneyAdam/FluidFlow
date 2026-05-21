@@ -733,10 +733,12 @@ export const PreviewPanel = memo(function PreviewPanel({
 
   // Helper functions
   const reloadPreview = useCallback(() => {
-    // Capture state before reload for HMR-like experience
+    // Capture state before reload for HMR-like experience.
+    // Iframe runs with `allow-same-origin`, so parent's origin is the
+    // correct postMessage target — never use '*'.
     if (iframeRef.current?.contentWindow) {
       try {
-        iframeRef.current.contentWindow.postMessage({ type: 'CAPTURE_STATE' }, '*');
+        iframeRef.current.contentWindow.postMessage({ type: 'CAPTURE_STATE' }, window.location.origin);
         console.log('[Preview] State captured before reload');
       } catch (_e) {
         // Ignore if iframe is not accessible
