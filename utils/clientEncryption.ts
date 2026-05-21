@@ -257,9 +257,23 @@ export async function encryptProviderConfigs<T extends { apiKey?: string }>(
 
 /**
  * Decrypts API keys in an array of provider configs.
+ *
+ * Per-config error isolation: a single corrupted entry must not wipe out
+ * every other provider on load. If decrypting one config's apiKey fails,
+ * that config is preserved with its apiKey cleared so the user can re-enter
+ * it for just that provider — the rest decrypt normally.
  */
 export async function decryptProviderConfigs<T extends { apiKey?: string }>(
   configs: T[]
 ): Promise<T[]> {
-  return Promise.all(configs.map(config => decryptApiKey(config)));
+  return Promise.all(
+    configs.map(async (config) => {
+      try {
+        return await decryptApiKey(config);
+      } catch (error) {
+        console.error('[Encryption] Skipping corrupted apiKey for one provider:', error);
+        return { ...config, apiKey: '' } as T;
+      }
+    })
+  );
 }
