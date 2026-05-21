@@ -92,11 +92,15 @@ export function getScreenshotCaptureScript(): string {
               '</svg>';
 
             var img = new Image();
+            var blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+            var blobUrl = URL.createObjectURL(blob);
             img.onload = function() {
               ctx.drawImage(img, 0, 0);
+              URL.revokeObjectURL(blobUrl);
               resolve(canvas);
             };
             img.onerror = function() {
+              URL.revokeObjectURL(blobUrl);
               // Fallback: create a simple placeholder
               ctx.fillStyle = '#1e1e2e';
               ctx.fillRect(0, 0, width, height);
@@ -106,9 +110,7 @@ export function getScreenshotCaptureScript(): string {
               ctx.fillText('Preview Screenshot', width / 2, height / 2);
               resolve(canvas);
             };
-
-            var blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-            img.src = URL.createObjectURL(blob);
+            img.src = blobUrl;
           } catch (e) {
             reject(e);
           }
@@ -157,8 +159,11 @@ export function getScreenshotCaptureScript(): string {
               '</svg>';
 
             var img = new Image();
+            var blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            var blobUrl = URL.createObjectURL(blob);
             img.onload = function() {
               ctx.drawImage(img, 0, 0, width, height);
+              URL.revokeObjectURL(blobUrl);
 
               // Convert to data URL
               var dataUrl = canvas.toDataURL('image/' + options.format, options.quality);
@@ -171,6 +176,7 @@ export function getScreenshotCaptureScript(): string {
             };
 
             img.onerror = function(e) {
+              URL.revokeObjectURL(blobUrl);
               // Fallback: simple screenshot representation
               createFallbackScreenshot(ctx, width, height, options);
               var dataUrl = canvas.toDataURL('image/' + options.format, options.quality);
@@ -182,9 +188,7 @@ export function getScreenshotCaptureScript(): string {
                 fallback: true
               });
             };
-
-            var blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-            img.src = URL.createObjectURL(blob);
+            img.src = blobUrl;
 
           } catch (e) {
             reject(e);
