@@ -311,8 +311,8 @@ export abstract class OpenAICompatibleProvider implements AIProvider {
               }
 
               finishReason = parsed.choices?.[0]?.finish_reason;
-            } catch {
-              // Skip parse errors for partial data
+            } catch (e) {
+              console.debug('[OpenAICompatibleProvider] SSE parse error, skipping chunk:', data.slice(0, 120), e instanceof Error ? e.message : e);
             }
           }
         }

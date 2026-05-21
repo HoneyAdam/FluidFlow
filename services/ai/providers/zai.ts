@@ -57,8 +57,8 @@ export class ZAIProvider implements AIProvider {
         name: m.id,
         supportsStreaming: true,
       }));
-    } catch {
-      // Fallback to config models if API fails
+    } catch (e) {
+      console.debug('[ZaiProvider] listModels failed, falling back to config:', e instanceof Error ? e.message : e);
       return this.config.models.length > 0 ? this.config.models : [{
         id: DEFAULT_MODEL,
         name: 'GLM-4.7',
