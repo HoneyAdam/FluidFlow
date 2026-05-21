@@ -235,8 +235,8 @@ export function createSSEProcessor(options: SSEParserOptions) {
             if (result.usage) {
               usage = result.usage;
             }
-          } catch {
-            // Ignore final buffer parse errors
+          } catch (e) {
+            console.debug(`[SSEParser:${format}] Flush parse error, dropping trailing buffer:`, parsed.data?.slice(0, 100), e instanceof Error ? e.message : e);
           }
         }
       }

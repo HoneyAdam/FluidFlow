@@ -483,8 +483,8 @@ export class AnthropicProvider implements AIProvider {
               if (parsed.type === 'message_stop') {
                 toolCallsComplete = true;
               }
-            } catch {
-              // Skip parse errors for partial data
+            } catch (e) {
+              console.debug('[AnthropicProvider] SSE parse error, skipping chunk:', data.slice(0, 120), e instanceof Error ? e.message : e);
             }
           }
         }

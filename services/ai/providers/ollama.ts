@@ -471,8 +471,8 @@ export class OllamaProvider implements AIProvider {
               onChunk({ text: '', done: true });
               break;
             }
-          } catch {
-            // Skip parse errors
+          } catch (e) {
+            console.debug('[OllamaProvider] NDJSON parse error, skipping chunk:', data.slice(0, 120), e instanceof Error ? e.message : e);
           }
         }
       }
