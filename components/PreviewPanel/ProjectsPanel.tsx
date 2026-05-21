@@ -356,29 +356,36 @@ export const ProjectsPanel: React.FC = () => {
     return undefined;
   }, [menuOpenId]);
 
-  // Load full-size image when lightbox opens
-  useEffect(() => {
+  // Load full-size image when lightbox opens.
+  // Cancellation guard: rapid lightbox switches can let an earlier project's
+  // image arrive after a newer selection and flash incorrect content.
+  useEffect((): (() => void) | undefined => {
     if (lightboxProject && lightboxProject.screenshots?.latest?.filename) {
       setLightboxLoading(true);
       setLightboxFullImage(null);
 
+      let cancelled = false;
       const filename = lightboxProject.screenshots.latest.filename;
       projectApi.readFile(lightboxProject.id, `.fluidflow/${filename}`)
         .then((dataUrl) => {
+          if (cancelled) return;
           if (dataUrl) {
             setLightboxFullImage(dataUrl);
           }
         })
         .catch((err) => {
+          if (cancelled) return;
           console.error('[Lightbox] Failed to load full image:', err);
         })
         .finally(() => {
-          setLightboxLoading(false);
+          if (!cancelled) setLightboxLoading(false);
         });
-    } else {
-      setLightboxFullImage(null);
-      setLightboxLoading(false);
+
+      return () => { cancelled = true; };
     }
+    setLightboxFullImage(null);
+    setLightboxLoading(false);
+    return undefined;
   }, [lightboxProject]);
 
   return (
