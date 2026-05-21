@@ -300,7 +300,12 @@ export async function generateStyleGuide(
     throw new Error('No JSON found in style guide response');
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    throw new Error(`Failed to parse style guide JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`);
+  }
   onProgress?.('Style guide complete!');
 
   return {
@@ -372,7 +377,12 @@ export async function generateProjectSummary(
     throw new Error('No JSON found in project summary response');
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    throw new Error(`Failed to parse project summary JSON (model may have returned truncated/invalid output): ${e instanceof Error ? e.message : String(e)}`);
+  }
   onProgress?.('Project summary complete!');
 
   return {
