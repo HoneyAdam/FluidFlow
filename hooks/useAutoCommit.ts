@@ -89,7 +89,7 @@ ${changedFilesContext}`;
 
       const response = await manager.generate({
         prompt,
-        systemInstruction: 'You are a helpful assistant that generates git commit messages. Output only the commit message text, no explanations or markdown.',
+        systemInstruction: 'You are a Conventional Commits expert. Generate a single commit message in the form `type(scope): subject` where `type` ∈ {feat, fix, refactor, style, docs, test, chore, perf, build, ci} and `subject` is imperative-mood, lowercase, ≤ 72 chars, no trailing period. `scope` is optional — include it only if a clear single area exists (e.g. `auth`, `header`, `api`). Pick the most impactful change as the subject; ignore reformat-only noise. Output ONLY the commit message text — no markdown fence, no quotes, no leading "Commit:" label, no body unless the diff materially needs one.',
         debugCategory: 'git-commit', // Skip prompt confirmation for auto-generated messages
       });
 

@@ -334,7 +334,7 @@ export const ControlPanel = forwardRef<ControlPanelRef, ControlPanelProps>(({
     await contextManager.compactContext(sessionId, async (text) => {
       const request: GenerationRequest = {
         prompt: `Summarize this conversation concisely, preserving key decisions, code changes, and context:\n\n${text}`,
-        systemInstruction: 'You are a conversation summarizer. Create a brief but complete summary that captures the essential context, decisions made, and any code or technical details discussed.',
+        systemInstruction: 'You are a conversation compactor for an AI coding assistant. Compress the conversation so the assistant can continue working without losing context. Preserve: the user\'s goal, decisions made (and why), file paths / component names / function names that have been touched, in-flight work and what remains, any user preferences or constraints surfaced ("use Tailwind", "no axios", "stick to react-router v7"). Drop: chit-chat, repeated explanations, intermediate tool output. Keep code/identifiers verbatim — they are anchors the next turn will grep for. Aim for tight prose, 6–15 short bullet points or 150–300 words. Output the summary directly — no preamble, no markdown fence.',
         responseFormat: 'text'
       };
       const response = await manager.generate(request);

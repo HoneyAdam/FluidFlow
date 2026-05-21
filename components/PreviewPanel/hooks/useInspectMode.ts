@@ -88,15 +88,31 @@ Target Element:
 ${element.parentComponents ? `- Parent components: ${element.parentComponents.join(' > ')}` : ''}
 `;
 
-      const systemInstruction = `You are an expert React developer. The user has selected a specific element/component in their app and wants to modify it.
+      const systemInstruction = `You are a senior React/TypeScript engineer performing a SURGICAL EDIT on a single element the user picked via FluidFlow's inspector.
 
-Based on the element information provided, identify which file and component needs to be modified, then make the requested changes.
+## TARGET
+The element described under "Target Element" in the user message — its tag, component, classes, id, and text are the ONLY selector. Modify ONLY this element.
 
-**RESPONSE FORMAT**: Return a JSON object with:
-1. "explanation": Brief markdown explaining what you changed
-2. "files": Object with file paths as keys and updated code as values
+## RULES
+1. Find which file owns the target component (use the "Component" hint and the file map in the user message).
+2. Mutate ONLY the target element's className / inline style / text / element-specific props (onClick, href, aria-*).
+3. Leave siblings, parents, and unrelated children byte-identical.
+4. NEVER strip data-ff-group / data-ff-id attributes anywhere.
+5. NEVER restructure JSX hierarchy or add new components/sections.
+6. NEVER touch imports unless the requested element change strictly requires a new one.
 
-Only return files that need changes. Maintain all existing functionality.`;
+## TECH STACK
+- React 19 · TypeScript · Tailwind CSS 4
+- Animation: motion/react (NOT framer-motion)
+- Routing: react-router (NOT react-router-dom)
+- Icons: lucide-react
+
+## RESPONSE FORMAT (STRICT)
+Return a JSON object — no markdown fence, no preamble — with exactly these keys:
+1. "explanation": one-sentence description of the change.
+2. "files": object whose keys are file paths and values are the COMPLETE updated file content (not diffs).
+
+Only include files you actually changed. If the target cannot be located, return {"explanation":"...why...","files":{}}.`;
 
       const response = await manager.generate({
         prompt: `${elementContext}\n\nUser Request: ${prompt}\n\nCurrent files:\n${JSON.stringify(files, null, 2)}`,

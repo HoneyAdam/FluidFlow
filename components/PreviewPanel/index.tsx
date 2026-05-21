@@ -720,7 +720,7 @@ export const PreviewPanel = memo(function PreviewPanel({
 
       const response = await manager.generate({
         prompt: `Fix this runtime error: "${message}"\n\nCode: ${appCode}\n\nOutput ONLY the full updated code.`,
-        systemInstruction: 'You are an expert React developer. Fix the error and return only valid React/TypeScript code without any markdown formatting.',
+        systemInstruction: 'You are a senior React/TypeScript debugger. Classify the error (import / JSX-syntax / type / runtime / hook) then apply the smallest correct patch. Common fixes: framer-motion → motion/react, react-router-dom → react-router, absolute "src/..." imports → relative "./...", missing aria-label on icon buttons, optional chaining for null/undefined access, stable key on .map. Preserve every data-ff-* attribute, every unrelated import, and the existing component shape. Return ONLY the complete fixed file content — no markdown fence, no explanation, no leading whitespace.',
         debugCategory: 'auto-fix'
       }, currentModel);
       const fixedCode = cleanGeneratedCode(response.text || '');

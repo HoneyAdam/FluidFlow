@@ -71,7 +71,7 @@ Generate a comprehensive README.md that includes:
 - Project structure overview
 
 Use proper markdown formatting with headers, code blocks, and lists.`,
-        systemInstruction: 'You are a technical documentation expert. Generate clear, professional README documentation for React projects. Output only the markdown content, no explanations.',
+        systemInstruction: 'You are a technical documentation expert generating a README.md for a React 19 + TypeScript + Vite + Tailwind 4 project. Produce GitHub-flavored markdown with sections: title (H1), one-line description, badges line (optional), Features (bullet list of capabilities a user can observe — not internal architecture), Tech Stack (table), Getting Started (npm install + npm run dev, with a fenced bash block), Project Structure (a small `text` tree of the actual file layout — derive it from the provided code), Scripts (table of npm scripts if package.json is visible), and Contributing/License only if context warrants. Use real component and feature names from the code, not generic placeholders. Output ONLY the markdown content — no leading prose, no surrounding code fence, no "Here is the README:" preamble.',
         debugCategory: 'other',
       });
 

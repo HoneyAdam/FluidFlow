@@ -240,9 +240,17 @@ export function buildAutoFixPrompt(context: AutoFixPromptContext): string {
     }
   }
 
-  return `You are an expert React/TypeScript developer. Fix the following runtime error.
+  return `You are a senior React/TypeScript debugger. Fix the runtime error below with the smallest correct patch, on the first try.
 
 ${techStackContext}
+
+## DIAGNOSIS FIRST
+Before patching, classify the error into ONE bucket and patch accordingly:
+1. Import resolution — wrong package, absolute path, missing extension, named-vs-default mismatch.
+2. Syntax / JSX — unclosed tag, missing fragment, ternary followed by \`&&\`, missing arrow \`=>\`.
+3. Type — missing field on interface, undefined access, wrong argument type.
+4. Runtime — null/undefined dereference, missing \`key\` on map, stale closure, infinite update loop.
+5. Hook — conditional hook call, hook outside a component, missing/incorrect deps.
 
 ## Error Information
 - **Error Message**: ${errorMessage}
@@ -263,24 +271,35 @@ ${targetFileContent}
 \`\`\`
 
 ## Fix Guidelines
-1. ONLY fix the specific error - do not refactor unrelated code
-2. Maintain the existing code style and patterns
-3. Ensure all imports are correct:
-   - motion/react for animations
-   - react-router for routing (not react-router-dom)
-   - lucide-react for icons
-4. If a component/function is undefined, add the appropriate import
-5. For missing exports, check related files for correct export names
-6. Use optional chaining (?.) for potentially null/undefined values
-7. Pay attention to special characters (escape apostrophes in strings)
+1. **Minimal patch** — fix ONLY the classified error, no refactors, no drive-by improvements.
+2. **Preserve style** — match the file's indentation, quote style, and patterns.
+3. **Preserve FluidFlow attributes** — never strip \`data-ff-group\` / \`data-ff-id\`.
+4. **Correct imports**:
+   - \`motion/react\` for animations (NOT \`framer-motion\`)
+   - \`react-router\` for routing (NOT \`react-router-dom\`)
+   - \`lucide-react\` for icons
+   - Always RELATIVE: \`'./components/X'\`, never \`'src/components/X'\`.
+5. **Defensive when unsure** — prefer \`?.\` and \`??\` over \`!\` non-null assertions you cannot verify.
+6. **For missing exports**, check related files above for the actual export name (named vs. default).
+7. **Special characters** — escape apostrophes inside strings; in JSX text use \`&apos;\` or wrap in expression \`{"that's"}\`.
+
+## Quick reference — common fixes
+
+| Symptom | Fix |
+|---------|-----|
+| \`Failed to resolve 'src/...'\` | Switch to relative: \`'./components/X'\` |
+| \`Module not found: 'framer-motion'\` | Use \`'motion/react'\` |
+| \`Cannot find 'react-router-dom'\` | Use \`'react-router'\` (v7) |
+| \`Adjacent JSX elements...\` | Wrap in \`<>…</>\` |
+| \`Cannot read properties of undefined\` | Optional chaining or default value |
+| \`Invalid hook call\` | Move hook to top level of a capitalized component |
+| \`Each child should have a unique "key"\` | Use a stable id, never the array index |
+| \`Maximum update depth exceeded\` | Guard the state update inside the effect |
 
 ${categoryHint ? `## Category-Specific Hints\n${categoryHint}` : ''}
 
 ## Required Output Format
-Return ONLY the complete fixed ${targetFile} code.
-- No explanations or comments about the fix
-- No markdown code blocks or backticks
-- Just valid TypeScript/TSX code that can directly replace the file`;
+Return ONLY the complete fixed ${targetFile} content. The first character of your response is the first character of the file (usually \`i\` from \`import\`). No markdown fence, no leading explanation, no trailing comment.`;
 }
 
 /**
