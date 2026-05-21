@@ -5,28 +5,33 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ZAIProvider } from '../../../services/ai/providers/zai';
 import { ProviderConfig } from '../../../services/ai/types';
 
-// Mock the entire OpenAI module
+// Mock the entire OpenAI module.
+// Vitest 4 requires constructor implementations to use `function` or `class`
+// so that `new MockedOpenAI(...)` is recognised as a constructor call;
+// an arrow-function implementation triggers "is not a constructor".
 vi.mock('openai', () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: vi.fn().mockResolvedValue({
-            choices: [{
-              message: {
-                role: 'assistant',
-                content: 'Hello! I can help you create a file.',
-              },
-              finish_reason: 'stop',
-            }],
-            usage: { prompt_tokens: 10, completion_tokens: 20 },
-          }),
-        },
-        models: {
-          list: vi.fn().mockResolvedValue({ data: [] })
+    default: vi.fn().mockImplementation(function MockOpenAI(this: unknown) {
+      return {
+        chat: {
+          completions: {
+            create: vi.fn().mockResolvedValue({
+              choices: [{
+                message: {
+                  role: 'assistant',
+                  content: 'Hello! I can help you create a file.',
+                },
+                finish_reason: 'stop',
+              }],
+              usage: { prompt_tokens: 10, completion_tokens: 20 },
+            }),
+          },
+          models: {
+            list: vi.fn().mockResolvedValue({ data: [] })
+          }
         }
-      }
-    }))
+      };
+    })
   };
 });
 
