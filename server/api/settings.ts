@@ -270,10 +270,18 @@ async function loadSettings(): Promise<GlobalSettings> {
       const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
       const settings = { ...DEFAULT_SETTINGS, ...safeJsonParse(data, {}) } as GlobalSettings;
 
-      // Decrypt API keys in provider configs
+      // Decrypt API keys in provider configs — per-config isolation so one
+      // corrupted ciphertext doesn't wipe out every saved provider.
       if (settings.aiProviders && settings.aiProviders.length > 0) {
         settings.aiProviders = await Promise.all(
-          settings.aiProviders.map(provider => decryptProviderConfig(provider))
+          settings.aiProviders.map(async (provider) => {
+            try {
+              return await decryptProviderConfig(provider);
+            } catch (err) {
+              console.error('[Settings] Skipping corrupted apiKey for provider:', provider.id, err);
+              return { ...provider, apiKey: '' };
+            }
+          })
         );
       } else {
         const envProvider = getEnvDefaultProvider();
