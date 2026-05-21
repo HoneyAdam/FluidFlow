@@ -153,7 +153,7 @@ export function getConsoleEnhancementsScript(): string {
           message: indent + message,
           timestamp: Date.now(),
           extra: extra || null
-        }, '*');
+        });
       }
 
       // Enhanced console.log

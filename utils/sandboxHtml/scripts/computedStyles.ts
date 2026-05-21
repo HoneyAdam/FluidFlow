@@ -272,7 +272,7 @@ export function getComputedStylesScript(): string {
           type: 'COMPUTED_STYLES_RESPONSE',
           requestId: event.data.requestId,
           styles: styles
-        }, '*');
+        });
       }
 
       if (event.data.type === 'APPLY_TEMP_STYLES') {
@@ -285,7 +285,7 @@ export function getComputedStylesScript(): string {
           type: 'TEMP_STYLES_APPLIED',
           requestId: event.data.requestId,
           success: success
-        }, '*');
+        });
       }
 
       if (event.data.type === 'CLEAR_TEMP_STYLES') {
@@ -294,7 +294,7 @@ export function getComputedStylesScript(): string {
         window.__postToParent({
           type: 'TEMP_STYLES_CLEARED',
           requestId: event.data.requestId
-        }, '*');
+        });
       }
     });
   `;

@@ -86,7 +86,7 @@ export function getNetworkStatusScript(): string {
           online: true,
           state: networkState,
           timestamp: Date.now()
-        }, '*');
+        });
       });
 
       // Handle offline event
@@ -102,7 +102,7 @@ export function getNetworkStatusScript(): string {
           online: false,
           state: networkState,
           timestamp: Date.now()
-        }, '*');
+        });
       });
 
       // Listen for connection changes (if supported)

@@ -154,7 +154,7 @@ export function getPerformanceMetricsScript(): string {
                   type: 'PERFORMANCE_LONG_TASK',
                   duration: entry.duration,
                   timestamp: Date.now()
-                }, '*');
+                });
               }
             });
           });
@@ -298,7 +298,7 @@ export function getPerformanceMetricsScript(): string {
           fps: currentFps,
           memory: window.__SANDBOX_PERF__.getMemory(),
           timestamp: Date.now()
-        }, '*');
+        });
       }, 2000);
 
     })();

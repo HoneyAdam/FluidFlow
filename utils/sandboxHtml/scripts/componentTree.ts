@@ -335,7 +335,7 @@ export function getComponentTreeScript(): string {
           type: 'COMPONENT_TREE_RESPONSE',
           requestId: event.data.requestId,
           tree: tree
-        }, '*');
+        });
       }
 
       if (event.data.type === 'REQUEST_NODE_DETAILS') {
@@ -344,7 +344,7 @@ export function getComponentTreeScript(): string {
           type: 'NODE_DETAILS_RESPONSE',
           requestId: event.data.requestId,
           details: details
-        }, '*');
+        });
       }
 
       if (event.data.type === 'HIGHLIGHT_TREE_NODE') {

@@ -53,7 +53,7 @@ export function getClipboardMockScript(): string {
                 type: 'CLIPBOARD_WRITE',
                 text: clipboardData.text,
                 timestamp: Date.now()
-              }, '*');
+              });
 
               resolve();
             } catch (e) {
@@ -81,7 +81,7 @@ export function getClipboardMockScript(): string {
             };
 
             window.addEventListener('message', handler);
-            window.__postToParent({ type: 'CLIPBOARD_READ_REQUEST' }, '*');
+            window.__postToParent({ type: 'CLIPBOARD_READ_REQUEST' });
           });
         },
 
@@ -196,7 +196,7 @@ export function getClipboardMockScript(): string {
               type: 'CLIPBOARD_WRITE',
               text: selectedText,
               timestamp: Date.now()
-            }, '*');
+            });
 
             // For cut, try to delete the selection
             if (lowerCommand === 'cut') {
@@ -309,7 +309,7 @@ export function getClipboardMockScript(): string {
             type: 'CLIPBOARD_WRITE',
             text: clipboardData.text,
             timestamp: Date.now()
-          }, '*');
+          });
         },
 
         // Get clipboard HTML

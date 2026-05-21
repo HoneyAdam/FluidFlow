@@ -373,7 +373,7 @@ export function getStatePreservationScript(): string {
                 scrollPositions: state.scroll.length,
                 route: state.route ? state.route.pathname : null
               }
-            }, '*');
+            });
             break;
 
           case 'RESTORE_STATE':
@@ -381,7 +381,7 @@ export function getStatePreservationScript(): string {
             window.__postToParent({
               type: 'STATE_RESTORED',
               success: restored
-            }, '*');
+            });
             break;
 
           case 'CLEAR_PRESERVED_STATE':

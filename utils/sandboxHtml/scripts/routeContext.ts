@@ -367,7 +367,7 @@ export function getRouteContextScript(): string {
           type: 'ROUTES_REGISTERED',
           requestId: event.data.requestId,
           count: (event.data.routes || []).length
-        }, '*');
+        });
       }
 
       if (event.data.type === 'GET_ROUTE_PARAMS') {
@@ -375,7 +375,7 @@ export function getRouteContextScript(): string {
           type: 'ROUTE_PARAMS_RESPONSE',
           requestId: event.data.requestId,
           params: window.__SANDBOX_ROUTE_CONTEXT__.getParams()
-        }, '*');
+        });
       }
 
       if (event.data.type === 'GET_ROUTE_MATCHES') {
@@ -383,7 +383,7 @@ export function getRouteContextScript(): string {
           type: 'ROUTE_MATCHES_RESPONSE',
           requestId: event.data.requestId,
           matches: window.__SANDBOX_ROUTE_CONTEXT__.matches
-        }, '*');
+        });
       }
     });
 

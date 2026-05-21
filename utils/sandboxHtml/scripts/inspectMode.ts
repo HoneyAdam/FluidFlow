@@ -66,14 +66,14 @@ export function getInspectModeScript(): string {
         window.__postToParent({
           type: 'INSPECT_HOVER',
           rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-        }, '*');
+        });
       }, true);
 
       document.addEventListener('mouseout', function(e) {
         if (highlightedEl) {
           highlightedEl.classList.remove('inspect-highlight');
         }
-        window.__postToParent({ type: 'INSPECT_LEAVE' }, '*');
+        window.__postToParent({ type: 'INSPECT_LEAVE' });
       }, true);
 
       document.addEventListener('click', function(e) {
@@ -111,7 +111,7 @@ export function getInspectModeScript(): string {
             ffGroup: target.getAttribute('data-ff-group') || null,
             ffId: target.getAttribute('data-ff-id') || null
           }
-        }, '*');
+        });
       }, true);
 
       // Update selection rect on scroll
@@ -121,7 +121,7 @@ export function getInspectModeScript(): string {
           window.__postToParent({
             type: 'INSPECT_SCROLL',
             rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-          }, '*');
+          });
         }
       }, true);
 
@@ -132,7 +132,7 @@ export function getInspectModeScript(): string {
           window.__postToParent({
             type: 'INSPECT_SCROLL',
             rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-          }, '*');
+          });
         }
       }, true);
     })();

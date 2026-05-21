@@ -317,7 +317,7 @@ export function getEventListenerCleanupScript(): string {
             type: 'MEMORY_LEAK_WARNING',
             leaks: leaks,
             timestamp: Date.now()
-          }, '*');
+          });
         }
       }, 30000);
 

@@ -25,7 +25,7 @@ export function getStoragePersistenceScript(): string {
         window.__postToParent({
           type: 'STORAGE_GET_ALL',
           storageType: storageType
-        }, '*');
+        });
 
         // Listen for storage data from parent
         window.addEventListener('message', function(event) {
@@ -55,7 +55,7 @@ export function getStoragePersistenceScript(): string {
               storageType: storageType,
               key: key,
               value: strValue
-            }, '*');
+            });
           },
 
           removeItem: function(key) {
@@ -65,7 +65,7 @@ export function getStoragePersistenceScript(): string {
               type: 'STORAGE_REMOVE',
               storageType: storageType,
               key: key
-            }, '*');
+            });
           },
 
           clear: function() {
@@ -74,7 +74,7 @@ export function getStoragePersistenceScript(): string {
             window.__postToParent({
               type: 'STORAGE_CLEAR',
               storageType: storageType
-            }, '*');
+            });
           },
 
           key: function(index) {
@@ -119,7 +119,7 @@ export function getStoragePersistenceScript(): string {
                   storageType: 'localStorage',
                   key: key,
                   value: String(value)
-                }, '*');
+                });
               };
             }
             if (prop === 'removeItem') {
@@ -129,7 +129,7 @@ export function getStoragePersistenceScript(): string {
                   type: 'STORAGE_REMOVE',
                   storageType: 'localStorage',
                   key: key
-                }, '*');
+                });
               };
             }
             if (prop === 'clear') {
@@ -138,7 +138,7 @@ export function getStoragePersistenceScript(): string {
                 window.__postToParent({
                   type: 'STORAGE_CLEAR',
                   storageType: 'localStorage'
-                }, '*');
+                });
               };
             }
             var value = target[prop];
@@ -171,8 +171,8 @@ export function getStoragePersistenceScript(): string {
       window.__SANDBOX_STORAGE__ = {
         // Request full sync from parent
         requestSync: function() {
-          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'localStorage' }, '*');
-          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'sessionStorage' }, '*');
+          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'localStorage' });
+          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'sessionStorage' });
         },
 
         // Export all storage data

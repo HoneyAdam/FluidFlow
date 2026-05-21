@@ -320,7 +320,7 @@ export function getScreenshotCaptureScript(): string {
             height: result.height,
             format: result.format,
             timestamp: Date.now()
-          }, '*');
+          });
           return result;
         });
       }
@@ -336,7 +336,7 @@ export function getScreenshotCaptureScript(): string {
               type: 'SCREENSHOT_ERROR',
               error: e.message,
               timestamp: Date.now()
-            }, '*');
+            });
           });
         }
       });

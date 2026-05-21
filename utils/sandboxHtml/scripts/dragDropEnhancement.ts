@@ -219,7 +219,7 @@ export function getDragDropEnhancementScript(): string {
               fileCount: files.length,
               fileNames: files.map(function(f) { return f.name; }),
               timestamp: Date.now()
-            }, '*');
+            });
           }
         }
 

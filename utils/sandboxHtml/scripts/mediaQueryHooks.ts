@@ -71,7 +71,7 @@ export function getMediaQueryHooksScript(): string {
           type: 'VIEWPORT_CHANGE',
           viewport: viewportState,
           timestamp: Date.now()
-        }, '*');
+        });
       }
 
       // Initialize viewport state

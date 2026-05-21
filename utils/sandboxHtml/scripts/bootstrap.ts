@@ -1136,7 +1136,7 @@ export function getBootstrapScript(files: FileSystem): string {
           logType: 'error',
           message: 'Compilation failed for: ' + errors.map(e => e.file).join(', ') + '. Check console for details.',
           timestamp: Date.now()
-        }, '*');
+        });
 
         // Show visual error in preview
         const root = document.getElementById('root');
