@@ -150,7 +150,7 @@ export function getPerformanceMetricsScript(): string {
             list.getEntries().forEach(function(entry) {
               if (entry.duration > 50) {
                 console.warn('[Perf] Long task detected: ' + entry.duration.toFixed(2) + 'ms');
-                window.parent.postMessage({
+                window.__postToParent({
                   type: 'PERFORMANCE_LONG_TASK',
                   duration: entry.duration,
                   timestamp: Date.now()
@@ -293,7 +293,7 @@ export function getPerformanceMetricsScript(): string {
 
       // Send periodic performance updates to parent
       setInterval(function() {
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'PERFORMANCE_UPDATE',
           fps: currentFps,
           memory: window.__SANDBOX_PERF__.getMemory(),

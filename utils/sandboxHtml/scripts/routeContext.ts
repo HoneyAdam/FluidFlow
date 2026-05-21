@@ -363,7 +363,7 @@ export function getRouteContextScript(): string {
       if (event.data.type === 'REGISTER_ROUTES') {
         window.__SANDBOX_ROUTE_CONTEXT__.registerRoutes(event.data.routes || []);
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'ROUTES_REGISTERED',
           requestId: event.data.requestId,
           count: (event.data.routes || []).length
@@ -371,7 +371,7 @@ export function getRouteContextScript(): string {
       }
 
       if (event.data.type === 'GET_ROUTE_PARAMS') {
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'ROUTE_PARAMS_RESPONSE',
           requestId: event.data.requestId,
           params: window.__SANDBOX_ROUTE_CONTEXT__.getParams()
@@ -379,7 +379,7 @@ export function getRouteContextScript(): string {
       }
 
       if (event.data.type === 'GET_ROUTE_MATCHES') {
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'ROUTE_MATCHES_RESPONSE',
           requestId: event.data.requestId,
           matches: window.__SANDBOX_ROUTE_CONTEXT__.matches

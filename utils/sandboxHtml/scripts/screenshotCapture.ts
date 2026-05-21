@@ -313,7 +313,7 @@ export function getScreenshotCaptureScript(): string {
       // Capture and send to parent
       function captureAndSend(options) {
         return capture(options).then(function(result) {
-          window.parent.postMessage({
+          window.__postToParent({
             type: 'SCREENSHOT_CAPTURED',
             dataUrl: result.dataUrl,
             width: result.width,
@@ -332,7 +332,7 @@ export function getScreenshotCaptureScript(): string {
             console.log('[Screenshot] Captured:', result.width + 'x' + result.height);
           }).catch(function(e) {
             console.error('[Screenshot] Capture failed:', e.message);
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'SCREENSHOT_ERROR',
               error: e.message,
               timestamp: Date.now()

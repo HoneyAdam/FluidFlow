@@ -63,7 +63,7 @@ export function getInspectModeScript(): string {
         highlightedEl = e.target;
 
         const rect = e.target.getBoundingClientRect();
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'INSPECT_HOVER',
           rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
         }, '*');
@@ -73,7 +73,7 @@ export function getInspectModeScript(): string {
         if (highlightedEl) {
           highlightedEl.classList.remove('inspect-highlight');
         }
-        window.parent.postMessage({ type: 'INSPECT_LEAVE' }, '*');
+        window.__postToParent({ type: 'INSPECT_LEAVE' }, '*');
       }, true);
 
       document.addEventListener('click', function(e) {
@@ -98,7 +98,7 @@ export function getInspectModeScript(): string {
         target.classList.add('inspect-selected');
         selectedEl = target;
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'INSPECT_SELECT',
           element: {
             tagName: target.tagName,
@@ -118,7 +118,7 @@ export function getInspectModeScript(): string {
       document.addEventListener('scroll', function() {
         if (selectedEl) {
           const rect = selectedEl.getBoundingClientRect();
-          window.parent.postMessage({
+          window.__postToParent({
             type: 'INSPECT_SCROLL',
             rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
           }, '*');
@@ -129,7 +129,7 @@ export function getInspectModeScript(): string {
       window.addEventListener('scroll', function() {
         if (selectedEl) {
           const rect = selectedEl.getBoundingClientRect();
-          window.parent.postMessage({
+          window.__postToParent({
             type: 'INSPECT_SCROLL',
             rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
           }, '*');

@@ -1131,7 +1131,7 @@ export function getBootstrapScript(files: FileSystem): string {
           console.error('[Sandbox] COMPILE ERROR in ' + e.file + ': ' + e.error);
         });
         // Notify parent about compilation failures
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'CONSOLE_LOG',
           logType: 'error',
           message: 'Compilation failed for: ' + errors.map(e => e.file).join(', ') + '. Check console for details.',

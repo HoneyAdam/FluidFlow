@@ -147,7 +147,7 @@ export function getConsoleEnhancementsScript(): string {
       // Send to parent with enhanced formatting
       function notify(type, message, extra) {
         var indent = '  '.repeat(groupDepth);
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'CONSOLE_LOG',
           logType: type,
           message: indent + message,

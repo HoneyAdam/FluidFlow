@@ -22,7 +22,7 @@ export function getStoragePersistenceScript(): string {
         var synced = false;
 
         // Request initial data from parent
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'STORAGE_GET_ALL',
           storageType: storageType
         }, '*');
@@ -50,7 +50,7 @@ export function getStoragePersistenceScript(): string {
             var strValue = String(value);
             data[key] = strValue;
             // Sync to parent
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'STORAGE_SET',
               storageType: storageType,
               key: key,
@@ -61,7 +61,7 @@ export function getStoragePersistenceScript(): string {
           removeItem: function(key) {
             delete data[key];
             // Sync to parent
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'STORAGE_REMOVE',
               storageType: storageType,
               key: key
@@ -71,7 +71,7 @@ export function getStoragePersistenceScript(): string {
           clear: function() {
             data = {};
             // Sync to parent
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'STORAGE_CLEAR',
               storageType: storageType
             }, '*');
@@ -114,7 +114,7 @@ export function getStoragePersistenceScript(): string {
             if (prop === 'setItem') {
               return function(key, value) {
                 target.setItem(key, value);
-                window.parent.postMessage({
+                window.__postToParent({
                   type: 'STORAGE_SET',
                   storageType: 'localStorage',
                   key: key,
@@ -125,7 +125,7 @@ export function getStoragePersistenceScript(): string {
             if (prop === 'removeItem') {
               return function(key) {
                 target.removeItem(key);
-                window.parent.postMessage({
+                window.__postToParent({
                   type: 'STORAGE_REMOVE',
                   storageType: 'localStorage',
                   key: key
@@ -135,7 +135,7 @@ export function getStoragePersistenceScript(): string {
             if (prop === 'clear') {
               return function() {
                 target.clear();
-                window.parent.postMessage({
+                window.__postToParent({
                   type: 'STORAGE_CLEAR',
                   storageType: 'localStorage'
                 }, '*');
@@ -171,8 +171,8 @@ export function getStoragePersistenceScript(): string {
       window.__SANDBOX_STORAGE__ = {
         // Request full sync from parent
         requestSync: function() {
-          window.parent.postMessage({ type: 'STORAGE_GET_ALL', storageType: 'localStorage' }, '*');
-          window.parent.postMessage({ type: 'STORAGE_GET_ALL', storageType: 'sessionStorage' }, '*');
+          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'localStorage' }, '*');
+          window.__postToParent({ type: 'STORAGE_GET_ALL', storageType: 'sessionStorage' }, '*');
         },
 
         // Export all storage data

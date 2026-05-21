@@ -313,7 +313,7 @@ export function getEventListenerCleanupScript(): string {
         var leaks = detectLeaks();
         if (leaks.length > 0) {
           console.warn('[EventListener] Potential memory leaks detected:', leaks.length);
-          window.parent.postMessage({
+          window.__postToParent({
             type: 'MEMORY_LEAK_WARNING',
             leaks: leaks,
             timestamp: Date.now()

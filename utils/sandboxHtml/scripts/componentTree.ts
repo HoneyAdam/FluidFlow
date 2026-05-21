@@ -331,7 +331,7 @@ export function getComponentTreeScript(): string {
 
       if (event.data.type === 'REQUEST_COMPONENT_TREE') {
         var tree = window.__SANDBOX_COMPONENT_TREE__.getTree();
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'COMPONENT_TREE_RESPONSE',
           requestId: event.data.requestId,
           tree: tree
@@ -340,7 +340,7 @@ export function getComponentTreeScript(): string {
 
       if (event.data.type === 'REQUEST_NODE_DETAILS') {
         var details = window.__SANDBOX_COMPONENT_TREE__.getNodeDetails(event.data.nodeId);
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'NODE_DETAILS_RESPONSE',
           requestId: event.data.requestId,
           details: details

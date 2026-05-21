@@ -365,7 +365,7 @@ export function getStatePreservationScript(): string {
           case 'CAPTURE_STATE':
             var state = captureState();
             // Notify parent that state was captured
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'STATE_CAPTURED',
               success: true,
               summary: {
@@ -378,7 +378,7 @@ export function getStatePreservationScript(): string {
 
           case 'RESTORE_STATE':
             var restored = restoreState();
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'STATE_RESTORED',
               success: restored
             }, '*');

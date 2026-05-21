@@ -49,7 +49,7 @@ export function getClipboardMockScript(): string {
               clipboardData.lastModified = Date.now();
 
               // Notify parent window
-              window.parent.postMessage({
+              window.__postToParent({
                 type: 'CLIPBOARD_WRITE',
                 text: clipboardData.text,
                 timestamp: Date.now()
@@ -81,7 +81,7 @@ export function getClipboardMockScript(): string {
             };
 
             window.addEventListener('message', handler);
-            window.parent.postMessage({ type: 'CLIPBOARD_READ_REQUEST' }, '*');
+            window.__postToParent({ type: 'CLIPBOARD_READ_REQUEST' }, '*');
           });
         },
 
@@ -192,7 +192,7 @@ export function getClipboardMockScript(): string {
             clipboardData.text = selectedText;
             clipboardData.lastModified = Date.now();
 
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'CLIPBOARD_WRITE',
               text: selectedText,
               timestamp: Date.now()
@@ -305,7 +305,7 @@ export function getClipboardMockScript(): string {
         setText: function(text) {
           clipboardData.text = String(text);
           clipboardData.lastModified = Date.now();
-          window.parent.postMessage({
+          window.__postToParent({
             type: 'CLIPBOARD_WRITE',
             text: clipboardData.text,
             timestamp: Date.now()

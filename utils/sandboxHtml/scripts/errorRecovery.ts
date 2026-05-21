@@ -83,7 +83,7 @@ export function getErrorRecoveryScript(): string {
         retryBtn.onmouseout = function() { retryBtn.style.background = '#89b4fa'; };
         retryBtn.onclick = function() {
           // Request parent to refresh the preview
-          window.parent.postMessage({ type: 'REQUEST_REFRESH' }, '*');
+          window.__postToParent({ type: 'REQUEST_REFRESH' }, '*');
         };
         container.appendChild(retryBtn);
 
@@ -152,7 +152,7 @@ export function getErrorRecoveryScript(): string {
           // Check if app has rendered content
           if (scrollContainer && scrollContainer.children.length > 0) {
             clearInterval(checkInterval);
-            window.parent.postMessage({ type: 'RENDER_COMPLETE' }, '*');
+            window.__postToParent({ type: 'RENDER_COMPLETE' }, '*');
             return;
           }
 
@@ -163,7 +163,7 @@ export function getErrorRecoveryScript(): string {
             var loadingDiv = root?.querySelector('.sandbox-loading');
             if (loadingDiv) {
               console.warn('[Recovery] Render timeout - still showing loading state');
-              window.parent.postMessage({
+              window.__postToParent({
                 type: 'CONSOLE_LOG',
                 logType: 'warn',
                 message: 'Application took too long to render. Check for errors in the code.',

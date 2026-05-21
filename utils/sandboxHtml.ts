@@ -17,6 +17,7 @@ import { analyzeFilesForImports } from './importResolver';
 
 // Import script generators from submodules
 import {
+  getPostToParentScript,
   getInspectModeScript,
   getFetchMockingScript,
   getAssetHandlingScript,
@@ -190,6 +191,10 @@ function buildIframeHtmlTemplate(files: FileSystem, isInspectMode: boolean): str
   <script>
     // Sandbox environment setup
     window.__SANDBOX_READY__ = false;
+
+    // Post-to-parent helper: defines window.__postToParent for origin-aware
+    // messaging. Must come BEFORE any other script that talks to the parent.
+    ${getPostToParentScript()}
 
     // Environment Variables (process.env, import.meta.env)
     ${getEnvVariablesScript()}

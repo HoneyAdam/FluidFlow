@@ -214,7 +214,7 @@ export function getDragDropEnhancementScript(): string {
             config.onDrop(files, e);
 
             // Notify parent
-            window.parent.postMessage({
+            window.__postToParent({
               type: 'FILE_DROP',
               fileCount: files.length,
               fileNames: files.map(function(f) { return f.name; }),

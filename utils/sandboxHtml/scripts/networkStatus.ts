@@ -81,7 +81,7 @@ export function getNetworkStatusScript(): string {
         console.log('[Network] Connection restored');
         notifyListeners('online', networkState);
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'NETWORK_STATUS',
           online: true,
           state: networkState,
@@ -97,7 +97,7 @@ export function getNetworkStatusScript(): string {
         console.warn('[Network] Connection lost');
         notifyListeners('offline', networkState);
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'NETWORK_STATUS',
           online: false,
           state: networkState,

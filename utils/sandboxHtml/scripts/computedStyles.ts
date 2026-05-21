@@ -268,7 +268,7 @@ export function getComputedStylesScript(): string {
 
         var styles = element ? window.__SANDBOX_COMPUTED_STYLES__.getStyles(element) : null;
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'COMPUTED_STYLES_RESPONSE',
           requestId: event.data.requestId,
           styles: styles
@@ -281,7 +281,7 @@ export function getComputedStylesScript(): string {
           event.data.styles
         );
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'TEMP_STYLES_APPLIED',
           requestId: event.data.requestId,
           success: success
@@ -291,7 +291,7 @@ export function getComputedStylesScript(): string {
       if (event.data.type === 'CLEAR_TEMP_STYLES') {
         window.__SANDBOX_COMPUTED_STYLES__.clearTempStyles(event.data.elementRef);
 
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'TEMP_STYLES_CLEARED',
           requestId: event.data.requestId
         }, '*');

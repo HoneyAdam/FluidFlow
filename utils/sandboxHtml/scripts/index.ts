@@ -4,6 +4,9 @@
  * Barrel export for all sandbox script generators.
  */
 
+// Post-to-parent helper (origin-aware messaging)
+export { getPostToParentScript } from './postToParent';
+
 // Inspect Mode
 export { getInspectModeScript } from './inspectMode';
 

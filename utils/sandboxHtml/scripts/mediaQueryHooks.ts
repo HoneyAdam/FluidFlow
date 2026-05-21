@@ -67,7 +67,7 @@ export function getMediaQueryHooksScript(): string {
         viewportState.isDesktop = viewportState.width >= breakpoints.lg;
 
         // Notify parent window
-        window.parent.postMessage({
+        window.__postToParent({
           type: 'VIEWPORT_CHANGE',
           viewport: viewportState,
           timestamp: Date.now()
