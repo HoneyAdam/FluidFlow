@@ -119,6 +119,7 @@ router.post('/minimax/chat/completions', async (req: Request, res: Response) => 
       } catch (streamError) {
         console.error('[AI Proxy] Stream error:', streamError);
       } finally {
+        reader.releaseLock();
         res.end();
       }
     } else {
