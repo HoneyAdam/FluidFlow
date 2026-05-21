@@ -23,7 +23,12 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    "alwaysStrict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true
   },
   "exclude": [
     "node_modules",

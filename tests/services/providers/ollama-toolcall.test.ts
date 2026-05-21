@@ -79,7 +79,7 @@ describe('OllamaProvider Tool Calling', () => {
 
   it('should detect and execute tool calls', async () => {
     let callCount = 0;
-    global.fetch = async (_url: string) => {
+    global.fetch = async (_url: URL | RequestInfo) => {
       callCount++;
       if (callCount === 1) {
         // First call returns tool calls
