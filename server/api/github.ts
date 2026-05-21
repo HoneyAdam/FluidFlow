@@ -962,8 +962,8 @@ router.get('/repos', rateLimitMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid GitHub token format' });
     }
 
-    // Fetch user's repos
-    const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
+    // Fetch user's repos (uses fetchWithTimeout like the rest of this file)
+    const response = await fetchWithTimeout('https://api.github.com/user/repos?sort=updated&per_page=50', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.github.v3+json'
