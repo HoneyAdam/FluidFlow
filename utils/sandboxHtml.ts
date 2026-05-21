@@ -72,13 +72,19 @@ export type { ComponentTreeNode, ComputedStylesResult } from './sandboxHtml/scri
  * - Console/error forwarding to parent window
  * - Inspect mode support
  */
-export function buildIframeHtml(files: FileSystem, isInspectMode: boolean = false): string {
+export function buildIframeHtml(
+  files: FileSystem,
+  isInspectMode: boolean = false,
+  parentOrigin: string = '',
+): string {
   // Analyze files for additional imports (proactive resolution)
   const dynamicImports = analyzeFilesForImports(files);
 
   // Build HTML with dynamic imports injected
   const html = buildIframeHtmlTemplate(files, isInspectMode);
-  return html.replace('__DYNAMIC_IMPORTS_PLACEHOLDER__', JSON.stringify(dynamicImports));
+  return html
+    .replace('__DYNAMIC_IMPORTS_PLACEHOLDER__', JSON.stringify(dynamicImports))
+    .replace('__PARENT_ORIGIN_PLACEHOLDER__', JSON.stringify(parentOrigin));
 }
 
 /**
@@ -191,6 +197,11 @@ function buildIframeHtmlTemplate(files: FileSystem, isInspectMode: boolean): str
   <script>
     // Sandbox environment setup
     window.__SANDBOX_READY__ = false;
+
+    // Host-injected parent origin (used by __postToParent when same-origin
+    // access is denied, e.g. when sandbox drops allow-same-origin).
+    // Empty string means "no host hint, fall back to '*'".
+    window.__PARENT_ORIGIN__ = __PARENT_ORIGIN_PLACEHOLDER__;
 
     // Post-to-parent helper: defines window.__postToParent for origin-aware
     // messaging. Must come BEFORE any other script that talks to the parent.

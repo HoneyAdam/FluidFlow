@@ -690,7 +690,7 @@ export const PreviewPanel = memo(function PreviewPanel({
   useEffect(() => {
     if (!appCode) return;
     const timeout = setTimeout(() => {
-      const html = buildIframeHtml(files, isInspectMode);
+      const html = buildIframeHtml(files, isInspectMode, window.location.origin);
       setIframeSrc(html);
     }, 500);
     return () => clearTimeout(timeout);
