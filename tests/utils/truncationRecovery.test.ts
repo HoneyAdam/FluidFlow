@@ -178,7 +178,7 @@ export async function fetchData(url) {
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx', 'src/Footer.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 3,
       };
 
@@ -206,7 +206,7 @@ export default function App() {
 
       const filePlan = {
         create: ['src/App.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 1,
       };
 
@@ -324,7 +324,7 @@ export default function App() {
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -355,7 +355,7 @@ export default function App() {
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Other.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -551,7 +551,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Other.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -598,7 +598,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx', 'src/Footer.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 3,
       };
 
@@ -622,7 +622,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -681,7 +681,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -706,7 +706,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/App.tsx', 'src/Other.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -729,7 +729,7 @@ The component uses functional syntax and returns JSX.
       // Missing Header.tsx should trigger continuation
       const filePlan = {
         create: ['src/App.tsx', 'src/Header.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 2,
       };
 
@@ -757,7 +757,7 @@ The component uses functional syntax and returns JSX.
 
       const filePlan = {
         create: ['src/Header.tsx', 'src/Footer.tsx', 'src/App.tsx'],
-        delete: [],
+        delete: [] as string[],
         total: 3,
       };
 

@@ -9,7 +9,7 @@ vi.mock('../contexts/AppContext', () => ({
   AppProvider: ({ children }: { children: React.ReactNode }) => children,
   useAppContext: () => ({
     files: {},
-    currentProject: null,
+    currentProject: null as unknown,
   }),
 }));
 

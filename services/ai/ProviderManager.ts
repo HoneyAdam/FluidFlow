@@ -117,8 +117,8 @@ export class ProviderManager {
             this.instances.delete(id);
           } else {
             // Compare configs without apiKey to avoid clearing on masked key differences
-            const oldCompare = { ...oldConfig, apiKey: undefined };
-            const newCompare = { ...newConfig, apiKey: undefined };
+            const { apiKey: _oldKey, ...oldCompare } = oldConfig;
+            const { apiKey: _newKey, ...newCompare } = newConfig;
             if (JSON.stringify(oldCompare) !== JSON.stringify(newCompare)) {
               this.instances.delete(id);
             }

@@ -274,7 +274,7 @@ describe('searchReplace', () => {
             content: 'export function NewFile() { return <div>New</div>; }'
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -296,7 +296,7 @@ describe('searchReplace', () => {
             ]
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -332,7 +332,7 @@ describe('searchReplace', () => {
         changes: {
           'src/App.tsx': { isDeleted: true }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -347,7 +347,7 @@ describe('searchReplace', () => {
         changes: {
           'node_modules/pkg/index.js': { isNew: true, content: 'module.exports = {}' }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -367,7 +367,7 @@ describe('searchReplace', () => {
             ]
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -382,7 +382,7 @@ describe('searchReplace', () => {
         changes: {
           'src/App.tsx': { isNew: true, content: '' }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -400,7 +400,7 @@ describe('searchReplace', () => {
             content: 'line1\\nline2\\ttabbed'
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -416,7 +416,7 @@ describe('searchReplace', () => {
             content: 'export default function App() { return <div>Hello World!</div>; }'
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -434,7 +434,7 @@ describe('searchReplace', () => {
             content: '<!-- FILE:src/App.tsx -->\nexport default function App() { return <div>Test</div>; }\n<!-- /FILE:src/App.tsx -->'
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -531,7 +531,7 @@ describe('searchReplace', () => {
             ]
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);
@@ -554,7 +554,7 @@ describe('searchReplace', () => {
             ]
           }
         },
-        deletedFiles: []
+        deletedFiles: [] as string[]
       };
 
       const result = mergeSearchReplaceChanges(currentFiles, response);

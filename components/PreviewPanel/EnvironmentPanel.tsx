@@ -211,7 +211,7 @@ export const EnvironmentPanel: React.FC<EnvironmentPanelProps> = ({ files, setFi
 
   const saveEnvFile = () => {
     const envContent = generateEnvFile(variables);
-    const newFiles = { ...files, '.env': envContent };
+    const newFiles: Record<string, string> = { ...files, '.env': envContent };
 
     // Also ensure .gitignore exists and has .env
     if (!gitignoreStatus.hasEnv) {

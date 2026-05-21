@@ -76,7 +76,7 @@ export async function importContext(file: File): Promise<{
     const contextManager = getContextManager();
 
     // Check if context with same ID exists, ask for overwrite
-    const existingContext = contextId => {
+    const existingContext = (contextId: string) => {
       try {
         contextManager.getContext(contextId);
         return true;

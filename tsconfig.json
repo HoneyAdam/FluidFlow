@@ -28,7 +28,8 @@
     "noUncheckedIndexedAccess": true,
     "alwaysStrict": true,
     "strictBindCallApply": true,
-    "strictFunctionTypes": true
+    "strictFunctionTypes": true,
+    "noImplicitAny": true
   },
   "exclude": [
     "node_modules",

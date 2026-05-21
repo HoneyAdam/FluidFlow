@@ -7,8 +7,8 @@ import GitPanel from '../../components/GitPanel';
 
 vi.mock('../../contexts/AppContext', () => ({
   useAppContext: () => ({
-    currentProject: null,
-    gitStatus: null,
+    currentProject: null as unknown,
+    gitStatus: null as unknown,
   }),
 }));
 

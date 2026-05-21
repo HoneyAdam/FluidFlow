@@ -936,14 +936,14 @@ router.get('/:id/context', async (req, res) => {
     const contextPath = getContextPath(id);
 
     // BUG-FIX: Use safe JSON parsing with fallback
-    const defaultContext = {
+    const defaultContext: ProjectContext = {
       history: [],
       currentIndex: -1,
       savedAt: 0
     };
 
     if (existsSync(contextPath)) {
-      const context = await safeReadJson<ProjectContext>(contextPath, defaultContext as ProjectContext);
+      const context = await safeReadJson<ProjectContext>(contextPath, defaultContext);
       res.json(context);
     } else {
       // Return empty context if not exists

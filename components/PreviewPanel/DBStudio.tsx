@@ -520,7 +520,7 @@ Use appropriate SQL types: INT, BIGINT, SERIAL, VARCHAR(255), TEXT, BOOLEAN, DAT
   const saveToFiles = () => {
     const sql = generateSQL(tables, edges);
     const relations = generateRelationsJson(nodes, edges);
-    const newFiles = { ...files, 'db/schema.sql': sql, 'db/relations.json': relations };
+    const newFiles: Record<string, string> = { ...files, 'db/schema.sql': sql, 'db/relations.json': relations };
 
     // Also update seed.sql if it exists
     if (files['db/seed.sql']) {

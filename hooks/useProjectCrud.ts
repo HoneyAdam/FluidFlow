@@ -154,7 +154,7 @@ export function useProjectCrud(options: UseProjectCrudOptions): UseProjectCrudRe
         // Fetch project and context in parallel
         const [project, savedContext] = await Promise.all([
           projectApi.get(id),
-          projectApi.getContext(id).catch(() => null), // do not fail if context doesn't exist
+          projectApi.getContext(id).catch((): null => null), // do not fail if context doesn't exist
         ]);
 
         // Check if a newer openProject call was made while we were fetching

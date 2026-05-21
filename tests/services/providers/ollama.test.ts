@@ -67,7 +67,7 @@ describe('OllamaProvider', () => {
     });
 
     it('should handle missing API key (Ollama does not require API key)', () => {
-      const noKeyConfig = { ...config, apiKey: undefined };
+      const noKeyConfig = { ...config, apiKey: undefined as string | undefined };
       const noKeyProvider = new OllamaProvider(noKeyConfig);
       expect(noKeyProvider.config.apiKey).toBeUndefined();
     });

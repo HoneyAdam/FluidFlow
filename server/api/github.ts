@@ -424,7 +424,7 @@ router.post('/:id/push', rateLimitMiddleware, async (req, res) => {
     }
 
     // Check if we have any commits
-    const log = await git.log({ maxCount: 1 }).catch(() => null);
+    const log = await git.log({ maxCount: 1 }).catch((): null => null);
     if (!log || log.total === 0) {
       console.log(`[Push] No commits found`);
       return res.status(400).json({ error: 'No commits to push. Please make a commit first.' });
