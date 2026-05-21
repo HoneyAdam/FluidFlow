@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { isValidProjectId, isValidFilePath, sanitizeFilePath } from '../utils/validation';
+import { isValidProjectId, isValidFilePath, sanitizeFilePath, isPathWithin } from '../utils/validation';
 import { safeReadJson } from '../utils/safeJson';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1049,7 +1049,7 @@ router.get('/:id/file', async (req, res) => {
 
     // Security: Ensure path is within project directory
     const projectFilesDir = getFilesDir(id);
-    if (!fullPath.startsWith(projectFilesDir)) {
+    if (!isPathWithin(fullPath, projectFilesDir)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -1121,7 +1121,7 @@ router.put('/:id/file', async (req, res) => {
 
     // Security: Ensure path is within project directory
     const projectFilesDir = getFilesDir(id);
-    if (!fullPath.startsWith(projectFilesDir)) {
+    if (!isPathWithin(fullPath, projectFilesDir)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -1170,7 +1170,7 @@ router.delete('/:id/file', async (req, res) => {
 
     // Security: Ensure path is within project directory
     const projectFilesDir = getFilesDir(id);
-    if (!fullPath.startsWith(projectFilesDir)) {
+    if (!isPathWithin(fullPath, projectFilesDir)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 

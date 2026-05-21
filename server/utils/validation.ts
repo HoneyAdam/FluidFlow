@@ -2,6 +2,8 @@
  * Server-side validation utilities for security
  */
 
+import path from 'path';
+
 // UUID v4 regex pattern
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -70,6 +72,21 @@ export function isValidFilePath(filePath: unknown): boolean {
  */
 export function sanitizeFilePath(filePath: string): string {
   return filePath.replace(/\\/g, '/');
+}
+
+/**
+ * Verifies that `child` resolves to a location inside `parent`.
+ *
+ * Why: `startsWith` on raw joined paths is bypassable on case-insensitive
+ * filesystems and misses cases where `parent` is missing a trailing separator
+ * (`/a/b` would match `/a/bc`). This resolver-based check normalizes both
+ * sides and requires a clean separator boundary.
+ */
+export function isPathWithin(child: string, parent: string): boolean {
+  const resolvedChild = path.resolve(child);
+  const resolvedParent = path.resolve(parent);
+  if (resolvedChild === resolvedParent) return true;
+  return resolvedChild.startsWith(resolvedParent + path.sep);
 }
 
 /**
