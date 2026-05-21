@@ -75,12 +75,17 @@ export function useExport(options: UseExportOptions): UseExportReturn {
   const [hasRemote, setHasRemote] = useState(false);
   const [currentRemoteUrl, setCurrentRemoteUrl] = useState('');
 
-  // Load remote info when projectId changes or modal opens
-  useEffect(() => {
+  // Load remote info when projectId changes or modal opens.
+  // Cancellation flag: if projectId switches mid-fetch, the older response
+  // must not overwrite remote state for the newer project.
+  useEffect((): (() => void) | undefined => {
+    if (!projectId || !showGithubModal) return undefined;
+    let cancelled = false;
+
     const loadRemotes = async () => {
-      if (!projectId || !showGithubModal) return;
       try {
         const result = await githubApi.getRemotes(projectId);
+        if (cancelled) return;
         if (result.initialized && result.remotes.length > 0) {
           const origin = result.remotes.find(r => r.name === 'origin');
           if (origin) {
@@ -92,12 +97,14 @@ export function useExport(options: UseExportOptions): UseExportReturn {
           setCurrentRemoteUrl('');
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to load remotes:', err);
         setHasRemote(false);
         setCurrentRemoteUrl('');
       }
     };
     loadRemotes();
+    return () => { cancelled = true; };
   }, [projectId, showGithubModal]);
 
   /**
