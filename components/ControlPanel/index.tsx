@@ -170,15 +170,15 @@ export const ControlPanel = forwardRef<ControlPanelRef, ControlPanelProps>(({
   }, [isInitialized, currentProject?.id]); // Wait for initialization
 
   // Save chat messages when they change
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     // Don't save if no messages or if this is the initial empty state
-    if (messages.length === 0) return;
+    if (messages.length === 0) return undefined;
 
     const chatId = currentProject?.id || SCRATCH_WIP_ID;
     const messagesJson = JSON.stringify(messages);
 
     // Skip if messages haven't changed
-    if (messagesJson === lastSavedMessagesRef.current) return;
+    if (messagesJson === lastSavedMessagesRef.current) return undefined;
     lastSavedMessagesRef.current = messagesJson;
 
     // Debounce save

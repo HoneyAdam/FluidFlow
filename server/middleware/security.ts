@@ -65,7 +65,7 @@ export const securityHeaders = helmet({
 /**
  * Request validation middleware
  */
-export function validateRequest(req: Request, res: Response, next: NextFunction) {
+export function validateRequest(req: Request, res: Response, next: NextFunction): void {
   // Check for common attack patterns
   // VULN-017 fix: Remove 'g' flag to prevent stateful regex .test() false negatives
   const suspiciousPatterns = [
@@ -95,9 +95,10 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
 
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(bodyToScan) || pattern.test(query)) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid request: potentially malicious content detected',
       });
+      return;
     }
   }
 
@@ -105,9 +106,10 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.get('Content-Type');
     if (contentType && !contentType.includes('application/json')) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid Content-Type. Expected application/json',
       });
+      return;
     }
   }
 
@@ -155,7 +157,7 @@ export function errorHandler(
   req: Request,
   res: Response,
   _next: NextFunction
-) {
+): void {
   // Log the error
   console.error(`[ERROR] ${req.method} ${req.path}:`, err);
 
@@ -164,16 +166,18 @@ export function errorHandler(
 
   // Handle specific error types
   if (err.name === 'ValidationError') {
-    return res.status(400).json({
+    res.status(400).json({
       error: 'Validation error',
       details: isDevelopment ? err.message : undefined,
     });
+    return;
   }
 
   if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Unauthorized',
     });
+    return;
   }
 
   // Default error response

@@ -180,7 +180,7 @@ export const PreviewPanel = memo(function PreviewPanel({
   }, [isRunnerActive, onRunnerStatusChange, setRunnerActive]);
 
   // Close settings when clicking outside
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     const handleClickOutside = (e: MouseEvent) => {
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
         setShowSettings(false);
@@ -190,13 +190,14 @@ export const PreviewPanel = memo(function PreviewPanel({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+    return undefined;
   }, [showSettings]);
 
   // Check runner status periodically
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     if (!projectId) {
       setIsRunnerActive(false);
-      return;
+      return undefined;
     }
 
     let mounted = true;
@@ -687,8 +688,8 @@ export const PreviewPanel = memo(function PreviewPanel({
   }, [setFiles, setActiveFile]);
 
   // Build iframe content (FIX-08: debounce to avoid rebuilding on every keystroke)
-  useEffect(() => {
-    if (!appCode) return;
+  useEffect((): (() => void) | undefined => {
+    if (!appCode) return undefined;
     const timeout = setTimeout(() => {
       const html = buildIframeHtml(files, isInspectMode, window.location.origin);
       setIframeSrc(html);

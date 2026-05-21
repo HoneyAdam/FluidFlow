@@ -117,8 +117,8 @@ export function useScreenshot({
   }, [projectId, onCapture]);
 
   // Auto-capture after delay (initial)
-  useEffect(() => {
-    if (!autoCapture || !projectId || !iframeRef.current) return;
+  useEffect((): (() => void) | undefined => {
+    if (!autoCapture || !projectId || !iframeRef.current) return undefined;
 
     const timer = setTimeout(() => {
       capture().then(() => {
@@ -131,16 +131,16 @@ export function useScreenshot({
   }, [autoCapture, autoCaptureDelay, projectId]);
 
   // Auto-capture on significant changes (triggered by triggerOnChange)
-  useEffect(() => {
-    if (!autoCapture || !projectId || !iframeRef.current) return;
+  useEffect((): (() => void) | undefined => {
+    if (!autoCapture || !projectId || !iframeRef.current) return undefined;
 
     // Only trigger if the value actually changed
-    if (triggerOnChange === prevTriggerRef.current) return;
+    if (triggerOnChange === prevTriggerRef.current) return undefined;
 
     // Skip first render (no previous value)
     if (prevTriggerRef.current === null) {
       prevTriggerRef.current = triggerOnChange ?? null;
-      return;
+      return undefined;
     }
 
     prevTriggerRef.current = triggerOnChange ?? null;
@@ -150,7 +150,7 @@ export function useScreenshot({
     const timeSinceLastCapture = now - lastAutoCaptureRef.current;
     if (timeSinceLastCapture < autoCaptureThrottle) {
       console.log(`[Screenshot] Auto-capture throttled (${Math.round((autoCaptureThrottle - timeSinceLastCapture) / 1000)}s remaining)`);
-      return;
+      return undefined;
     }
 
     // Wait for preview to stabilize before capturing

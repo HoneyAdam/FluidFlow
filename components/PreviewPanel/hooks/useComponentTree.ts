@@ -130,20 +130,21 @@ export function useComponentTree({
   }, [enabled, isConnected, requestComponentTree]);
 
   // Auto-refresh
-  useEffect(() => {
-    if (!enabled || !isConnected || autoRefreshInterval <= 0) return;
+  useEffect((): (() => void) | undefined => {
+    if (!enabled || !isConnected || autoRefreshInterval <= 0) return undefined;
 
     const interval = setInterval(refreshTree, autoRefreshInterval);
     return () => clearInterval(interval);
   }, [enabled, isConnected, autoRefreshInterval, refreshTree]);
 
   // Initial fetch when connected (debounced)
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     if (enabled && isConnected && !tree) {
       // Delay initial fetch to ensure iframe is ready
       const timeout = setTimeout(refreshTree, 500);
       return () => clearTimeout(timeout);
     }
+    return undefined;
   }, [enabled, isConnected, tree, refreshTree]);
 
   // Select node

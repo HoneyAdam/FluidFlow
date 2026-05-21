@@ -124,12 +124,13 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
   };
 
   // Close menu on outside click
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     const handleClick = () => setMenuOpenId(null);
     if (menuOpenId) {
       document.addEventListener('click', handleClick);
       return () => document.removeEventListener('click', handleClick);
     }
+    return undefined;
   }, [menuOpenId]);
 
   return (

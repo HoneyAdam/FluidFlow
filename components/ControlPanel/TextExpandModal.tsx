@@ -100,8 +100,8 @@ export const TextExpandModal: React.FC<TextExpandModalProps> = ({
   const { isCopied: copied, copy } = useCopyToClipboard();
 
   // Handle ESC key
-  useEffect(() => {
-    if (!isOpen) return;
+  useEffect((): (() => void) | undefined => {
+    if (!isOpen) return undefined;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

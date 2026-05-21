@@ -187,9 +187,9 @@ export const RunnerPanel: React.FC<RunnerPanelProps> = ({
   const scrollRequestRef = useRef<number | null>(null);
   const lastLogCountRef = useRef(0);
 
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     // Only scroll if new logs were added (not on every render)
-    if (terminalLogs.length === lastLogCountRef.current) return;
+    if (terminalLogs.length === lastLogCountRef.current) return undefined;
     lastLogCountRef.current = terminalLogs.length;
 
     if (terminalRef.current && devToolsTab === 'terminal') {

@@ -301,15 +301,15 @@ export function AppProvider({ children, defaultFiles }: AppProviderProps) {
   }, [project.isInitialized, project.currentProject, resetFiles, setActiveTab]);
 
   // Save WIP to IndexedDB when files change
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     // Save to project WIP or scratch WIP depending on context
     const wipId = project.currentProject?.id || SCRATCH_WIP_ID;
 
     // For project WIP, wait for initialization
-    if (project.currentProject && !hasInitializedFromBackend.current) return;
+    if (project.currentProject && !hasInitializedFromBackend.current) return undefined;
 
     // Don't save empty files
-    if (Object.keys(files).length === 0) return;
+    if (Object.keys(files).length === 0) return undefined;
 
     // Track uncommitted changes for project mode
     if (project.currentProject) {

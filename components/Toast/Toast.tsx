@@ -55,8 +55,8 @@ export const ToastItem: React.FC<ToastProps> = ({ toast, onDismiss }) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (toast.duration === 0) return;
+  useEffect((): (() => void) | undefined => {
+    if (toast.duration === 0) return undefined;
 
     const duration = toast.duration ?? 5000;
     const interval = 50; // Update every 50ms

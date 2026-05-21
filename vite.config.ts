@@ -74,8 +74,8 @@ export default defineConfig(({ mode }) => {
           'os'
         ],
         output: {
-          manualChunks(id) {
-            if (!id.includes('node_modules')) return;
+          manualChunks(id): string | undefined {
+            if (!id.includes('node_modules')) return undefined;
             // React core
             if (id.includes('/react-dom/') || id.includes('/react/')) return 'vendor-react-core';
             // Icons
@@ -95,6 +95,7 @@ export default defineConfig(({ mode }) => {
               id.includes('/uuid/') ||
               id.includes('/marked/')
             ) return 'vendor-utils';
+            return undefined;
           }
         }
       }

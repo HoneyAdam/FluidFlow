@@ -55,8 +55,8 @@ export const MegaSettingsModal: React.FC<MegaSettingsModalProps> = ({
   }, [isOpen, initialCategory]);
 
   // Handle escape key - only add listener when modal is open to prevent accumulation
-  useEffect(() => {
-    if (!isOpen) return;
+  useEffect((): (() => void) | undefined => {
+    if (!isOpen) return undefined;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

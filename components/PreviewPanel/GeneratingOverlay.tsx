@@ -85,14 +85,14 @@ export const GeneratingOverlay = memo(function GeneratingOverlay({
   };
 
   // Cycle through promotions (only if autoPlay is enabled)
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     if (!isGenerating) {
       setCurrentIndex(0);
       setAutoPlay(true);
-      return;
+      return undefined;
     }
 
-    if (!autoPlay) return;
+    if (!autoPlay) return undefined;
 
     const interval = setInterval(() => {
       setIsTransitioning(true);

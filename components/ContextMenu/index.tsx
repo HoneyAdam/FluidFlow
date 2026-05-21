@@ -72,8 +72,8 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
   }, []);
 
   // Close on click outside or Escape (only when menu is visible)
-  useEffect(() => {
-    if (!state.show) return;
+  useEffect((): (() => void) | undefined => {
+    if (!state.show) return undefined;
 
     const handleClick = () => hideContextMenu();
     const handleEscape = (e: KeyboardEvent) => {

@@ -86,7 +86,7 @@ export function useLogStream({
     setLogs([]);
   }, []);
 
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     if (!projectId || !enabled) {
       // Close any existing connection
       if (eventSourceRef.current) {
@@ -98,7 +98,7 @@ export function useLogStream({
         batchTimeoutRef.current = null;
       }
       setConnected(false);
-      return;
+      return undefined;
     }
 
     // Create SSE connection

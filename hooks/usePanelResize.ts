@@ -96,8 +96,8 @@ export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelRes
   }, [defaultWidth]);
 
   // Global mouse move and mouse up handlers when dragging
-  useEffect(() => {
-    if (!isDragging) return;
+  useEffect((): (() => void) | undefined => {
+    if (!isDragging) return undefined;
 
     const handleMouseMove = (e: MouseEvent) => {
       const maxWidth = getMaxWidth();

@@ -64,8 +64,8 @@ export const ComponentInspector: React.FC<ComponentInspectorProps> = ({
     document.body.style.userSelect = 'none';
   };
 
-  useEffect(() => {
-    if (!isDragging) return;
+  useEffect((): (() => void) | undefined => {
+    if (!isDragging) return undefined;
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
@@ -421,8 +421,8 @@ const DraggableLabel: React.FC<{
     };
   };
 
-  useEffect(() => {
-    if (!isDragging) return;
+  useEffect((): (() => void) | undefined => {
+    if (!isDragging) return undefined;
 
     const handleMouseMove = (e: MouseEvent) => {
       const dx = e.clientX - dragStartRef.current.x;

@@ -197,7 +197,7 @@ export default function App() {
   }, []);
 
   // Check if first visit and show credits
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     const hasVisited = localStorage.getItem(STORAGE_KEYS.HAS_VISITED);
     if (!hasVisited) {
       localStorage.setItem(STORAGE_KEYS.HAS_VISITED, 'true');
@@ -207,6 +207,7 @@ export default function App() {
       }, CREDITS_MODAL_DELAY_MS);
       return () => clearTimeout(creditsTimeout);
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

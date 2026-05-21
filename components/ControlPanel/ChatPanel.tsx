@@ -585,7 +585,7 @@ export const ChatPanel = memo(function ChatPanel({
   }, [messages, streamingChars, isGenerating]);
 
   // Auto-continue to next batch after 10 seconds
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     // Find the last message with continuation data
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.continuation && !isGenerating && onSetExternalPrompt) {
@@ -615,6 +615,7 @@ export const ChatPanel = memo(function ChatPanel({
     } else {
       setAutoContinueCountdown(0);
     }
+    return undefined;
   }, [messages, isGenerating, onSetExternalPrompt]);
 
   if (messages.length === 0) {

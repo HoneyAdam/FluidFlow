@@ -347,12 +347,13 @@ export const ProjectsPanel: React.FC = () => {
   };
 
   // Close menu on outside click
-  useEffect(() => {
+  useEffect((): (() => void) | undefined => {
     const handleClick = () => setMenuOpenId(null);
     if (menuOpenId) {
       document.addEventListener('click', handleClick);
       return () => document.removeEventListener('click', handleClick);
     }
+    return undefined;
   }, [menuOpenId]);
 
   // Load full-size image when lightbox opens
