@@ -40,11 +40,6 @@ export default defineConfig(({ mode }) => {
     // securely (encrypted) in localStorage and backend. For development, set
     // GEMINI_API_KEY in .env and the backend will automatically configure the default provider.
     define: {},
-    esbuild: {
-      // Strip console.log/debug in production; keep warn/error for diagnostics
-      pure: mode === 'production' ? ['console.log', 'console.debug'] : [],
-      drop: mode === 'production' ? ['debugger'] : [],
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -67,13 +62,30 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: false,
-      rollupOptions: {
+      // Vite 8 swapped esbuild for the oxc-based rolldown bundler. The legacy
+      // `build.rollupOptions` became `build.rolldownOptions`; production-only
+      // `esbuild.pure`/`esbuild.drop` is now expressed through the rolldown
+      // output minifier (pure_funcs declares the calls side-effect-free so
+      // DCE removes them; drop_debugger drops the literal `debugger` keyword).
+      // We intentionally keep console.warn/.error in production for runtime
+      // diagnostics.
+      rolldownOptions: {
         external: [
           'fs',
           'path',
           'os'
         ],
         output: {
+          ...(mode === 'production' ? {
+            minify: {
+              compress: {
+                dropDebugger: true,
+                treeshake: {
+                  manualPureFunctions: ['console.log', 'console.debug'],
+                },
+              },
+            },
+          } : {}),
           manualChunks(id): string | undefined {
             if (!id.includes('node_modules')) return undefined;
             // React core
