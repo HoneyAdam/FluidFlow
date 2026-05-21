@@ -88,7 +88,10 @@ export async function fetchProvidersFromModelsDev(): Promise<ProviderMetadata[]>
   }
 
   try {
-    const response = await fetch('https://models.dev/api.json');
+    // 10s timeout — provider catalog refresh should not hang on remote outages.
+    const response = await fetch('https://models.dev/api.json', {
+      signal: AbortSignal.timeout(10000),
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch: ${response.status}`);
     }

@@ -92,12 +92,14 @@ export function compareVersions(a: string, b: string): number {
  */
 export async function checkForUpdates(): Promise<UpdateCheckResult> {
   try {
+    // 10s timeout — update check should not hang the UI on GitHub outages.
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
       {
         headers: {
           Accept: 'application/vnd.github.v3+json',
         },
+        signal: AbortSignal.timeout(10000),
       }
     );
 
