@@ -86,7 +86,8 @@ const rateLimitMap = new Map<string, RateLimitEntry>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute for expensive ops
 
-// Cleanup old rate limit entries every 5 minutes
+// Cleanup old rate limit entries every 5 minutes.
+// .unref() so this background timer doesn't block Node from exiting cleanly.
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap.entries()) {
@@ -94,7 +95,7 @@ setInterval(() => {
       rateLimitMap.delete(key);
     }
   }
-}, 5 * 60 * 1000);
+}, 5 * 60 * 1000).unref();
 
 // GH-002 fix: Rate limiting middleware for expensive operations
 function rateLimitMiddleware(req: Request, res: Response, next: NextFunction) {

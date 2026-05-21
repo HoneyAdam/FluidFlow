@@ -128,7 +128,8 @@ const projectLockQueues = new Map<string, { promise: Promise<void>; timestamp: n
 // BUG-036 FIX: Maximum number of concurrent lock queues to prevent memory exhaustion
 const MAX_LOCK_QUEUES = 100;
 
-// Periodic cleanup of stale lock queues (queues not accessed for 5 minutes)
+// Periodic cleanup of stale lock queues (queues not accessed for 5 minutes).
+// .unref() so this background timer doesn't block Node from exiting cleanly.
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 setInterval(() => {
   const now = Date.now();
@@ -138,7 +139,7 @@ setInterval(() => {
       projectLockQueues.delete(projectId);
     }
   }
-}, 60 * 1000); // Check every minute
+}, 60 * 1000).unref(); // Check every minute
 
 async function withProjectLock<T>(projectId: string, fn: () => Promise<T>): Promise<T> {
   // BUG-036 FIX: Check queue size before adding new entries
