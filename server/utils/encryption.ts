@@ -112,15 +112,18 @@ export async function decrypt(encryptedValue: string): Promise<string> {
   }
 
   const [ivHex, authTagHex, ciphertext] = parts;
+  const ivHexStr = ivHex ?? '';
+  const authTagHexStr = authTagHex ?? '';
+  const ciphertextStr = ciphertext ?? '';
 
   try {
-    const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
+    const iv = Buffer.from(ivHexStr, 'hex');
+    const authTag = Buffer.from(authTagHexStr, 'hex');
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
 
-    let plaintext = decipher.update(ciphertext, 'hex', 'utf8');
+    let plaintext = decipher.update(ciphertextStr, 'hex', 'utf8');
     plaintext += decipher.final('utf8');
 
     return plaintext;
