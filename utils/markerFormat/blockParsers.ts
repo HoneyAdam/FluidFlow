@@ -26,7 +26,7 @@ export function parseMarkerPlan(response: string): MarkerFilePlan | null {
   const planMatch = response.match(/<!--\s*PLAN\s*-->([\s\S]*?)<!--\s*\/PLAN\s*-->/);
   if (!planMatch) return null;
 
-  const planContent = planMatch[1].trim();
+  const planContent = (planMatch[1] ?? '').trim();
   const lines = planContent.split('\n').map((l) => l.trim()).filter(Boolean);
 
   const plan: MarkerFilePlan = {
@@ -82,7 +82,7 @@ export function parseMarkerPlan(response: string): MarkerFilePlan | null {
  */
 export function parseMarkerExplanation(response: string): string | undefined {
   const match = response.match(/<!--\s*EXPLANATION\s*-->([\s\S]*?)<!--\s*\/EXPLANATION\s*-->/);
-  return match ? match[1].trim() : undefined;
+  return match ? (match[1] ?? '').trim() : undefined;
 }
 
 // ============================================================================
@@ -108,7 +108,7 @@ export function parseMarkerGenerationMeta(response: string): GenerationMeta | un
   );
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
 
   const meta: GenerationMeta = {
@@ -173,7 +173,7 @@ export function parseMarkerMeta(response: string): MarkerMeta | undefined {
   const match = response.match(/<!--\s*META\s*-->([\s\S]*?)<!--\s*\/META\s*-->/);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
 
   const meta: MarkerMeta = {
@@ -222,7 +222,7 @@ export function parseMarkerManifest(response: string): MarkerManifestEntry[] | u
   const match = response.match(/<!--\s*MANIFEST\s*-->([\s\S]*?)<!--\s*\/MANIFEST\s*-->/);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
 
   const entries: MarkerManifestEntry[] = [];
@@ -241,7 +241,7 @@ export function parseMarkerManifest(response: string): MarkerManifestEntry[] | u
         .filter(Boolean);
 
       if (cells.length >= 5) {
-        const [file, action, linesStr, tokensStr, status] = cells;
+        const [file = '', action = '', linesStr = '', tokensStr = '', status = ''] = cells;
 
         // Parse tokens (handle ~320 format)
         const tokens = parseInt(tokensStr.replace(/[~,]/g, ''), 10) || 0;
@@ -291,7 +291,7 @@ export function parseMarkerBatch(response: string): MarkerBatch | undefined {
   const match = response.match(/<!--\s*BATCH\s*-->([\s\S]*?)<!--\s*\/BATCH\s*-->/);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
 
   const batch: MarkerBatch = {
