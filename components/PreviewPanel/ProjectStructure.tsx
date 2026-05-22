@@ -47,11 +47,11 @@ function analyzeFile(path: string, content: string): FileAnalysis {
 
   // Extract exports
   const exportMatches = content.matchAll(/export\s+(?:default\s+)?(?:const|function|class|interface|type|enum)\s+(\w+)/g);
-  const exports = [...exportMatches].map(m => m[1]);
+  const exports = [...exportMatches].map(m => m[1] ?? '');
 
   // Extract imports
   const importMatches = content.matchAll(/import\s+(?:{[^}]+}|\w+)\s+from\s+['"]([^'"]+)['"]/g);
-  const imports = [...importMatches].map(m => m[1]);
+  const imports = [...importMatches].map(m => m[1] ?? '');
 
   // Extract dependencies (external packages)
   const dependencies = imports.filter(i => !i.startsWith('.') && !i.startsWith('@/'));
@@ -185,7 +185,7 @@ export const ProjectStructure: React.FC<ProjectStructureProps> = ({ files }) => 
       data: [],
       other: []
     };
-    analyses.forEach(a => groups[a.type].push(a));
+    analyses.forEach(a => (groups[a.type] ?? []).push(a));
     return groups;
   }, [analyses]);
 
@@ -274,7 +274,7 @@ export const ProjectStructure: React.FC<ProjectStructureProps> = ({ files }) => 
             <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--theme-glass-200)', border: '1px solid var(--theme-border-light)' }}>
               <h3 className="text-sm font-medium mb-4" style={{ color: 'var(--theme-text-secondary)' }}>Component Hierarchy</h3>
               <div className="space-y-1 font-mono text-xs">
-                {groupedFiles.component.slice(0, 10).map((comp, i) => (
+                {(groupedFiles.component ?? []).slice(0, 10).map((comp, i) => (
                   <div key={i} className="flex items-center gap-2 py-1 px-2 rounded">
                     <Component className="w-3 h-3" style={{ color: 'var(--color-info)' }} />
                     <span style={{ color: 'var(--theme-text-secondary)' }}>{comp.name}</span>
@@ -283,9 +283,9 @@ export const ProjectStructure: React.FC<ProjectStructureProps> = ({ files }) => 
                     )}
                   </div>
                 ))}
-                {groupedFiles.component.length > 10 && (
+                {(groupedFiles.component ?? []).length > 10 && (
                   <div className="text-[10px] pl-5" style={{ color: 'var(--theme-text-dim)' }}>
-                    ...and {groupedFiles.component.length - 10} more
+                    ...and {(groupedFiles.component?.length ?? 0) - 10} more
                   </div>
                 )}
               </div>

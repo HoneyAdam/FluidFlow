@@ -11,7 +11,7 @@ import type { ScreenshotMeta } from '@/services/api/types';
 
 interface UseScreenshotOptions {
   projectId: string | null;
-  iframeRef: React.RefObject<HTMLIFrameElement>;
+  iframeRef: React.RefObject<HTMLIFrameElement | null>;
   autoCapture?: boolean;
   autoCaptureDelay?: number;
   /** Trigger auto-capture when this value changes (e.g., file hash or timestamp) */
