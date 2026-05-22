@@ -121,8 +121,9 @@ export function useAISettings({ isOpen, onProviderChange }: AISettingsModalProps
     if (!provider || provider.models.length <= 1) return;
     const updatedModels = provider.models.filter(m => m.id !== modelId);
     const updates: Partial<ProviderConfig> = { models: updatedModels };
-    if (provider.defaultModel === modelId) {
-      updates.defaultModel = updatedModels[0].id;
+    const firstUpdated = updatedModels[0];
+    if (provider.defaultModel === modelId && firstUpdated) {
+      updates.defaultModel = firstUpdated.id;
     }
     updateProvider(selectedProviderId, updates);
   };
@@ -144,7 +145,7 @@ export function useAISettings({ isOpen, onProviderChange }: AISettingsModalProps
           const mergedModels = [...provider.models, ...newModels];
           updateProvider(selectedProviderId, {
             models: mergedModels,
-            defaultModel: provider.defaultModel || mergedModels[0].id
+            defaultModel: provider.defaultModel || mergedModels[0]?.id
           });
         }
       }
