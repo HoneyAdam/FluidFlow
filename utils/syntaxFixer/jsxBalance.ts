@@ -22,10 +22,10 @@ export function extractJsxTags(code: string): JsxTag[] {
   let inMultilineComment = false;
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
-    const line = lines[lineNum];
+    const line = lines[lineNum] ?? '';
 
     for (let col = 0; col < line.length; col++) {
-      const char = line[col];
+      const char = line[col] ?? '';
       const nextChar = line[col + 1] || '';
       const prevChar = line[col - 1] || '';
 
@@ -66,7 +66,7 @@ export function extractJsxTags(code: string): JsxTag[] {
         const selfClosingMatch = restOfLine.match(/^<([A-Z][a-zA-Z0-9]*)(?:\s[^>]*)?\s*\/>/);
         if (selfClosingMatch) {
           tags.push({
-            name: selfClosingMatch[1],
+            name: selfClosingMatch[1] ?? '',
             isClosing: false,
             isSelfClosing: true,
             line: lineNum + 1,
@@ -80,7 +80,7 @@ export function extractJsxTags(code: string): JsxTag[] {
         const closingMatch = restOfLine.match(/^<\/([A-Z][a-zA-Z0-9]*)\s*>/);
         if (closingMatch) {
           tags.push({
-            name: closingMatch[1],
+            name: closingMatch[1] ?? '',
             isClosing: true,
             isSelfClosing: false,
             line: lineNum + 1,
@@ -94,7 +94,7 @@ export function extractJsxTags(code: string): JsxTag[] {
         const openingMatch = restOfLine.match(/^<([A-Z][a-zA-Z0-9]*)(?:\s[^>]*)?\s*>/);
         if (openingMatch) {
           tags.push({
-            name: openingMatch[1],
+            name: openingMatch[1] ?? '',
             isClosing: false,
             isSelfClosing: false,
             line: lineNum + 1,
@@ -127,7 +127,7 @@ export function findUnclosedTags(tags: JsxTag[]): JsxTag[] {
     if (tag.isClosing) {
       // Look for matching opening tag
       for (let i = stack.length - 1; i >= 0; i--) {
-        if (stack[i].name === tag.name) {
+        if (stack[i]?.name === tag.name) {
           stack.splice(i, 1);
           break;
         }
@@ -165,7 +165,7 @@ export function fixJsxTagBalance(code: string): string {
 
     // Search for a good insertion point
     for (let i = insertLine; i < lines.length; i++) {
-      const line = lines[i];
+      const line = lines[i] ?? '';
 
       // If we find a return statement end or closing brace, insert before it
       if (i > insertLine && (/^\s*\);?\s*$/.test(line) || /^\s*\}\s*$/.test(line))) {
@@ -181,7 +181,7 @@ export function fixJsxTagBalance(code: string): string {
     }
 
     // Insert the closing tag
-    const indent = lines[tag.line - 1].match(/^\s*/)?.[0] || '';
+    const indent = (lines[tag.line - 1] ?? '').match(/^\s*/)?.[0] || '';
     lines.splice(insertLine, 0, `${indent}</${tag.name}>`);
   }
 
