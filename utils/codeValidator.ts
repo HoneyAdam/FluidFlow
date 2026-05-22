@@ -34,6 +34,7 @@ export function validateJsxSyntax(code: string): SyntaxIssue[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!line) continue;
     const lineNum = i + 1;
 
     // Check for `: condition && (` pattern
@@ -48,13 +49,14 @@ export function validateJsxSyntax(code: string): SyntaxIssue[] {
 
     // Check for unclosed JSX tags on single line
     const jsxTagMatch = line.match(/<([A-Z]\w*)(?:\s[^>]*)?>(?!.*<\/\1>)(?!.*\/>)/);
-    if (jsxTagMatch && !line.includes('return') && !lines.slice(i + 1, i + 10).some(l => l.includes(`</${jsxTagMatch[1]}>`))) {
+    const jsxTagName = jsxTagMatch?.[1];
+    if (jsxTagMatch && jsxTagName && !line.includes('return') && !lines.slice(i + 1, i + 10).some(l => l.includes(`</${jsxTagName}>`))) {
       // do not warn if closing tag is on a nearby line
-      const hasClosingNearby = lines.slice(i, i + 20).some(l => l.includes(`</${jsxTagMatch[1]}>`));
+      const hasClosingNearby = lines.slice(i, i + 20).some(l => l.includes(`</${jsxTagName}>`));
       if (!hasClosingNearby) {
         issues.push({
           type: 'warning',
-          message: `Potentially unclosed JSX tag: <${jsxTagMatch[1]}>`,
+          message: `Potentially unclosed JSX tag: <${jsxTagName}>`,
           line: lineNum
         });
       }
@@ -81,7 +83,8 @@ export function validateJsxSyntax(code: string): SyntaxIssue[] {
     }
 
     // Check for incomplete ternary at end of expression
-    if (/\?\s*<[A-Z]\w*[^:]*\s*\}$/.test(line.trim())) {
+    const trimmedLine = line.trim();
+    if (trimmedLine && /\?\s*<[A-Z]\w*[^:]*\s*\}$/.test(trimmedLine)) {
       const hasColonAfter = lines.slice(i + 1, i + 3).some(l => /^\s*:/.test(l));
       if (!hasColonAfter) {
         issues.push({
@@ -189,8 +192,8 @@ export function parseBabelError(message: string): { line?: number; column?: numb
   const lineColMatch = message.match(/\((\d+):(\d+)\)/);
   if (lineColMatch) {
     return {
-      line: parseInt(lineColMatch[1], 10),
-      column: parseInt(lineColMatch[2], 10),
+      line: parseInt(lineColMatch[1] ?? '0', 10),
+      column: parseInt(lineColMatch[2] ?? '0', 10),
       message
     };
   }
@@ -198,7 +201,7 @@ export function parseBabelError(message: string): { line?: number; column?: numb
   const lineMatch = message.match(/Line (\d+):/);
   if (lineMatch) {
     return {
-      line: parseInt(lineMatch[1], 10),
+      line: parseInt(lineMatch[1] ?? '0', 10),
       message
     };
   }

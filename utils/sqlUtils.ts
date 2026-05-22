@@ -145,10 +145,10 @@ export function generateFakeData(tables: TableSchema[], rowCount: number = 10): 
         if (col.isPrimaryKey) return i.toString();
 
         // Smart value generation based on column name
-        if (colName.includes('email')) return `'${names[i % names.length].toLowerCase()}${i}@${domains[i % domains.length]}'`;
-        if (colName.includes('name') && colName.includes('user')) return `'${names[i % names.length]}'`;
-        if (colName.includes('name') && colName.includes('product')) return `'${products[i % products.length]}'`;
-        if (colName.includes('name')) return `'${names[i % names.length]}'`;
+        if (colName.includes('email')) return `'${(names[i % names.length] ?? 'user').toLowerCase()}${i}@${domains[i % domains.length] ?? 'example.com'}'`;
+        if (colName.includes('name') && colName.includes('user')) return `'${names[i % names.length] ?? 'User'}'`;
+        if (colName.includes('name') && colName.includes('product')) return `'${products[i % products.length] ?? 'Product'}'`;
+        if (colName.includes('name')) return `'${names[i % names.length] ?? 'Name'}'`;
         if (colName.includes('title')) return `'Title ${i}'`;
         if (colName.includes('description')) return `'Description for item ${i}'`;
         if (colName.includes('status')) return `'${statuses[i % statuses.length]}'`;
