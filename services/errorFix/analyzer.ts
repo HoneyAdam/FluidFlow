@@ -57,8 +57,8 @@ const ERROR_PATTERNS: ErrorPattern[] = [
     category: 'import',
     priority: 4,
     extract: (match) => ({
-      importPath: match[1],
-      isAutoFixable: match[1].startsWith('.') || match[1].startsWith('src/'),
+      importPath: match[1] ?? '',
+      isAutoFixable: (match[1] ?? '').startsWith('.') || (match[1] ?? '').startsWith('src/'),
       confidence: 0.85,
     }),
   },
@@ -68,7 +68,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
     category: 'import',
     priority: 4,
     extract: (match) => ({
-      importPath: match[1],
+      importPath: match[1] ?? '',
       isAutoFixable: true,
       confidence: 0.85,
     }),
@@ -253,7 +253,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
     priority: 5,
     extract: (match) => {
       const modulePath = match[1] || '';
-      const wrongExport = match[2];
+      const wrongExport = match[2] ?? '';
 
       // Common wrong export -> correct export mappings
       const EXPORT_FIXES: Record<string, Record<string, string>> = {
@@ -304,7 +304,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       for (const [lib, fixes] of Object.entries(EXPORT_FIXES)) {
         if (modulePath.includes(lib)) {
           libraryName = lib;
-          correctExport = fixes[wrongExport];
+          correctExport = fixes[wrongExport] ?? undefined;
           break;
         }
       }
@@ -585,10 +585,14 @@ class ErrorAnalyzer {
       /(?:at\s+)?(?:\()?([^()\s]+\.(?:tsx?|jsx?)):(\d+):(\d+)(?:\))?/
     );
     if (fileMatch) {
+      const fileMatch1 = fileMatch[1];
+      const fileMatch2 = fileMatch[2];
+      const fileMatch3 = fileMatch[3];
+      if (!fileMatch1 || !fileMatch2 || !fileMatch3) return null;
       return {
-        file: this.normalizeFilePath(fileMatch[1]),
-        line: parseInt(fileMatch[2], 10),
-        column: parseInt(fileMatch[3], 10),
+        file: this.normalizeFilePath(fileMatch1 as string),
+        line: parseInt(fileMatch2, 10),
+        column: parseInt(fileMatch3, 10),
       };
     }
 
@@ -597,9 +601,12 @@ class ErrorAnalyzer {
       /in\s+([^()\s]+\.(?:tsx?|jsx?))\s*\(line\s+(\d+)/i
     );
     if (inFileMatch) {
+      const inFileMatch1 = inFileMatch[1];
+      const inFileMatch2 = inFileMatch[2];
+      if (!inFileMatch1 || !inFileMatch2) return null;
       return {
-        file: this.normalizeFilePath(inFileMatch[1]),
-        line: parseInt(inFileMatch[2], 10),
+        file: this.normalizeFilePath(inFileMatch1 as string),
+        line: parseInt(inFileMatch2, 10),
       };
     }
 
@@ -611,7 +618,7 @@ class ErrorAnalyzer {
    */
   private normalizeFilePath(path: string): string {
     let normalized = path.replace(/^https?:\/\/[^/]+\//, '');
-    normalized = normalized.split('?')[0];
+    normalized = normalized.split('?')[0] ?? normalized;
     normalized = normalized.replace(/^\/+/, '');
 
     if (!normalized.startsWith('src/') && !normalized.startsWith('./')) {
