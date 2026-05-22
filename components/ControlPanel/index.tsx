@@ -509,7 +509,7 @@ export const ControlPanel = forwardRef<ControlPanelRef, ControlPanelProps>(({
     if (errorIndex < 1) return;
 
     const userMessage = messages[errorIndex - 1];
-    if (userMessage.role !== 'user') return;
+    if (!userMessage || userMessage.role !== 'user') return;
 
     // Remove the error message and user message from chat
     setMessages(prev => prev.filter((_, i) => i !== errorIndex && i !== errorIndex - 1));

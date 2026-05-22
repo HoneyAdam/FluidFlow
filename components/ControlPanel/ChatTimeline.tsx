@@ -36,14 +36,16 @@ export const ChatTimeline: React.FC<ChatTimelineProps> = ({
 
   const handleBack = () => {
     if (canGoBack) {
-      onNavigate(snapshotMessages[currentPos - 1].index);
+      const prev = snapshotMessages[currentPos - 1];
+      if (prev) onNavigate(prev.index);
     }
   };
 
   const handleForward = () => {
     if (currentPos < snapshotMessages.length - 1) {
       // Go to next snapshot
-      onNavigate(snapshotMessages[currentPos + 1].index);
+      const next = snapshotMessages[currentPos + 1];
+      if (next) onNavigate(next.index);
     } else {
       // Return to current state
       onNavigate(null);

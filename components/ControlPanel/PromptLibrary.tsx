@@ -25,7 +25,7 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 };
 
 export const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelectPrompt }) => {
-  const [activeCategory, setActiveCategory] = useState<string>(promptLibrary[0].id);
+  const [activeCategory, setActiveCategory] = useState<string>(promptLibrary[0]?.id ?? '');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPrompt, setSelectedPrompt] = useState<PromptItem | null>(null);
   const [showLevelModal, setShowLevelModal] = useState(false);

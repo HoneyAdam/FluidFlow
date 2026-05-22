@@ -78,7 +78,7 @@ interface ChatPanelProps {
 // Extract filename from full path
 const getFileName = (path: string): string => {
   const parts = path.split('/');
-  return parts[parts.length - 1];
+  return parts[parts.length - 1] ?? '';
 };
 
 // Simple markdown renderer for explanations
@@ -552,7 +552,7 @@ export const ChatPanel = memo(function ChatPanel({
     if (onTimeTravel) {
       if (messageIndex !== null) {
         const message = messages[messageIndex];
-        if (message.snapshotFiles) {
+        if (message?.snapshotFiles) {
           onTimeTravel(message.snapshotFiles);
         }
       } else {
@@ -605,7 +605,7 @@ export const ChatPanel = memo(function ChatPanel({
       const autoContinueTimer = setTimeout(() => {
         clearInterval(countdownInterval);
         setAutoContinueCountdown(0);
-        onSetExternalPrompt(lastMessage.continuation.prompt);
+        onSetExternalPrompt(lastMessage?.continuation?.prompt ?? '');
       }, 10000); // 10 seconds
 
       return () => {

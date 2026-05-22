@@ -38,7 +38,7 @@ export async function executeConsultantMode({
 
   const images: { data: string; mimeType: string }[] = [];
   if (sketchAtt) {
-    const base64Data = sketchAtt.preview.split(',')[1];
+    const base64Data = sketchAtt.preview.split(',')[1] ?? '';
     images.push({ data: base64Data, mimeType: sketchAtt.file.type });
   }
 

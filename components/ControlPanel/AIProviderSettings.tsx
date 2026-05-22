@@ -137,7 +137,8 @@ export const AIProviderSettings: React.FC<AIProviderSettingsProps> = ({ onProvid
     // If we're deleting the default model, set a new default
     const updates: Partial<ProviderConfig> = { models: updatedModels };
     if (provider.defaultModel === modelId) {
-      updates.defaultModel = updatedModels[0].id;
+      const firstModel = updatedModels[0];
+      if (firstModel) updates.defaultModel = firstModel.id;
     }
 
     updateProvider(providerId, updates);
@@ -164,7 +165,7 @@ export const AIProviderSettings: React.FC<AIProviderSettingsProps> = ({ onProvid
 
           updateProvider(providerId, {
             models: mergedModels,
-            defaultModel: provider.defaultModel || mergedModels[0].id
+            defaultModel: provider.defaultModel || (mergedModels[0]?.id ?? '')
           });
         }
       }

@@ -131,7 +131,8 @@ export const PromptLevelModal: React.FC<PromptLevelModalProps> = ({
                 blue: { bg: 'var(--color-info-subtle)', border: 'var(--color-info-border)', text: 'var(--color-info)' },
                 purple: { bg: 'var(--color-feature-subtle)', border: 'var(--color-feature-border)', text: 'var(--color-feature)' },
               };
-              const colors = colorMap[cfg.color] || colorMap.purple;
+              const defaultColors = { bg: 'var(--color-feature-subtle)', border: 'var(--color-feature-border)', text: 'var(--color-feature)' };
+              const colors = colorMap[cfg.color] ?? defaultColors;
 
               return (
                 <button

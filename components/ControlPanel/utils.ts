@@ -85,7 +85,7 @@ export function parsePlanComment(response: string): FilePlan | null {
   if (!planMatch) return null;
 
   try {
-    const plan = JSON.parse(planMatch[1]);
+    const plan = JSON.parse(planMatch[1] ?? '{}');
     return {
       create: plan.create || [],
       update: plan.update || [],
@@ -162,6 +162,7 @@ export function updateFileProgress(
 
   for (const match of matches) {
     const filePath = match[1];
+    if (!filePath) continue;
     const fileProgress = progressMap.get(filePath);
 
     if (fileProgress && fileProgress.status !== 'complete') {
@@ -237,7 +238,7 @@ export function formatFileSize(bytes: number): string {
  */
 export function getFileExtension(path: string): string {
   const match = path.match(/\.([^.]+)$/);
-  return match ? match[1].toLowerCase() : '';
+  return match ? (match[1]?.toLowerCase() ?? '') : '';
 }
 
 /**

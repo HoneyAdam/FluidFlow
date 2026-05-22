@@ -54,6 +54,8 @@ export function useChatOrchestrator({
   onUndo,
   canUndo,
 }: UseChatOrchestratorProps) {
+  // Normalize projectId: null → undefined for hooks that expect undefined
+  const effectiveProjectId = projectId ?? undefined;
   // Chat messages state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -103,7 +105,7 @@ export function useChatOrchestrator({
   const { handleInspectEditRequest } = useInspectEdit({
     files,
     selectedModel,
-    projectId,
+    projectId: effectiveProjectId,
     generateSystemInstruction,
     setStreamingStatus,
     setIsGenerating,
@@ -137,7 +139,7 @@ export function useChatOrchestrator({
 
   // Context management
   const { sessionId, contextManager } = useContextSync({
-    projectId,
+    projectId: effectiveProjectId,
     messages,
   });
 
@@ -315,7 +317,7 @@ export function useChatOrchestrator({
     if (errorIndex < 1) return;
 
     const userMessage = messages[errorIndex - 1];
-    if (userMessage.role !== 'user') return;
+    if (!userMessage || userMessage.role !== 'user') return;
 
     // Remove error and user message
     setMessages(prev => prev.filter((_, i) => i !== errorIndex && i !== errorIndex - 1));

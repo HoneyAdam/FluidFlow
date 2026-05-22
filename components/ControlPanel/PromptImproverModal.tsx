@@ -85,7 +85,7 @@ export const PromptImproverModal: React.FC<PromptImproverModalProps> = ({
     const hasTypeScript = fileList.some(f => f.endsWith('.ts') || f.endsWith('.tsx'));
     const componentNames = components.map(c => {
       const parts = c.split('/');
-      return parts[parts.length - 1].replace(/\.(tsx?|jsx?)$/, '');
+      return parts[parts.length - 1]?.replace(/\.(tsx?|jsx?)$/, '') ?? c;
     });
 
     let projectType = 'React application';
@@ -252,7 +252,7 @@ export const PromptImproverModal: React.FC<PromptImproverModalProps> = ({
   // Get current step data
   const getCurrentStepData = (): StepData | null => {
     if (typeof wizard.step !== 'number') return null;
-    return wizard.stepData[wizard.step - 1];
+    return wizard.stepData[wizard.step - 1] ?? null;
   };
 
   // Toggle option selection

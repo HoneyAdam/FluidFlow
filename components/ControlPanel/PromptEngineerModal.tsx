@@ -155,22 +155,23 @@ export const PromptEngineerModal: React.FC<PromptEngineerModalProps> = ({
     let generatedPrompt = "Create a ";
 
     // Build prompt based on conversation
-    if (answers[0].toLowerCase().includes('ecommerce')) {
+    const firstAnswer = answers[0];
+    if (firstAnswer && firstAnswer.toLowerCase().includes('ecommerce')) {
       generatedPrompt += "modern, responsive e-commerce platform with ";
       generatedPrompt += "product catalog with filtering and search, shopping cart with local storage persistence, ";
       generatedPrompt += "user authentication system, secure checkout flow, and admin dashboard for inventory management. ";
-    } else if (answers[0].toLowerCase().includes('dashboard')) {
+    } else if (firstAnswer && firstAnswer.toLowerCase().includes('dashboard')) {
       generatedPrompt += "professional analytics dashboard with ";
       generatedPrompt += "real-time data visualization, interactive charts and graphs, data filtering capabilities, ";
       generatedPrompt += "responsive grid layout, and clean, modern UI design. ";
-    } else if (answers[0].toLowerCase().includes('form')) {
+    } else if (firstAnswer && firstAnswer.toLowerCase().includes('form')) {
       generatedPrompt += "user-friendly form with ";
       generatedPrompt += "client-side validation, accessible input fields, proper error handling, ";
       generatedPrompt += "progressive enhancement, and mobile-responsive layout. ";
     } else {
       generatedPrompt += "modern, responsive web application with ";
       generatedPrompt += "clean user interface, excellent user experience, and ";
-      generatedPrompt += answers.join(" ");
+      generatedPrompt += (firstAnswer ?? '');
     }
 
     // Add technical requirements
