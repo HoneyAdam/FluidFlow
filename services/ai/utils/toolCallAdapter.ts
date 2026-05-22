@@ -388,7 +388,7 @@ export function getToolCallAdapter(providerType: string): ToolCallAdapter {
     return a.providerType === providerType;
   });
 
-  return adapter || adapters[0]; // Default to OpenAI-compatible
+  return adapter ?? (adapters[0] as ToolCallAdapter); // Default to OpenAI-compatible
 }
 
 /**
@@ -396,5 +396,5 @@ export function getToolCallAdapter(providerType: string): ToolCallAdapter {
  */
 export function getAdapterByFormat(format: string): ToolCallAdapter {
   const adapter = adapters.find(a => a.supportsFormat(format));
-  return adapter || adapters[0];
+  return adapter ?? (adapters[0] as ToolCallAdapter);
 }
