@@ -113,6 +113,7 @@ function buildTree(files: FileSystem): TreeNode[] {
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
+      if (part === undefined) continue;
       const isLast = i === parts.length - 1;
       const currentPath = parts.slice(0, i + 1).join('/');
 
