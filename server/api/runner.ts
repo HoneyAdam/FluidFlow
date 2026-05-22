@@ -60,8 +60,8 @@ function cleanupOrphanProcesses() {
         // Match lines like: TCP    0.0.0.0:3300    0.0.0.0:0    LISTENING    12345
         const match = line.match(/TCP\s+\S+:(\d+)\s+\S+\s+LISTENING\s+(\d+)/);
         if (match) {
-          const port = parseInt(match[1], 10);
-          const pid = match[2];
+          const port = parseInt(match[1] ?? '0', 10);
+          const pid = match[2] ?? '0';
           if (port >= PORT_RANGE_START && port <= PORT_RANGE_END && pid !== '0') {
             pidsToKill.add(pid);
           }
@@ -583,7 +583,7 @@ function extractImportedPackages(filesDir: string): Set<string> {
         // Reset lastIndex for global regex
         pattern.lastIndex = 0;
         while ((match = pattern.exec(content)) !== null) {
-          let packageName = match[1];
+          let packageName = match[1] ?? '';
 
           // Handle scoped packages (@org/package)
           if (packageName.startsWith('@')) {
@@ -593,7 +593,7 @@ function extractImportedPackages(filesDir: string): Set<string> {
             }
           } else {
             // Handle regular packages (get only the package name, not subpaths)
-            packageName = packageName.split('/')[0];
+            packageName = packageName.split('/')[0] ?? packageName;
           }
 
           // Skip Node.js built-ins and relative imports
