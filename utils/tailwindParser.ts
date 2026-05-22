@@ -25,6 +25,17 @@ export interface TailwindClassInfo {
   cssEquivalent: string;
 }
 
+// Regex match-group accessors. Under noUncheckedIndexedAccess match[i] is
+// string | undefined, but here every capture group is itself \d+ / a literal
+// alternation — so when the regex matches, the slot is guaranteed defined.
+// These narrow the union so the file stays clean under strictNullChecks.
+function num(m: RegExpMatchArray, i: number): number {
+  return parseInt(m[i] ?? '0', 10);
+}
+function str(m: RegExpMatchArray, i: number): string {
+  return m[i] ?? '';
+}
+
 // Common Tailwind class patterns
 const TAILWIND_PATTERNS: Record<string, { category: TailwindCategory; descFn: (value: string) => string; cssFn: (value: string) => string }> = {
   // Layout
@@ -180,33 +191,33 @@ const DYNAMIC_PATTERNS: Array<{
   cssFn: (match: RegExpMatchArray) => string;
 }> = [
   // Spacing: p-*, m-*, gap-*
-  { regex: /^p-(\d+)$/, category: 'spacing', descFn: (m) => `Padding ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^px-(\d+)$/, category: 'spacing', descFn: (m) => `Padding X ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-left: ${parseInt(m[1]) * 0.25}rem; padding-right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^py-(\d+)$/, category: 'spacing', descFn: (m) => `Padding Y ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-top: ${parseInt(m[1]) * 0.25}rem; padding-bottom: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^pt-(\d+)$/, category: 'spacing', descFn: (m) => `Padding top ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-top: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^pr-(\d+)$/, category: 'spacing', descFn: (m) => `Padding right ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^pb-(\d+)$/, category: 'spacing', descFn: (m) => `Padding bottom ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-bottom: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^pl-(\d+)$/, category: 'spacing', descFn: (m) => `Padding left ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `padding-left: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^m-(\d+)$/, category: 'spacing', descFn: (m) => `Margin ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^mx-(\d+)$/, category: 'spacing', descFn: (m) => `Margin X ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-left: ${parseInt(m[1]) * 0.25}rem; margin-right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^my-(\d+)$/, category: 'spacing', descFn: (m) => `Margin Y ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-top: ${parseInt(m[1]) * 0.25}rem; margin-bottom: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^mt-(\d+)$/, category: 'spacing', descFn: (m) => `Margin top ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-top: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^mr-(\d+)$/, category: 'spacing', descFn: (m) => `Margin right ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^mb-(\d+)$/, category: 'spacing', descFn: (m) => `Margin bottom ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-bottom: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^ml-(\d+)$/, category: 'spacing', descFn: (m) => `Margin left ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `margin-left: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^gap-(\d+)$/, category: 'spacing', descFn: (m) => `Gap ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `gap: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^gap-x-(\d+)$/, category: 'spacing', descFn: (m) => `Column gap ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `column-gap: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^gap-y-(\d+)$/, category: 'spacing', descFn: (m) => `Row gap ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `row-gap: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^space-x-(\d+)$/, category: 'spacing', descFn: (m) => `Horizontal space ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `> * + * { margin-left: ${parseInt(m[1]) * 0.25}rem }` },
-  { regex: /^space-y-(\d+)$/, category: 'spacing', descFn: (m) => `Vertical space ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `> * + * { margin-top: ${parseInt(m[1]) * 0.25}rem }` },
+  { regex: /^p-(\d+)$/, category: 'spacing', descFn: (m) => `Padding ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding: ${num(m, 1) * 0.25}rem` },
+  { regex: /^px-(\d+)$/, category: 'spacing', descFn: (m) => `Padding X ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-left: ${num(m, 1) * 0.25}rem; padding-right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^py-(\d+)$/, category: 'spacing', descFn: (m) => `Padding Y ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-top: ${num(m, 1) * 0.25}rem; padding-bottom: ${num(m, 1) * 0.25}rem` },
+  { regex: /^pt-(\d+)$/, category: 'spacing', descFn: (m) => `Padding top ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-top: ${num(m, 1) * 0.25}rem` },
+  { regex: /^pr-(\d+)$/, category: 'spacing', descFn: (m) => `Padding right ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^pb-(\d+)$/, category: 'spacing', descFn: (m) => `Padding bottom ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-bottom: ${num(m, 1) * 0.25}rem` },
+  { regex: /^pl-(\d+)$/, category: 'spacing', descFn: (m) => `Padding left ${num(m, 1) * 0.25}rem`, cssFn: (m) => `padding-left: ${num(m, 1) * 0.25}rem` },
+  { regex: /^m-(\d+)$/, category: 'spacing', descFn: (m) => `Margin ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin: ${num(m, 1) * 0.25}rem` },
+  { regex: /^mx-(\d+)$/, category: 'spacing', descFn: (m) => `Margin X ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-left: ${num(m, 1) * 0.25}rem; margin-right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^my-(\d+)$/, category: 'spacing', descFn: (m) => `Margin Y ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-top: ${num(m, 1) * 0.25}rem; margin-bottom: ${num(m, 1) * 0.25}rem` },
+  { regex: /^mt-(\d+)$/, category: 'spacing', descFn: (m) => `Margin top ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-top: ${num(m, 1) * 0.25}rem` },
+  { regex: /^mr-(\d+)$/, category: 'spacing', descFn: (m) => `Margin right ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^mb-(\d+)$/, category: 'spacing', descFn: (m) => `Margin bottom ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-bottom: ${num(m, 1) * 0.25}rem` },
+  { regex: /^ml-(\d+)$/, category: 'spacing', descFn: (m) => `Margin left ${num(m, 1) * 0.25}rem`, cssFn: (m) => `margin-left: ${num(m, 1) * 0.25}rem` },
+  { regex: /^gap-(\d+)$/, category: 'spacing', descFn: (m) => `Gap ${num(m, 1) * 0.25}rem`, cssFn: (m) => `gap: ${num(m, 1) * 0.25}rem` },
+  { regex: /^gap-x-(\d+)$/, category: 'spacing', descFn: (m) => `Column gap ${num(m, 1) * 0.25}rem`, cssFn: (m) => `column-gap: ${num(m, 1) * 0.25}rem` },
+  { regex: /^gap-y-(\d+)$/, category: 'spacing', descFn: (m) => `Row gap ${num(m, 1) * 0.25}rem`, cssFn: (m) => `row-gap: ${num(m, 1) * 0.25}rem` },
+  { regex: /^space-x-(\d+)$/, category: 'spacing', descFn: (m) => `Horizontal space ${num(m, 1) * 0.25}rem`, cssFn: (m) => `> * + * { margin-left: ${num(m, 1) * 0.25}rem }` },
+  { regex: /^space-y-(\d+)$/, category: 'spacing', descFn: (m) => `Vertical space ${num(m, 1) * 0.25}rem`, cssFn: (m) => `> * + * { margin-top: ${num(m, 1) * 0.25}rem }` },
 
   // Sizing: w-*, h-*
-  { regex: /^w-(\d+)$/, category: 'sizing', descFn: (m) => `Width ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `width: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^h-(\d+)$/, category: 'sizing', descFn: (m) => `Height ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `height: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^min-w-(\d+)$/, category: 'sizing', descFn: (m) => `Min width ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `min-width: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^min-h-(\d+)$/, category: 'sizing', descFn: (m) => `Min height ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `min-height: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^max-w-(\d+)$/, category: 'sizing', descFn: (m) => `Max width ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `max-width: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^max-h-(\d+)$/, category: 'sizing', descFn: (m) => `Max height ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `max-height: ${parseInt(m[1]) * 0.25}rem` },
+  { regex: /^w-(\d+)$/, category: 'sizing', descFn: (m) => `Width ${num(m, 1) * 0.25}rem`, cssFn: (m) => `width: ${num(m, 1) * 0.25}rem` },
+  { regex: /^h-(\d+)$/, category: 'sizing', descFn: (m) => `Height ${num(m, 1) * 0.25}rem`, cssFn: (m) => `height: ${num(m, 1) * 0.25}rem` },
+  { regex: /^min-w-(\d+)$/, category: 'sizing', descFn: (m) => `Min width ${num(m, 1) * 0.25}rem`, cssFn: (m) => `min-width: ${num(m, 1) * 0.25}rem` },
+  { regex: /^min-h-(\d+)$/, category: 'sizing', descFn: (m) => `Min height ${num(m, 1) * 0.25}rem`, cssFn: (m) => `min-height: ${num(m, 1) * 0.25}rem` },
+  { regex: /^max-w-(\d+)$/, category: 'sizing', descFn: (m) => `Max width ${num(m, 1) * 0.25}rem`, cssFn: (m) => `max-width: ${num(m, 1) * 0.25}rem` },
+  { regex: /^max-h-(\d+)$/, category: 'sizing', descFn: (m) => `Max height ${num(m, 1) * 0.25}rem`, cssFn: (m) => `max-height: ${num(m, 1) * 0.25}rem` },
 
   // Typography: text-*, leading-*, tracking-*
   { regex: /^text-xs$/, category: 'typography', descFn: () => 'Font size 0.75rem', cssFn: () => 'font-size: 0.75rem; line-height: 1rem' },
@@ -218,7 +229,7 @@ const DYNAMIC_PATTERNS: Array<{
   { regex: /^text-3xl$/, category: 'typography', descFn: () => 'Font size 1.875rem', cssFn: () => 'font-size: 1.875rem; line-height: 2.25rem' },
   { regex: /^text-4xl$/, category: 'typography', descFn: () => 'Font size 2.25rem', cssFn: () => 'font-size: 2.25rem; line-height: 2.5rem' },
   { regex: /^text-\[(\d+)px\]$/, category: 'typography', descFn: (m) => `Font size ${m[1]}px`, cssFn: (m) => `font-size: ${m[1]}px` },
-  { regex: /^leading-(\d+)$/, category: 'typography', descFn: (m) => `Line height ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `line-height: ${parseInt(m[1]) * 0.25}rem` },
+  { regex: /^leading-(\d+)$/, category: 'typography', descFn: (m) => `Line height ${num(m, 1) * 0.25}rem`, cssFn: (m) => `line-height: ${num(m, 1) * 0.25}rem` },
   { regex: /^tracking-tight$/, category: 'typography', descFn: () => 'Letter spacing -0.025em', cssFn: () => 'letter-spacing: -0.025em' },
   { regex: /^tracking-normal$/, category: 'typography', descFn: () => 'Letter spacing normal', cssFn: () => 'letter-spacing: 0em' },
   { regex: /^tracking-wide$/, category: 'typography', descFn: () => 'Letter spacing 0.025em', cssFn: () => 'letter-spacing: 0.025em' },
@@ -234,16 +245,16 @@ const DYNAMIC_PATTERNS: Array<{
   { regex: /^bg-transparent$/, category: 'colors', descFn: () => 'Background transparent', cssFn: () => 'background-color: transparent' },
 
   // Opacity
-  { regex: /^opacity-(\d+)$/, category: 'effects', descFn: (m) => `Opacity ${parseInt(m[1])}%`, cssFn: (m) => `opacity: ${parseInt(m[1]) / 100}` },
+  { regex: /^opacity-(\d+)$/, category: 'effects', descFn: (m) => `Opacity ${num(m, 1)}%`, cssFn: (m) => `opacity: ${num(m, 1) / 100}` },
 
   // Inset/Position: top-*, right-*, bottom-*, left-*, inset-*
-  { regex: /^top-(\d+)$/, category: 'layout', descFn: (m) => `Top ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `top: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^right-(\d+)$/, category: 'layout', descFn: (m) => `Right ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^bottom-(\d+)$/, category: 'layout', descFn: (m) => `Bottom ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `bottom: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^left-(\d+)$/, category: 'layout', descFn: (m) => `Left ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `left: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^inset-(\d+)$/, category: 'layout', descFn: (m) => `Inset ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `inset: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^inset-x-(\d+)$/, category: 'layout', descFn: (m) => `Inset X ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `left: ${parseInt(m[1]) * 0.25}rem; right: ${parseInt(m[1]) * 0.25}rem` },
-  { regex: /^inset-y-(\d+)$/, category: 'layout', descFn: (m) => `Inset Y ${parseInt(m[1]) * 0.25}rem`, cssFn: (m) => `top: ${parseInt(m[1]) * 0.25}rem; bottom: ${parseInt(m[1]) * 0.25}rem` },
+  { regex: /^top-(\d+)$/, category: 'layout', descFn: (m) => `Top ${num(m, 1) * 0.25}rem`, cssFn: (m) => `top: ${num(m, 1) * 0.25}rem` },
+  { regex: /^right-(\d+)$/, category: 'layout', descFn: (m) => `Right ${num(m, 1) * 0.25}rem`, cssFn: (m) => `right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^bottom-(\d+)$/, category: 'layout', descFn: (m) => `Bottom ${num(m, 1) * 0.25}rem`, cssFn: (m) => `bottom: ${num(m, 1) * 0.25}rem` },
+  { regex: /^left-(\d+)$/, category: 'layout', descFn: (m) => `Left ${num(m, 1) * 0.25}rem`, cssFn: (m) => `left: ${num(m, 1) * 0.25}rem` },
+  { regex: /^inset-(\d+)$/, category: 'layout', descFn: (m) => `Inset ${num(m, 1) * 0.25}rem`, cssFn: (m) => `inset: ${num(m, 1) * 0.25}rem` },
+  { regex: /^inset-x-(\d+)$/, category: 'layout', descFn: (m) => `Inset X ${num(m, 1) * 0.25}rem`, cssFn: (m) => `left: ${num(m, 1) * 0.25}rem; right: ${num(m, 1) * 0.25}rem` },
+  { regex: /^inset-y-(\d+)$/, category: 'layout', descFn: (m) => `Inset Y ${num(m, 1) * 0.25}rem`, cssFn: (m) => `top: ${num(m, 1) * 0.25}rem; bottom: ${num(m, 1) * 0.25}rem` },
 
   // Grid
   { regex: /^grid-cols-(\d+)$/, category: 'grid', descFn: (m) => `Grid ${m[1]} columns`, cssFn: (m) => `grid-template-columns: repeat(${m[1]}, minmax(0, 1fr))` },
@@ -252,7 +263,7 @@ const DYNAMIC_PATTERNS: Array<{
   { regex: /^row-span-(\d+)$/, category: 'grid', descFn: (m) => `Row span ${m[1]}`, cssFn: (m) => `grid-row: span ${m[1]} / span ${m[1]}` },
 
   // Arbitrary values
-  { regex: /^\[(.+)\]$/, category: 'other', descFn: (m) => `Custom: ${m[1]}`, cssFn: (m) => m[1] },
+  { regex: /^\[(.+)\]$/, category: 'other', descFn: (m) => `Custom: ${str(m, 1)}`, cssFn: (m) => str(m, 1) },
 ];
 
 /**
