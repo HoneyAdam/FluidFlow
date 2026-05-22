@@ -309,7 +309,7 @@ function tryFixMissingImport(errorMessage: string, code: string): LocalFixResult
   for (const pattern of patterns) {
     const match = errorMessage.match(pattern);
     if (match) {
-      identifier = match[1];
+      identifier = match[1] ?? null;
       break;
     }
   }
@@ -338,7 +338,7 @@ function tryFixPropTypo(errorMessage: string, code: string): LocalFixResult {
     errorMessage.match(/react does not recognize the ['"`](\w+)['"`] prop/i);
 
   if (invalidPropMatch) {
-    const wrongProp = invalidPropMatch[1];
+    const wrongProp = invalidPropMatch[1] ?? '';
     const correctProp = PROP_TYPOS[wrongProp.toLowerCase()];
 
     if (correctProp && wrongProp !== correctProp) {
@@ -380,7 +380,7 @@ function tryFixJSXIssues(errorMessage: string, code: string): LocalFixResult {
   if (errorLower.includes('adjacent jsx elements') || errorLower.includes('must be wrapped')) {
     const returnMatch = code.match(/return\s*\(\s*\n?([\s\S]*?)\s*\);?\s*$/m);
     if (returnMatch) {
-      const jsxContent = returnMatch[1].trim();
+      const jsxContent = (returnMatch[1] ?? '').trim();
       if (!jsxContent.startsWith('<>') && !jsxContent.startsWith('<Fragment')) {
         const wrappedJsx = `<>\n      ${jsxContent}\n    </>`;
         const newCode = code.replace(returnMatch[0], `return (\n    ${wrappedJsx}\n  );`);
@@ -490,6 +490,7 @@ function tryFixUndefinedVariable(errorMessage: string, code: string): LocalFixRe
   if (!match) return noFix();
 
   const undefinedVar = match[1];
+  if (!undefinedVar) return noFix();
 
   // Skip if it's a known import we couldn't find
   if (COMMON_IMPORTS[undefinedVar]) return noFix();
@@ -594,6 +595,7 @@ function tryFixMissingExport(errorMessage: string, code: string): LocalFixResult
 
   const modulePath = match[1] || '';
   const wrongExport = match[2];
+  if (!wrongExport) return noFix();
 
   // Detect library from module path or import in code
   let libraryName = '';
@@ -647,8 +649,8 @@ function tryFixMissingExport(errorMessage: string, code: string): LocalFixResult
   }
 
   // Check for known corrections in other libraries
-  if (libraryName && EXPORT_CORRECTIONS[libraryName]?.[wrongExport]) {
-    const correctExport = EXPORT_CORRECTIONS[libraryName][wrongExport];
+  const correctExport = libraryName ? EXPORT_CORRECTIONS[libraryName]?.[wrongExport] : undefined;
+  if (correctExport) {
 
     // Replace in imports
     const importRegex = new RegExp(
@@ -773,7 +775,7 @@ function extractBareSpecifier(errorMessage: string): string | null {
 
   for (const pattern of patterns) {
     const match = errorMessage.match(pattern);
-    if (match) return match[1];
+    if (match) return match[1] ?? null;
   }
   return null;
 }
@@ -825,7 +827,7 @@ function addImport(code: string, identifier: string, info: ImportInfo): string {
   const existingMatch = code.match(existingRegex);
 
   if (existingMatch && !info.isDefault) {
-    const currentImports = existingMatch[1].trim();
+    const currentImports = (existingMatch[1] ?? '').trim();
     const newImports = currentImports ? `${currentImports}, ${identifier}` : identifier;
     return code.replace(existingRegex, `import { ${newImports} } from '${info.from}'`);
   }
@@ -850,8 +852,15 @@ function addImport(code: string, identifier: string, info: ImportInfo): string {
   return importStatement + code;
 }
 
-function countBrackets(code: string): Record<string, number> {
-  const counts: Record<string, number> = { '(': 0, ')': 0, '{': 0, '}': 0, '[': 0, ']': 0 };
+type BracketChar = '(' | ')' | '{' | '}' | '[' | ']';
+type BracketCounts = Record<BracketChar, number>;
+
+function isBracketChar(c: string): c is BracketChar {
+  return c === '(' || c === ')' || c === '{' || c === '}' || c === '[' || c === ']';
+}
+
+function countBrackets(code: string): BracketCounts {
+  const counts: BracketCounts = { '(': 0, ')': 0, '{': 0, '}': 0, '[': 0, ']': 0 };
   let inString = false;
   let stringChar = '';
   let inLineComment = false;
@@ -859,6 +868,7 @@ function countBrackets(code: string): Record<string, number> {
 
   for (let i = 0; i < code.length; i++) {
     const char = code[i];
+    if (char === undefined) continue;
     const nextChar = code[i + 1] || '';
     const prevChar = i > 0 ? code[i - 1] : '';
 
@@ -893,7 +903,7 @@ function countBrackets(code: string): Record<string, number> {
       }
     }
 
-    if (!inString && Object.hasOwn(counts, char)) {
+    if (!inString && isBracketChar(char)) {
       counts[char]++;
     }
   }
@@ -905,13 +915,14 @@ function extractDefinedVariables(code: string): string[] {
   const vars: string[] = [];
 
   for (const match of code.matchAll(/(const|let|var)\s+(\w+)/g)) {
-    vars.push(match[2]);
+    if (match[2]) vars.push(match[2]);
   }
   for (const match of code.matchAll(/function\s+(\w+)/g)) {
-    vars.push(match[1]);
+    if (match[1]) vars.push(match[1]);
   }
   for (const match of code.matchAll(/const\s+\[(\w+),\s*(\w+)\]/g)) {
-    vars.push(match[1], match[2]);
+    if (match[1]) vars.push(match[1]);
+    if (match[2]) vars.push(match[2]);
   }
 
   return [...new Set(vars)];
