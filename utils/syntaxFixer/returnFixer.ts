@@ -22,7 +22,7 @@ export function fixReturnStatements(code: string): string {
   let inReturnParen = false;
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    let line = lines[i] ?? '';
 
     // Detect return (
     if (/return\s*\(/.test(line) && !inReturnParen) {
@@ -43,7 +43,8 @@ export function fixReturnStatements(code: string): string {
     }
 
     // Fix return without value followed by JSX
-    if (/^\s*return\s*$/.test(line) && i + 1 < lines.length && /^\s*</.test(lines[i + 1])) {
+    const nextLine = lines[i + 1] ?? '';
+    if (/^\s*return\s*$/.test(line) && nextLine && /^\s*</.test(nextLine)) {
       line = line.replace(/return\s*$/, 'return (');
     }
 
@@ -54,8 +55,9 @@ export function fixReturnStatements(code: string): string {
   if (inReturnParen && returnParenDepth > 0) {
     // Find the last line with content and add closing parens
     for (let i = fixedLines.length - 1; i >= 0; i--) {
-      if (fixedLines[i].trim()) {
-        fixedLines[i] = fixedLines[i] + ')'.repeat(returnParenDepth);
+      const fixedLine = fixedLines[i] ?? '';
+      if (fixedLine.trim()) {
+        fixedLines[i] = fixedLine + ')'.repeat(returnParenDepth);
         break;
       }
     }

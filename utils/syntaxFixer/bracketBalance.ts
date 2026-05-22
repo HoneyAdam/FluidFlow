@@ -30,11 +30,13 @@ export function fixBracketBalanceAdvanced(code: string): string {
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
+    if (!line) continue;
 
     for (let col = 0; col < line.length; col++) {
       const char = line[col];
+      if (!char) continue;
       const nextChar = line[col + 1] || '';
-      const prevChar = line[col - 1] || '';
+      const prevChar = col > 0 ? line[col - 1] ?? '' : '';
 
       // Track comment state
       if (!inString && !inMultilineComment && char === '/' && nextChar === '/') {
@@ -119,7 +121,7 @@ export function fixBracketBalanceAdvanced(code: string): string {
     let result = code;
 
     for (const unclosed of stack) {
-      const closer = pairs[unclosed.char];
+      const closer = pairs[unclosed.char] ?? '';
 
       // Find a good place to insert the closer
       // Generally at the end of the same or next logical block
@@ -160,8 +162,9 @@ export function findBestCloserPosition(code: string, afterIndex: number, closer:
       // Look for likely expression ends
       if (/[;,}\]]/.test(line)) {
         const match = line.match(/[;,}\]]/);
+        const matchIndex = match?.index ?? 0;
         if (match) {
-          return offset + (match.index || 0);
+          return offset + matchIndex;
         }
       }
       offset += line.length + 1;

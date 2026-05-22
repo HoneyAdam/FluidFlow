@@ -20,7 +20,7 @@ export function parseImports(code: string): ImportInfo[] {
   const importRegex = /^import\s+(?:(type)\s+)?(?:(\*\s+as\s+\w+)|(\w+)(?:\s*,\s*)?)?(?:\{([^}]+)\})?\s+from\s+['"]([^'"]+)['"];?$/;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i]?.trim() ?? '';
     if (!line.startsWith('import ')) continue;
 
     const match = line.match(importRegex);
@@ -32,13 +32,13 @@ export function parseImports(code: string): ImportInfo[] {
         : [];
 
       imports.push({
-        source,
+        source: source ?? '',
         defaultImport: defaultImport || null,
         namedImports,
         namespaceImport: namespaceImport?.replace('* as ', '') || null,
         typeOnly: !!typeOnly,
         line: i + 1,
-        fullMatch: lines[i]
+        fullMatch: line
       });
     }
   }
@@ -61,10 +61,11 @@ export function fixAndMergeImports(code: string): string {
   // Group imports by source
   const bySource: Record<string, ImportInfo[]> = {};
   for (const imp of imports) {
-    if (!bySource[imp.source]) {
-      bySource[imp.source] = [];
+    const source = imp.source;
+    if (!bySource[source]) {
+      bySource[source] = [];
     }
-    bySource[imp.source].push(imp);
+    bySource[source]!.push(imp);
   }
 
   // Build merged import statements
@@ -72,9 +73,11 @@ export function fixAndMergeImports(code: string): string {
   const usedLines = new Set<number>();
 
   for (const [source, sourceImports] of Object.entries(bySource)) {
+    const first = sourceImports[0];
+    if (!first) continue;
     if (sourceImports.length === 1) {
-      mergedImports.push(sourceImports[0].fullMatch);
-      usedLines.add(sourceImports[0].line);
+      mergedImports.push(first.fullMatch);
+      usedLines.add(first.line);
       continue;
     }
 
@@ -132,7 +135,8 @@ export function fixAndMergeImports(code: string): string {
         importsInserted = true;
       }
     } else {
-      newLines.push(lines[i]);
+      const line = lines[i] ?? '';
+      if (line) newLines.push(line);
     }
   }
 
