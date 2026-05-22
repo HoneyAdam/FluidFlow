@@ -418,7 +418,8 @@ router.post('/:id/checkout', async (req, res) => {
     if (errorMessage.includes('would be overwritten')) {
       // Extract file names from error message
       const fileMatch = errorMessage.match(/overwritten by checkout:\s*([\s\S]*?)(?:Please|Aborting)/);
-      const files = fileMatch ? fileMatch[1].trim().split('\n').map(f => f.trim()).filter(Boolean) : [];
+      const fileMatchContent = fileMatch?.[1];
+      const files = fileMatchContent ? fileMatchContent.trim().split('\n').map(f => f.trim()).filter(Boolean) : [];
 
       return res.status(409).json({
         error: 'Uncommitted changes would be overwritten',
@@ -565,8 +566,8 @@ router.get('/:id/commit/:hash', async (req, res) => {
 
     const changedFiles = fileLines.map(line => {
       const parts = line.split('\t');
-      const status = parts[0];
-      const filePath = parts[1] || '';
+      const status = parts[0] ?? '';
+      const filePath = parts[1] ?? '';
       const newPath = parts[2]; // For renames
 
       let statusLabel: string;
@@ -590,8 +591,8 @@ router.get('/:id/commit/:hash', async (req, res) => {
     // Get stats (insertions, deletions)
     const statResult = await git.show([hash, '--stat', '--format=']);
     const statLine = statResult.split('\n').filter(l => l.includes('file') && l.includes('changed')).pop() || '';
-    const insertions = parseInt((statLine.match(/(\d+) insertion/) || ['0', '0'])[1]);
-    const deletions = parseInt((statLine.match(/(\d+) deletion/) || ['0', '0'])[1]);
+    const insertions = parseInt((statLine.match(/(\d+) insertion/) || ['0', '0'])[1] ?? '0');
+    const deletions = parseInt((statLine.match(/(\d+) deletion/) || ['0', '0'])[1] ?? '0');
 
     return res.json({
       hash: fullHash,
