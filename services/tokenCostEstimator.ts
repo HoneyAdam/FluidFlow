@@ -53,10 +53,14 @@ export function calculateCost(
   inputTokens: number,
   outputTokens: number
 ): CostEstimate {
-  const pricing = MODEL_PRICING[model] || MODEL_PRICING['openrouter'];
+  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING['openrouter'];
 
-  const inputCost = (inputTokens / 1_000_000) * pricing.inputPricePer1M;
-  const outputCost = (outputTokens / 1_000_000) * pricing.outputPricePer1M;
+  if (!pricing) {
+    return { model, inputTokens, outputTokens, inputCost: 0, outputCost: 0, totalCost: 0, currency: 'USD' };
+  }
+
+  const inputCost = (inputTokens / 1_000_000) * (pricing.inputPricePer1M ?? 0);
+  const outputCost = (outputTokens / 1_000_000) * (pricing.outputPricePer1M ?? 0);
   const totalCost = inputCost + outputCost;
 
   return {
@@ -66,7 +70,7 @@ export function calculateCost(
     inputCost,
     outputCost,
     totalCost,
-    currency: pricing.currency,
+    currency: pricing.currency ?? 'USD',
   };
 }
 

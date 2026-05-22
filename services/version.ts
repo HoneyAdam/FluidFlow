@@ -53,7 +53,7 @@ export function getVersionInfo(): VersionInfo {
   return {
     version: APP_VERSION,
     name: APP_NAME,
-    buildDate: new Date().toISOString().split('T')[0],
+    buildDate: new Date().toISOString().split('T')[0] ?? '',
   };
 }
 
@@ -64,9 +64,9 @@ function parseVersion(version: string): { major: number; minor: number; patch: n
   const match = version.replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)/);
   if (!match) return null;
   return {
-    major: parseInt(match[1], 10),
-    minor: parseInt(match[2], 10),
-    patch: parseInt(match[3], 10),
+    major: parseInt(match[1] ?? '0', 10),
+    minor: parseInt(match[2] ?? '0', 10),
+    patch: parseInt(match[3] ?? '0', 10),
   };
 }
 
@@ -174,7 +174,7 @@ export function parseChangelog(content: string): ChangelogEntry[] {
         entries.push(currentEntry);
       }
       currentEntry = {
-        version: versionMatch[1],
+        version: versionMatch[1] ?? '',
         date: versionMatch[2]?.trim() || '',
         sections: [],
       };
@@ -188,7 +188,8 @@ export function parseChangelog(content: string): ChangelogEntry[] {
       if (currentSection && currentSection.items.length > 0) {
         currentEntry.sections.push(currentSection);
       }
-      const type = sectionTypes[sectionMatch[1].toLowerCase()];
+      const sectionType = sectionMatch[1]?.toLowerCase();
+      const type = sectionType ? sectionTypes[sectionType] : undefined;
       if (type) {
         currentSection = { type, items: [] };
       } else {
@@ -200,7 +201,10 @@ export function parseChangelog(content: string): ChangelogEntry[] {
     // List item: - Some change
     const itemMatch = line.match(/^[-*]\s+(.+)$/);
     if (itemMatch && currentSection) {
-      currentSection.items.push(itemMatch[1].trim());
+      const itemContent = itemMatch[1]?.trim();
+      if (itemContent) {
+        currentSection.items.push(itemContent);
+      }
     }
   }
 

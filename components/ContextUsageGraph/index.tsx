@@ -43,8 +43,9 @@ export const ContextUsageGraph: React.FC<UsageGraphProps> = ({
   }, [data]);
 
   const usagePercent = (data.currentTokens / data.maxTokens) * 100;
-  const trend = data.snapshots.length >= 2
-    ? data.currentTokens - data.snapshots[0].tokens
+  const firstSnapshot = data.snapshots[0];
+  const trend = data.snapshots.length >= 2 && firstSnapshot
+    ? data.currentTokens - firstSnapshot.tokens
     : 0;
 
   return (

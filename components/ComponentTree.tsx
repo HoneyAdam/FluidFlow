@@ -51,7 +51,7 @@ function parseFile(content: string, filename: string): TreeNode[] {
       // Extract props from the component
       const propsMatch = content.substring(match.index, match.index + 500).match(/\{([^}]+)\}/);
       const props: string[] = [];
-      if (propsMatch) {
+      if (propsMatch?.[1]) {
         const propsStr = propsMatch[1];
         const propMatches = propsStr.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*[,}:]/g);
         if (propMatches) {
@@ -65,11 +65,12 @@ function parseFile(content: string, filename: string): TreeNode[] {
       }
 
       // Check if component already exists
-      if (!nodes.find(n => n.name === name)) {
+      const nameStr = name ?? '';
+      if (!nodes.find(n => n.name === nameStr)) {
         nodes.push({
-          name,
+          name: nameStr,
           type: 'component',
-          file: filename,
+          file: filename ?? '',
           line: lineNumber,
           props: props.slice(0, 10), // Limit props
         });
@@ -81,13 +82,13 @@ function parseFile(content: string, filename: string): TreeNode[] {
   let hookMatch;
   hookPattern.lastIndex = 0;
   while ((hookMatch = hookPattern.exec(content)) !== null) {
-    const name = hookMatch[1];
+    const hookName = hookMatch?.[1] ?? '';
     const lineNumber = content.substring(0, hookMatch.index).split('\n').length;
-    if (!nodes.find(n => n.name === name)) {
+    if (!nodes.find(n => n.name === hookName)) {
       nodes.push({
-        name,
+        name: hookName,
         type: 'hook',
-        file: filename,
+        file: filename ?? '',
         line: lineNumber,
       });
     }

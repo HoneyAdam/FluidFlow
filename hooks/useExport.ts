@@ -164,7 +164,8 @@ Thumbs.db
           .map((line) => {
             if (!line.trim() || line.startsWith('#')) return line;
             const match = line.match(/^([A-Z_][A-Z0-9_]*)=/i);
-            if (match) return `${match[1]}=your_${match[1].toLowerCase()}_here`;
+            const matchStr = match?.[1];
+            if (matchStr) return `${matchStr}=your_${matchStr.toLowerCase()}_here`;
             return line;
           })
           .join('\n');

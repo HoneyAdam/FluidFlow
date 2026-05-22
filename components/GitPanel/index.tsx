@@ -669,7 +669,7 @@ ${changedFilesContext}`;
                 onCopyHash={() => copyHash(selectedCommit.hash)}
                 copiedHash={copiedHash}
                 onRevert={onRevertToCommit ? handleRevertClick : undefined}
-                isFirstCommit={commits.length > 0 && commits[0].hash === selectedCommit.hash}
+                isFirstCommit={commits.length > 0 && commits[0]?.hash === selectedCommit.hash}
               />
             ) : (
               <div className="p-2 space-y-1">

@@ -129,7 +129,7 @@ function findClassNames(cssContent: string): string[] {
 
   for (const match of matches) {
     const className = match[1];
-    if (!pseudoClasses.has(className)) {
+    if (className && !pseudoClasses.has(className)) {
       classNames.add(className);
     }
   }

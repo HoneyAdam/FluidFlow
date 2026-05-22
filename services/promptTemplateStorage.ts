@@ -197,13 +197,16 @@ export function updatePromptTemplate(
 
   if (index === -1) return false;
 
+  const existing = templates[index];
+  if (!existing) return false;
+
   // Don't allow editing built-in template content, only favorites
-  if (templates[index].isBuiltIn && Object.keys(updates).some(k => k !== 'isFavorite')) {
+  if (existing.isBuiltIn && Object.keys(updates).some(k => k !== 'isFavorite')) {
     return false;
   }
 
   templates[index] = {
-    ...templates[index],
+    ...existing,
     ...updates,
     updatedAt: Date.now(),
   };

@@ -185,7 +185,9 @@ function updateLog(id: string, updates: Partial<DebugLogEntry>, notifyNow = fals
   if (logIndex === -1) return false;
 
   const updatedLogs = [...globalDebugState.logs];
-  updatedLogs[logIndex] = { ...updatedLogs[logIndex], ...updates };
+  const existingLog = updatedLogs[logIndex];
+  if (!existingLog) return false;
+  updatedLogs[logIndex] = { ...existingLog, ...updates };
 
   globalDebugState = {
     ...globalDebugState,

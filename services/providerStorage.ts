@@ -42,7 +42,7 @@ export const getAllProviders = (): ProviderConfig[] => {
  */
 export const getActiveProvider = (): ProviderConfig | null => {
   const manager = getProviderManager();
-  return manager.getActiveConfig();
+  return manager.getActiveConfig() ?? null;
 };
 
 /**

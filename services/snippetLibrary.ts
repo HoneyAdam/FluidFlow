@@ -85,11 +85,14 @@ export function updateSnippet(id: string, updates: Partial<Snippet>): boolean {
 
   if (index === -1) return false;
 
+  const existing = snippets[index];
+  if (!existing) return false;
+
   snippets[index] = {
-    ...snippets[index],
+    ...existing,
     ...updates,
-    id: snippets[index].id, // Preserve ID
-    createdAt: snippets[index].createdAt, // Preserve creation date
+    id: existing.id, // Preserve ID
+    createdAt: existing.createdAt, // Preserve creation date
     updatedAt: Date.now(),
   };
 

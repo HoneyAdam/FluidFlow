@@ -133,7 +133,11 @@ export const DEFAULT_ADS: Promotion[] = [
  */
 export function getRandomPromotion(): Promotion {
   const all = [...FEATURES, ...TIPS];
-  return all[Math.floor(Math.random() * all.length)];
+  const randomPromotion = all[Math.floor(Math.random() * all.length)];
+  if (!randomPromotion) {
+    return { id: 'default', title: 'Default', description: '', type: 'feature', icon: 'sparkles' };
+  }
+  return randomPromotion;
 }
 
 /**
@@ -150,9 +154,12 @@ export function getPromotionCycle(): Promotion[] {
   // Interleave: 2 features, 1 tip, repeat
   let fi = 0, ti = 0;
   while (fi < shuffledFeatures.length || ti < shuffledTips.length) {
-    if (fi < shuffledFeatures.length) cycle.push(shuffledFeatures[fi++]);
-    if (fi < shuffledFeatures.length) cycle.push(shuffledFeatures[fi++]);
-    if (ti < shuffledTips.length) cycle.push(shuffledTips[ti++]);
+    const feature1 = shuffledFeatures[fi++];
+    if (feature1) cycle.push(feature1);
+    const feature2 = shuffledFeatures[fi++];
+    if (feature2) cycle.push(feature2);
+    const tip = shuffledTips[ti++];
+    if (tip) cycle.push(tip);
   }
 
   // Add creator at the end

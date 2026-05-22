@@ -112,8 +112,8 @@ interface ProjectScreenshots {
 async function getFluidFlowMeta(projectId: string): Promise<{ screenshots?: ProjectScreenshots; lastScreenshot?: number } | null> {
   const metaPath = getFluidFlowMetaPath(projectId);
   try {
-    const meta = await safeReadJson<{ screenshots?: ProjectScreenshots; lastScreenshot?: number }>(metaPath, null);
-    return meta;
+    const meta = await safeReadJson<{ screenshots?: ProjectScreenshots; lastScreenshot?: number } | null>(metaPath, null);
+    return meta ?? null;
   } catch {
     return null;
   }
@@ -1136,7 +1136,7 @@ router.put('/:id/file', async (req, res) => {
     const dataUrlMatch = content.match(/^data:([^;]+);base64,(.+)$/);
     if (dataUrlMatch) {
       // Convert base64 data URL to binary and save
-      const base64Data = dataUrlMatch[2];
+      const base64Data = dataUrlMatch[2] ?? '';
       const binaryData = Buffer.from(base64Data, 'base64');
       await fs.writeFile(fullPath, binaryData);
       console.log(`[Projects] Saved binary file: ${sanitizedPath} (${binaryData.length} bytes)`);

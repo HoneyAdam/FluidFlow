@@ -70,8 +70,8 @@ function createThumbnail(dataUrl: string, maxWidth = THUMBNAIL_WIDTH, maxHeight 
  */
 function dataUrlToBlob(dataUrl: string): Blob {
   const parts = dataUrl.split(',');
-  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
-  const bstr = atob(parts[1]);
+  const mime = parts[0]?.match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(parts[1] ?? '');
   const n = bstr.length;
   const u8arr = new Uint8Array(n);
 
@@ -228,10 +228,12 @@ export async function deleteScreenshot(projectId: string, screenshotId: string):
   const index = screenshots.history.findIndex((s) => s.id === screenshotId);
   if (index !== -1) {
     const removed = screenshots.history.splice(index, 1)[0];
-    try {
-      await projectApi.deleteFile(projectId, `.fluidflow/${removed.filename}`);
-    } catch {
-      // Ignore
+    if (removed) {
+      try {
+        await projectApi.deleteFile(projectId, `.fluidflow/${removed.filename}`);
+      } catch {
+        // Ignore
+      }
     }
   }
 

@@ -254,9 +254,12 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
         return prevState;
       }
 
+      const targetEntry = allHistory[targetIndex];
+      if (!targetEntry) return prevState;
+
       return {
         past: allHistory.slice(0, targetIndex),
-        present: allHistory[targetIndex],
+        present: targetEntry,
         future: allHistory.slice(targetIndex + 1),
       };
     });
@@ -296,7 +299,8 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
   const getChangedFiles = useCallback((index: number): string[] => {
     const allHistory = [...state.past, state.present, ...state.future];
     if (index < 0 || index >= allHistory.length) return [];
-    return allHistory[index].changedFiles || [];
+    const entry = allHistory[index];
+    return entry?.changedFiles || [];
   }, [state]);
 
   // Reset to new initial state
@@ -384,10 +388,12 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
 
     // Ensure currentIndex is valid
     const validIndex = Math.max(0, Math.min(currentIndex, history.length - 1));
+    const presentEntry = history[validIndex];
+    if (!presentEntry) return;
 
     setState({
       past: history.slice(0, validIndex),
-      present: history[validIndex],
+      present: presentEntry,
       future: history.slice(validIndex + 1),
     });
 

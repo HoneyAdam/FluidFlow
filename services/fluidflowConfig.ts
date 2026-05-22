@@ -119,8 +119,9 @@ class FluidFlowConfigManager {
   updateAgent(id: string, updates: Partial<AgentConfig>): void {
     const agents = this.config.agents || [];
     const index = agents.findIndex((a) => a.id === id);
-    if (index >= 0) {
-      agents[index] = { ...agents[index], ...updates };
+    const existing = agents[index];
+    if (index >= 0 && existing) {
+      agents[index] = { ...existing, ...updates } as AgentConfig;
       this.config.agents = agents;
       this.saveConfig();
     }

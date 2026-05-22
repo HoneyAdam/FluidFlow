@@ -209,19 +209,22 @@ class WebContainerService {
       let current = tree;
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
+        if (!part) continue;
         if (!current[part]) {
           current[part] = { directory: {} };
         }
         const node = current[part];
-        if ('directory' in node) {
+        if (node && 'directory' in node) {
           current = node.directory;
         }
       }
 
       const fileName = parts[parts.length - 1];
-      current[fileName] = {
-        file: { contents: content },
-      };
+      if (fileName) {
+        current[fileName] = {
+          file: { contents: content },
+        };
+      }
     }
 
     return tree;

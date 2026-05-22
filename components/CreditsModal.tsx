@@ -26,7 +26,12 @@ function shuffleArray<T>(array: T[]): T[] {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+    const temp = result[i];
+    const other = result[j];
+    if (temp !== undefined && other !== undefined) {
+      result[i] = other;
+      result[j] = temp;
+    }
   }
   return result;
 }
@@ -43,12 +48,12 @@ const getGradientStyle = (colorId: string): string => {
   // Check if it's a legacy Tailwind class or a new gradient ID
   if (colorId.includes('from-') || colorId.includes('to-')) {
     // Legacy fallback - try to map common patterns
-    if (colorId.includes('blue') && colorId.includes('purple')) return gradients['accent-gradient'];
-    if (colorId.includes('emerald') || colorId.includes('green')) return gradients['success-gradient'];
-    return gradients['accent-gradient']; // default
+    if (colorId.includes('blue') && colorId.includes('purple')) return gradients['accent-gradient'] ?? '';
+    if (colorId.includes('emerald') || colorId.includes('green')) return gradients['success-gradient'] ?? '';
+    return gradients['accent-gradient'] ?? ''; // default
   }
 
-  return gradients[colorId] || gradients['accent-gradient'];
+  return gradients[colorId] ?? gradients['accent-gradient'] ?? '';
 };
 
 export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose, showOnFirstLaunch = false }) => {

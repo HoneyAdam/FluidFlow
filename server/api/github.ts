@@ -566,8 +566,11 @@ router.post('/:id/fetch', async (req, res) => {
     }
 
     const git: SimpleGit = createGit(filesDir);
-    const fetchOptions = prune ? ['--prune'] : [];
-    await git.fetch(remote, undefined, fetchOptions);
+    if (prune) {
+      await git.fetch(remote, { '--prune': null } as Record<string, null>);
+    } else {
+      await git.fetch(remote);
+    }
 
     return res.json({ message: `Fetched from ${remote}` });
   } catch (error: unknown) {
