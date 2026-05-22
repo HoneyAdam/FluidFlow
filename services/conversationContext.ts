@@ -148,7 +148,9 @@ class ConversationContextManager {
     // Remove oldest contexts until we're under the limit
     const targetSize = Math.max(3, Math.floor(this.contexts.size * 0.7)); // Keep 70% or at least 3
     for (let i = 0; i < sortedContexts.length - targetSize; i++) {
-      const [id, _context] = sortedContexts[i];
+      const entry = sortedContexts[i];
+      if (!entry) continue;
+      const [id, _context] = entry;
       // Keep system contexts (main-chat, etc.)
       if (!id.includes('main-chat')) {
         console.log(`[ContextManager] Removing old context: ${id}`);
@@ -266,17 +268,16 @@ class ConversationContextManager {
     if (!context || context.messages.length === 0) return;
 
     const lastMsg = context.messages[context.messages.length - 1];
-    if (lastMsg.role === 'assistant') {
-      // Update token estimate (CTX-001 fix: ensure non-negative)
-      const oldTokens = estimateTokens(lastMsg.content);
-      const newTokens = estimateTokens(content);
-      context.estimatedTokens = Math.max(0, context.estimatedTokens - oldTokens + newTokens);
-      lastMsg.content = content;
-      context.lastUpdatedAt = Date.now();
+    if (!lastMsg || lastMsg.role !== 'assistant') return;
+    // Update token estimate (CTX-001 fix: ensure non-negative)
+    const oldTokens = estimateTokens(lastMsg.content);
+    const newTokens = estimateTokens(content);
+    context.estimatedTokens = Math.max(0, context.estimatedTokens - oldTokens + newTokens);
+    lastMsg.content = content;
+    context.lastUpdatedAt = Date.now();
 
-      // AI-006 fix: Debounce save during streaming to prevent data loss
-      this.debouncedSave();
-    }
+    // AI-006 fix: Debounce save during streaming to prevent data loss
+    this.debouncedSave();
   }
 
   finalizeMessage(_contextId: string): void {
