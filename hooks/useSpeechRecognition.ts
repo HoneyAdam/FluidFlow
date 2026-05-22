@@ -86,8 +86,9 @@ export function useSpeechRecognition(
       let finalTranscript = '';
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+        const result = event.results[i];
+        if (result?.isFinal) {
+          finalTranscript += result[0]?.transcript ?? '';
         }
       }
 

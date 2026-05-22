@@ -39,8 +39,8 @@ export function parseSQLToSchema(sql: string): SQLParseResult {
   let match;
 
   while ((match = tableRegex.exec(sql)) !== null) {
-    const tableName = match[1];
-    const columnsStr = match[2];
+    const tableName = match[1] ?? 'unknown';
+    const columnsStr = match[2] ?? '';
     const columns: Column[] = [];
 
     // Parse each column
@@ -53,8 +53,8 @@ export function parseSQLToSchema(sql: string): SQLParseResult {
       const colMatch = line.match(/^(\w+)\s+(\w+(?:\(\d+(?:,\d+)?\))?)/i);
       if (colMatch) {
         const col: Column = {
-          name: colMatch[1],
-          type: colMatch[2].toUpperCase()
+          name: colMatch[1] ?? '',
+          type: (colMatch[2] ?? '').toUpperCase()
         };
         if (/PRIMARY\s+KEY/i.test(line)) col.isPrimaryKey = true;
         if (/NOT\s+NULL/i.test(line)) col.isNullable = false;

@@ -178,7 +178,7 @@ export function extractFileListUnified(response: string): string[] {
   const planMatch = response.match(/\/\/\s*PLAN:\s*(\{[\s\S]*?\})/);
   if (planMatch) {
     try {
-      const plan = JSON.parse(planMatch[1]);
+      const plan = JSON.parse(planMatch[1] ?? '{}');
       if (plan.create) plan.create.forEach((f: string) => files.add(f));
       if (plan.update) plan.update.forEach((f: string) => files.add(f));
     } catch {
@@ -190,7 +190,7 @@ export function extractFileListUnified(response: string): string[] {
   const pattern = /"([^"]+\.(tsx?|jsx?|css|json|md|sql|ts|js))"\s*:/g;
   const matches = [...response.matchAll(pattern)];
   for (const match of matches) {
-    files.add(match[1]);
+    if (match[1]) files.add(match[1]);
   }
 
   return Array.from(files).sort();
