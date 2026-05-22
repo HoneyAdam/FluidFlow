@@ -299,7 +299,7 @@ export function resolveUnknownPackage(specifier: string): string | null {
   // Handle regular packages with subpath
   if (parts.length >= 2) {
     const base = parts[0];
-    if (PACKAGE_REGISTRY[base]) {
+    if (base && PACKAGE_REGISTRY[base]) {
       const config = { ...PACKAGE_REGISTRY[base] };
       config.subpath = '/' + parts.slice(1).join('/');
       return buildEsmUrl(config);
@@ -313,7 +313,7 @@ export function resolveUnknownPackage(specifier: string): string | null {
 
   // Skip Node built-ins
   const nodeBuiltins = ['fs', 'path', 'os', 'crypto', 'http', 'https', 'stream', 'util', 'events', 'buffer'];
-  if (nodeBuiltins.includes(specifier) || nodeBuiltins.includes(parts[0])) {
+  if (nodeBuiltins.includes(specifier) || nodeBuiltins.includes(parts[0] ?? '')) {
     return null;
   }
 
@@ -337,9 +337,10 @@ export function extractImports(code: string): string[] {
     let match;
     while ((match = pattern.exec(code)) !== null) {
       const specifier = match[1];
-      if (!specifier.startsWith('.') && !specifier.startsWith('/')) {
-        imports.add(specifier);
+      if (!specifier || (!specifier.startsWith('.') && !specifier.startsWith('/'))) {
+        continue;
       }
+      imports.add(specifier);
     }
   }
 
@@ -375,10 +376,10 @@ export function analyzeFilesForImports(files: Record<string, string>): Record<st
  */
 export function parseSpecifierError(errorMessage: string): string | null {
   const match = errorMessage.match(/specifier ["']([^"']+)["'] was a bare specifier/i);
-  if (match) return match[1];
+  if (match) return match[1] ?? null;
 
   const altMatch = errorMessage.match(/Failed to resolve module specifier ["']([^"']+)["']/i);
-  if (altMatch) return altMatch[1];
+  if (altMatch) return altMatch[1] ?? null;
 
   return null;
 }
