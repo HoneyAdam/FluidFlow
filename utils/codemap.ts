@@ -98,7 +98,7 @@ function analyzeFile(path: string, content: string): FileInfo {
       items.push(defaultImport);
     }
     if (namedImports) {
-      const named = namedImports.replace(/[{}]/g, '').split(',').map(s => s.trim().split(' as ')[0].trim()).filter(Boolean);
+      const named = namedImports.replace(/[{}]/g, '').split(',').map(s => (s.trim().split(' as ')[0] ?? '').trim()).filter(Boolean);
       items.push(...named);
     }
 
@@ -111,12 +111,12 @@ function analyzeFile(path: string, content: string): FileInfo {
   const exportRegex = /export\s+(?:default\s+)?(?:const|function|class|interface|type)\s+(\w+)/g;
   exportRegex.lastIndex = 0;
   while ((match = exportRegex.exec(content)) !== null) {
-    info.exports.push(match[1]);
+    if (match[1]) info.exports.push(match[1]);
   }
 
   // Also check for inline default exports
   const defaultExportMatch = content.match(/export\s+default\s+(\w+)/);
-  if (defaultExportMatch && !info.exports.includes(defaultExportMatch[1])) {
+  if (defaultExportMatch?.[1] && !info.exports.includes(defaultExportMatch[1])) {
     info.exports.push(defaultExportMatch[1]);
   }
 
@@ -125,8 +125,10 @@ function analyzeFile(path: string, content: string): FileInfo {
   componentRegex.lastIndex = 0;
   while ((match = componentRegex.exec(content)) !== null) {
     const name = match[1];
+    if (!name) continue;
+    const firstChar = name[0] ?? '';
     // Check if it's a component (starts with capital letter)
-    if (name[0] === name[0].toUpperCase() && name[0] !== name[0].toLowerCase()) {
+    if (firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase()) {
       const componentInfo: ComponentInfo = {
         name,
         props: [],
@@ -139,7 +141,7 @@ function analyzeFile(path: string, content: string): FileInfo {
       const escapedName = escapeRegExp(name);
       const propsMatch = content.match(new RegExp(`interface\\s+${escapedName}Props\\s*{([^}]+)}`));
       if (propsMatch) {
-        const propsContent = propsMatch[1];
+        const propsContent = propsMatch[1] ?? '';
         const propNames = propsContent.match(/(\w+)\s*[?:]?\s*:/g);
         if (propNames) {
           componentInfo.props = propNames.map(p => p.replace(/[?:]/g, '').trim());
@@ -149,7 +151,7 @@ function analyzeFile(path: string, content: string): FileInfo {
       // Also try to extract from React.FC<{...}> inline props
       const inlinePropsMatch = content.match(new RegExp(`${escapedName}[^=]*=.*?\\(\\{([^}]+)\\}`));
       if (inlinePropsMatch) {
-        const inlineProps = inlinePropsMatch[1].split(',').map(p => p.trim().split(':')[0].trim()).filter(Boolean);
+        const inlineProps = (inlinePropsMatch[1] ?? '').split(',').map(p => (p.trim().split(':')[0] ?? '').trim()).filter(Boolean);
         componentInfo.props = [...new Set([...componentInfo.props, ...inlineProps])];
       }
 
@@ -167,8 +169,9 @@ function analyzeFile(path: string, content: string): FileInfo {
         jsxComponentRegex.lastIndex = 0;
         let jsxMatch;
         while ((jsxMatch = jsxComponentRegex.exec(componentBody)) !== null) {
-          if (!componentInfo.children.includes(jsxMatch[1])) {
-            componentInfo.children.push(jsxMatch[1]);
+          const child = jsxMatch[1];
+          if (child && !componentInfo.children.includes(child)) {
+            componentInfo.children.push(child);
           }
         }
       }
@@ -181,8 +184,9 @@ function analyzeFile(path: string, content: string): FileInfo {
   const funcRegex = /(?:export\s+)?(?:const|function)\s+([a-z]\w*)\s*(?:=\s*(?:async\s*)?\([^)]*\)\s*(?::\s*\w+)?\s*=>|(?:async\s*)?\([^)]*\))/g;
   funcRegex.lastIndex = 0;
   while ((match = funcRegex.exec(content)) !== null) {
-    if (!info.functions.includes(match[1])) {
-      info.functions.push(match[1]);
+    const fnName = match[1];
+    if (fnName && !info.functions.includes(fnName)) {
+      info.functions.push(fnName);
     }
   }
 
@@ -190,7 +194,7 @@ function analyzeFile(path: string, content: string): FileInfo {
   const constRegex = /(?:export\s+)?const\s+([A-Z][A-Z_0-9]+)\s*=/g;
   constRegex.lastIndex = 0;
   while ((match = constRegex.exec(content)) !== null) {
-    info.constants.push(match[1]);
+    if (match[1]) info.constants.push(match[1]);
   }
 
   return info;
@@ -398,7 +402,7 @@ export function generateProjectContextMd(files: FileSystem): string {
     let currentPath = '';
 
     for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+      const part = parts[i] ?? '';
       const isLast = i === parts.length - 1;
       currentPath = currentPath ? `${currentPath}/${part}` : part;
 
