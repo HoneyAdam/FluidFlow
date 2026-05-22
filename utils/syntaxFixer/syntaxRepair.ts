@@ -136,7 +136,7 @@ export function fixStringIssues(code: string): string {
   const fixedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    let line = lines[i] ?? '';
 
     // Count quotes to detect unclosed strings
     const singleQuotes = (line.match(/(?<!\\)'/g) || []).length;
@@ -146,7 +146,7 @@ export function fixStringIssues(code: string): string {
     // If odd number of single quotes and line ends without semicolon
     if (singleQuotes % 2 === 1 && !line.trim().endsWith("'") && !line.trim().endsWith("',") && !line.trim().endsWith("';")) {
       // Check if next line starts with continuation
-      if (i + 1 < lines.length && /^\s*['"]/.test(lines[i + 1])) {
+      if (i + 1 < lines.length && /^\s*['"]/.test(lines[i + 1] ?? '')) {
         // Likely multi-line string, leave it
       } else if (line.includes("'") && !line.includes('`')) {
         // Try to close the string at end of meaningful content
@@ -159,7 +159,7 @@ export function fixStringIssues(code: string): string {
 
     // Same for double quotes
     if (doubleQuotes % 2 === 1 && !line.trim().endsWith('"') && !line.trim().endsWith('",') && !line.trim().endsWith('";')) {
-      if (i + 1 < lines.length && /^\s*["']/.test(lines[i + 1])) {
+      if (i + 1 < lines.length && /^\s*["']/.test(lines[i + 1] ?? '')) {
         // Multi-line, leave it
       } else if (line.includes('"') && !line.includes('`')) {
         const match = line.match(/"([^"]+)$/);
