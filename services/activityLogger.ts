@@ -72,15 +72,17 @@ class ActivityLogger {
       const duration = Date.now() - startTime;
       // Update the entry with completion
       const idx = this.logs.findIndex(l => l.id === entry.id);
-      if (idx >= 0) {
-        this.logs[idx] = {
-          ...this.logs[idx],
+      const current = this.logs[idx];
+      if (idx >= 0 && current) {
+        const updated: ActivityLogEntry = {
+          ...current,
           level: 'success',
           message: message.replace('...', ''),
           duration,
         };
+        this.logs[idx] = updated;
         // Re-notify with updated entry
-        this.subscribers.forEach(fn => fn(this.logs[idx]));
+        this.subscribers.forEach(fn => fn(updated));
       }
     };
   }
