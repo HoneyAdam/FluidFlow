@@ -243,25 +243,31 @@ describe('extractJsxTags', () => {
     const input = '<Component prop="value">';
     const tags = extractJsxTags(input);
     expect(tags).toHaveLength(1);
-    expect(tags[0].name).toBe('Component');
-    expect(tags[0].isClosing).toBe(false);
-    expect(tags[0].isSelfClosing).toBe(false);
+    const firstTag = tags[0];
+    expect(firstTag).toBeDefined();
+    expect(firstTag!.name).toBe('Component');
+    expect(firstTag!.isClosing).toBe(false);
+    expect(firstTag!.isSelfClosing).toBe(false);
   });
 
   it('should extract closing tags', () => {
     const input = '</Component>';
     const tags = extractJsxTags(input);
     expect(tags).toHaveLength(1);
-    expect(tags[0].name).toBe('Component');
-    expect(tags[0].isClosing).toBe(true);
+    const firstTag = tags[0];
+    expect(firstTag).toBeDefined();
+    expect(firstTag!.name).toBe('Component');
+    expect(firstTag!.isClosing).toBe(true);
   });
 
   it('should extract self-closing tags', () => {
     const input = '<Component />';
     const tags = extractJsxTags(input);
     expect(tags).toHaveLength(1);
-    expect(tags[0].name).toBe('Component');
-    expect(tags[0].isSelfClosing).toBe(true);
+    const firstTag = tags[0];
+    expect(firstTag).toBeDefined();
+    expect(firstTag!.name).toBe('Component');
+    expect(firstTag!.isSelfClosing).toBe(true);
   });
 
   it('should ignore tags inside strings', () => {
@@ -358,31 +364,39 @@ describe('parseImports', () => {
     const input = "import React from 'react';";
     const imports = parseImports(input);
     expect(imports).toHaveLength(1);
-    expect(imports[0].defaultImport).toBe('React');
-    expect(imports[0].source).toBe('react');
+    const first = imports[0];
+    expect(first).toBeDefined();
+    expect(first!.defaultImport).toBe('React');
+    expect(first!.source).toBe('react');
   });
 
   it('should parse named imports', () => {
     const input = "import { useState, useEffect } from 'react';";
     const imports = parseImports(input);
     expect(imports).toHaveLength(1);
-    expect(imports[0].namedImports).toContain('useState');
-    expect(imports[0].namedImports).toContain('useEffect');
+    const first = imports[0];
+    expect(first).toBeDefined();
+    expect(first!.namedImports).toContain('useState');
+    expect(first!.namedImports).toContain('useEffect');
   });
 
   it('should parse mixed imports', () => {
     const input = "import React, { useState } from 'react';";
     const imports = parseImports(input);
     expect(imports).toHaveLength(1);
-    expect(imports[0].defaultImport).toBe('React');
-    expect(imports[0].namedImports).toContain('useState');
+    const first = imports[0];
+    expect(first).toBeDefined();
+    expect(first!.defaultImport).toBe('React');
+    expect(first!.namedImports).toContain('useState');
   });
 
   it('should parse type imports', () => {
     const input = "import type { FC } from 'react';";
     const imports = parseImports(input);
     expect(imports).toHaveLength(1);
-    expect(imports[0].typeOnly).toBe(true);
+    const first = imports[0];
+    expect(first).toBeDefined();
+    expect(first!.typeOnly).toBe(true);
   });
 });
 

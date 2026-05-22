@@ -50,13 +50,17 @@ describe('ProviderManager', () => {
       const loaded = await loadProvidersFromLocalStorage();
 
       expect(loaded).toHaveLength(1);
-      expect(loaded[0].id).toBe('test-1');
+      const firstProvider = loaded[0];
+      expect(firstProvider).toBeDefined();
+      expect(firstProvider!.id).toBe('test-1');
     });
 
     it('should return default provider when localStorage is empty', async () => {
       const loaded = await loadProvidersFromLocalStorage();
       expect(loaded).toHaveLength(1);
-      expect(loaded[0].type).toBe('gemini');
+      const firstProvider = loaded[0];
+      expect(firstProvider).toBeDefined();
+      expect(firstProvider!.type).toBe('gemini');
     });
 
     it('should save and load active provider ID', () => {

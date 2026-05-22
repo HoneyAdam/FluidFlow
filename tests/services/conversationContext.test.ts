@@ -61,22 +61,28 @@ describe('ConversationContextManager', () => {
       const context = manager.getContext('test');
 
       expect(context.messages).toHaveLength(1);
-      expect(context.messages[0].role).toBe('user');
-      expect(context.messages[0].content).toBe('Hello world');
+      const firstMsg = context.messages[0];
+      expect(firstMsg).toBeDefined();
+      expect(firstMsg!.role).toBe('user');
+      expect(firstMsg!.content).toBe('Hello world');
     });
 
     it('should add assistant message', () => {
       manager.addMessage('test', 'assistant', 'Hi there!');
       const context = manager.getContext('test');
 
-      expect(context.messages[0].role).toBe('assistant');
+      const firstMsg = context.messages[0];
+      expect(firstMsg).toBeDefined();
+      expect(firstMsg!.role).toBe('assistant');
     });
 
     it('should add system message', () => {
       manager.addMessage('test', 'system', 'System message');
       const context = manager.getContext('test');
 
-      expect(context.messages[0].role).toBe('system');
+      const firstMsg = context.messages[0];
+      expect(firstMsg).toBeDefined();
+      expect(firstMsg!.role).toBe('system');
     });
 
     it('should add multiple messages', () => {
@@ -185,8 +191,12 @@ describe('ConversationContextManager', () => {
 
       const messages = manager.getMessagesForAI('test');
       expect(messages).toHaveLength(2);
-      expect(messages[0].role).toBe('user');
-      expect(messages[1].role).toBe('assistant');
+      const firstMsg = messages[0];
+      const secondMsg = messages[1];
+      expect(firstMsg).toBeDefined();
+      expect(secondMsg).toBeDefined();
+      expect(firstMsg!.role).toBe('user');
+      expect(secondMsg!.role).toBe('assistant');
     });
 
     it('should limit messages for AI', () => {

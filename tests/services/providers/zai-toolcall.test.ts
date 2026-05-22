@@ -137,7 +137,9 @@ describe('ZAIProvider Tool Calling', () => {
     expect(toolExecutor).toHaveBeenCalledWith('write_file', { path: 'test.ts', content: 'hello world' });
 
     // Verify tool_choice was set to 'required' in the request
-    const callArgs = mockCreate.mock.calls[0][0];
+    const firstCall = mockCreate.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const callArgs = firstCall![0];
     expect(callArgs.tool_choice).toBe('required');
     expect(callArgs.tools).toHaveLength(1);
     console.log('[Test] Response after tool execution:', response.text);
@@ -188,8 +190,10 @@ describe('ToolCallHandler', () => {
 
     const toolCalls = handler.getAccumulatedToolCalls();
     expect(toolCalls).toHaveLength(1);
-    expect(toolCalls[0].name).toBe('write_file');
-    expect(toolCalls[0].arguments).toBe('{"path":"test.ts","content":"hello"}');
+    const firstToolCall = toolCalls[0];
+    expect(firstToolCall).toBeDefined();
+    expect(firstToolCall!.name).toBe('write_file');
+    expect(firstToolCall!.arguments).toBe('{"path":"test.ts","content":"hello"}');
   });
 
   it('should handle finish_reason tool_calls correctly', async () => {

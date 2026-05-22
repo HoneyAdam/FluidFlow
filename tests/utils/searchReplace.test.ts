@@ -28,7 +28,8 @@ describe('searchReplace', () => {
       expect(result).not.toBeNull();
       expect(result!.explanation).toBe('Updated component styling');
       expect(result!.changes['src/App.tsx']).toBeDefined();
-      expect(result!.changes['src/App.tsx'].replacements).toHaveLength(1);
+      const appChanges = result!.changes['src/App.tsx'];
+      expect(appChanges?.replacements).toHaveLength(1);
     });
 
     it('should parse response with new files', () => {
@@ -44,8 +45,9 @@ describe('searchReplace', () => {
 
       const result = parseSearchReplaceModeResponse(response);
       expect(result).not.toBeNull();
-      expect(result!.changes['src/NewComponent.tsx'].isNew).toBe(true);
-      expect(result!.changes['src/NewComponent.tsx'].content).toContain('NewComponent');
+      const newComponentChanges = result!.changes['src/NewComponent.tsx'];
+      expect(newComponentChanges?.isNew).toBe(true);
+      expect(newComponentChanges?.content).toContain('NewComponent');
     });
 
     it('should parse response with deleted files', () => {
@@ -61,7 +63,8 @@ describe('searchReplace', () => {
 
       const result = parseSearchReplaceModeResponse(response);
       expect(result).not.toBeNull();
-      expect(result!.changes['src/OldComponent.tsx'].isDeleted).toBe(true);
+      const oldComponentChanges = result!.changes['src/OldComponent.tsx'];
+      expect(oldComponentChanges?.isDeleted).toBe(true);
       expect(result!.deletedFiles).toContain('src/AnotherOld.tsx');
     });
 
@@ -114,8 +117,9 @@ describe('searchReplace', () => {
 
       const result = parseSearchReplaceModeResponse(response);
       expect(result).not.toBeNull();
-      expect(result!.changes['src/App.tsx'].isNew).toBe(true);
-      expect(result!.changes['src/App.tsx'].content).toContain('App');
+      const appChanges = result!.changes['src/App.tsx'];
+      expect(appChanges?.isNew).toBe(true);
+      expect(appChanges?.content).toContain('App');
     });
 
     it('should filter out empty search strings', () => {
@@ -133,8 +137,14 @@ describe('searchReplace', () => {
 
       const result = parseSearchReplaceModeResponse(response);
       expect(result).not.toBeNull();
-      expect(result!.changes['src/App.tsx'].replacements).toHaveLength(1);
-      expect(result!.changes['src/App.tsx'].replacements![0].search).toBe('valid');
+      const appChanges = result!.changes['src/App.tsx'];
+      expect(appChanges).toBeDefined();
+      const replacements = appChanges!.replacements;
+      expect(replacements).toBeDefined();
+      expect(replacements!.length).toBe(1);
+      const firstReplacement = replacements![0];
+      expect(firstReplacement).toBeDefined();
+      expect(firstReplacement!.search).toBe('valid');
     });
 
     it('should return null for invalid response', () => {

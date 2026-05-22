@@ -164,7 +164,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.system).toBe('You are a helpful assistant');
     });
 
@@ -185,7 +187,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.prompt).toContain('User: Hello');
       expect(callBody.prompt).toContain('Assistant: Hi there!');
       expect(callBody.prompt).toContain('User: Continue');
@@ -205,7 +209,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.prompt).toContain('System: You are helpful');
     });
 
@@ -223,7 +229,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llava');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.images).toEqual(['base64imagedata']);
     });
 
@@ -242,7 +250,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.system).toContain('You MUST respond with valid JSON');
       expect(callBody.system).toContain('"type": "object"');
     });
@@ -263,7 +273,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate(request, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.system).toContain('Be helpful');
       expect(callBody.system).toContain('You MUST respond with valid JSON');
     });
@@ -289,7 +301,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate({ prompt: 'Test' }, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.options.num_predict).toBe(4096);
     });
 
@@ -302,7 +316,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate({ prompt: 'Test' }, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.options.temperature).toBe(0.7);
     });
 
@@ -315,7 +331,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate({ prompt: 'Test', temperature: 0 }, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.options.temperature).toBe(0);
     });
 
@@ -328,7 +346,9 @@ describe('OllamaProvider', () => {
 
       await provider.generate({ prompt: 'Test' }, 'llama3.2');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.stream).toBe(false);
     });
   });
@@ -371,7 +391,9 @@ describe('OllamaProvider', () => {
 
       await provider.generateStream({ prompt: 'Test' }, 'llama3.2', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.stream).toBe(true);
     });
 
@@ -393,7 +415,9 @@ describe('OllamaProvider', () => {
 
       await provider.generateStream(request, 'llama3.2', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.prompt).toContain('User: First message');
       expect(callBody.prompt).toContain('Assistant: First response');
     });
@@ -413,7 +437,9 @@ describe('OllamaProvider', () => {
 
       await provider.generateStream(request, 'llava', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.images).toEqual(['imagedata']);
     });
 
@@ -433,7 +459,9 @@ describe('OllamaProvider', () => {
 
       await provider.generateStream(request, 'llama3.2', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.system).toContain('You MUST respond with valid JSON');
     });
   });
@@ -477,9 +505,12 @@ describe('OllamaProvider', () => {
       });
 
       const models = await provider.listModels();
-
-      expect(models[0].supportsVision).toBe(true);
-      expect(models[1].supportsVision).toBe(true);
+      const firstModel = models[0];
+      const secondModel = models[1];
+      expect(firstModel).toBeDefined();
+      expect(secondModel).toBeDefined();
+      expect(firstModel!.supportsVision).toBe(true);
+      expect(secondModel!.supportsVision).toBe(true);
     });
 
     it('should handle empty models list', async () => {

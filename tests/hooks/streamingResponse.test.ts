@@ -20,7 +20,7 @@ describe('Streaming Response Parsing', () => {
         const planMatch = text.match(/\/\/\s*PLAN:\s*(\{.+)/);
         expect(planMatch).not.toBeNull();
 
-        const jsonStr = planMatch![1];
+        const jsonStr = planMatch![1] ?? '';
         const plan = JSON.parse(jsonStr.substring(0, jsonStr.indexOf('}') + 1));
         expect(plan.create).toContain('src/App.tsx');
       });
@@ -49,11 +49,11 @@ describe('Streaming Response Parsing', () => {
         const planMatch = jsonV2.match(/"plan"\s*:\s*\{([^}]*)\}/);
         expect(planMatch).not.toBeNull();
 
-        const planContent = planMatch![1];
+        const planContent = planMatch![1] ?? '';
         const createMatch = planContent.match(/"create"\s*:\s*\[([^\]]*)\]/);
         expect(createMatch).not.toBeNull();
 
-        const items = createMatch![1].match(/"([^"]+)"/g);
+        const items = (createMatch![1] ?? '').match(/"([^"]+)"/g);
         expect(items).toHaveLength(2);
       });
 
@@ -69,10 +69,13 @@ describe('Streaming Response Parsing', () => {
         expect(manifestMatch).not.toBeNull();
 
         const entryPattern = /\{\s*"path"\s*:\s*"([^"]+)"[^}]*"lines"\s*:\s*(\d+)/g;
-        const entries = [...manifestMatch![1].matchAll(entryPattern)];
+        const manifestContent = manifestMatch![1] ?? '';
+        const entries = [...manifestContent.matchAll(entryPattern)];
         expect(entries).toHaveLength(1);
-        expect(entries[0][1]).toBe('src/App.tsx');
-        expect(entries[0][2]).toBe('45');
+        const firstEntry = entries[0];
+        expect(firstEntry).not.toBeUndefined();
+        expect(firstEntry![1]).toBe('src/App.tsx');
+        expect(firstEntry![2]).toBe('45');
       });
 
       it('should extract batch info', () => {
@@ -89,10 +92,12 @@ describe('Streaming Response Parsing', () => {
         const batchMatch = jsonV2.match(/"batch"\s*:\s*\{([^}]*)\}/);
         expect(batchMatch).not.toBeNull();
 
-        const completedMatch = batchMatch![1].match(/"completed"\s*:\s*\[([^\]]*)\]/);
+        const batchContent = batchMatch![1] ?? '';
+        const completedMatch = batchContent.match(/"completed"\s*:\s*\[([^\]]*)\]/);
         expect(completedMatch).not.toBeNull();
 
-        const items = completedMatch![1].match(/"([^"]+)"/g);
+        const itemsContent = completedMatch![1] ?? '';
+        const items = itemsContent.match(/"([^"]+)"/g);
         expect(items).toHaveLength(1);
         expect(items![0]).toBe('"src/App.tsx"');
       });
@@ -111,8 +116,12 @@ export function Header() {}`;
         const matches = [...text.matchAll(filePathRegex)];
 
         expect(matches).toHaveLength(2);
-        expect(matches[0][1]).toBe('src/App.tsx');
-        expect(matches[1][1]).toBe('src/components/Header.tsx');
+        const first = matches[0];
+        const second = matches[1];
+        expect(first).not.toBeUndefined();
+        expect(second).not.toBeUndefined();
+        expect(first![1]).toBe('src/App.tsx');
+        expect(second![1]).toBe('src/components/Header.tsx');
       });
 
       it('should add src/ prefix if missing', () => {
@@ -127,7 +136,7 @@ more code`;
 
         const files: string[] = [];
         for (const match of matches) {
-          let filePath = match[1];
+          let filePath = match[1] ?? '';
           if (!filePath.startsWith('src/')) {
             filePath = 'src/' + filePath;
           }
@@ -150,8 +159,9 @@ duplicate mention`;
 
         const files: string[] = [];
         for (const match of matches) {
-          if (!files.includes(match[1])) {
-            files.push(match[1]);
+          const filePath = match[1];
+          if (filePath && !files.includes(filePath)) {
+            files.push(filePath);
           }
         }
 
@@ -205,11 +215,11 @@ delete:
       const planMatch = marker.match(/<!-- PLAN -->([\s\S]*?)<!-- \/PLAN -->/);
       expect(planMatch).not.toBeNull();
 
-      const planContent = planMatch![1];
+      const planContent = planMatch![1] ?? '';
       const createMatch = planContent.match(/create:\s*(.+)/);
       expect(createMatch).not.toBeNull();
 
-      const createFiles = createMatch![1].split(',').map(f => f.trim()).filter(Boolean);
+      const createFiles = (createMatch![1] ?? '').split(',').map(f => f.trim()).filter(Boolean);
       expect(createFiles).toContain('src/App.tsx');
       expect(createFiles).toContain('src/Header.tsx');
     });
@@ -226,7 +236,8 @@ delete:
       expect(manifestMatch).not.toBeNull();
 
       // Extract rows (skip header)
-      const rows = manifestMatch![1].split('\n')
+      const manifestContent = manifestMatch![1] ?? '';
+      const rows = manifestContent.split('\n')
         .filter(line => line.includes('|') && !line.includes('---') && !line.includes('File'));
 
       expect(rows.length).toBe(2);
@@ -246,9 +257,13 @@ export function Header() {}
       const matches = [...files.matchAll(filePattern)];
 
       expect(matches).toHaveLength(2);
-      expect(matches[0][1]).toBe('src/App.tsx');
-      expect(matches[1][1]).toBe('src/Header.tsx');
-      expect(matches[0][2]).toContain('import React');
+      const firstFile = matches[0];
+      const secondFile = matches[1];
+      expect(firstFile).not.toBeUndefined();
+      expect(secondFile).not.toBeUndefined();
+      expect(firstFile![1]).toBe('src/App.tsx');
+      expect(secondFile![1]).toBe('src/Header.tsx');
+      expect(firstFile![2]).toContain('import React');
     });
 
     it('should parse BATCH block', () => {
@@ -263,15 +278,18 @@ remaining: src/Header.tsx
       const batchMatch = batch.match(/<!-- BATCH -->([\s\S]*?)<!-- \/BATCH -->/);
       expect(batchMatch).not.toBeNull();
 
-      const batchContent = batchMatch![1];
+      const batchContent = batchMatch![1] ?? '';
 
       const currentMatch = batchContent.match(/current:\s*(\d+)/);
+      expect(currentMatch).not.toBeNull();
       expect(currentMatch![1]).toBe('1');
 
       const totalMatch = batchContent.match(/total:\s*(\d+)/);
+      expect(totalMatch).not.toBeNull();
       expect(totalMatch![1]).toBe('2');
 
       const isCompleteMatch = batchContent.match(/isComplete:\s*(true|false)/);
+      expect(isCompleteMatch).not.toBeNull();
       expect(isCompleteMatch![1]).toBe('false');
     });
   });

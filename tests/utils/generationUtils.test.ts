@@ -165,7 +165,9 @@ describe('generationUtils', () => {
       const changes = calculateFileChanges(oldFiles, newFiles);
 
       expect(changes).toHaveLength(1);
-      expect(changes[0].path).toBe('src/App.tsx');
+      const firstChange = changes[0];
+      expect(firstChange).toBeDefined();
+      expect(firstChange!.path).toBe('src/App.tsx');
     });
 
     it('should handle empty file systems', () => {
@@ -424,7 +426,9 @@ describe('generationUtils', () => {
 
       expect(result.promptParts[0]).toContain('BRAND LOGO');
       expect(result.images).toHaveLength(1);
-      expect(result.images[0].mimeType).toBe('image/jpeg');
+      const firstImage = result.images[0];
+      expect(firstImage).toBeDefined();
+      expect(firstImage!.mimeType).toBe('image/jpeg');
     });
 
     it('should include both sketch and brand', () => {

@@ -169,7 +169,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.messages[0].role).toBe('system');
       expect(callBody.messages[0].content).toBe('You are a helpful assistant');
     });
@@ -194,7 +196,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.messages).toHaveLength(3); // history + current
       expect(callBody.messages[0].role).toBe('user');
       expect(callBody.messages[0].content).toBe('Hello');
@@ -217,7 +221,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4-vision');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       const userMessage = callBody.messages[0];
       expect(userMessage.content).toBeInstanceOf(Array);
       expect(userMessage.content[0].type).toBe('image_url');
@@ -241,7 +247,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.response_format).toBeDefined();
     });
 
@@ -266,7 +274,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.response_format.type).toBe('json_schema');
     });
 
@@ -286,7 +296,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generate(request, 'gpt-4');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.max_tokens).toBe(16384);
       expect(callBody.temperature).toBe(0.7);
     });
@@ -309,7 +321,9 @@ describe('OpenAIProvider', () => {
 
       await customProvider.generate({ prompt: 'Test' }, 'gpt-4');
 
-      const callHeaders = mockFetchWithTimeout.mock.calls[0][1]?.headers as Record<string, string>;
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callHeaders = firstCall![1]?.headers as Record<string, string>;
       expect(callHeaders['X-Custom-Header']).toBe('custom-value');
     });
 
@@ -387,7 +401,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generateStream({ prompt: 'Test' }, 'gpt-4', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.stream).toBe(true);
       expect(callBody.stream_options).toEqual({ include_usage: true });
     });
@@ -433,7 +449,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generateStream(request, 'gpt-4-vision', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       const userMessage = callBody.messages[0];
       expect(userMessage.content[0].type).toBe('image_url');
     });
@@ -459,7 +477,9 @@ describe('OpenAIProvider', () => {
 
       await provider.generateStream(request, 'gpt-4', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1]?.body as string);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).not.toBeUndefined();
+      const callBody = JSON.parse(firstCall![1]?.body as string);
       expect(callBody.messages).toHaveLength(3);
     });
   });
@@ -477,8 +497,12 @@ describe('OpenAIProvider', () => {
       const models = await provider.listModels();
 
       expect(models).toHaveLength(2); // Only gpt models
-      expect(models[0].id).toBe('gpt-4');
-      expect(models[1].id).toBe('gpt-3.5-turbo');
+      const firstModel = models[0];
+      const secondModel = models[1];
+      expect(firstModel).toBeDefined();
+      expect(secondModel).toBeDefined();
+      expect(firstModel!.id).toBe('gpt-4');
+      expect(secondModel!.id).toBe('gpt-3.5-turbo');
     });
 
     it('should include o1 models', async () => {
@@ -493,7 +517,9 @@ describe('OpenAIProvider', () => {
       const models = await provider.listModels();
 
       expect(models).toHaveLength(2);
-      expect(models[0].supportsStreaming).toBe(false); // o1 doesn't support streaming
+      const firstModel = models[0];
+      expect(firstModel).toBeDefined();
+      expect(firstModel!.supportsStreaming).toBe(false); // o1 doesn't support streaming
     });
 
     it('should list OpenRouter models with different structure', async () => {
@@ -532,10 +558,12 @@ describe('OpenAIProvider', () => {
       const models = await openRouterProvider.listModels();
 
       expect(models).toHaveLength(1); // Free tier filtered out
-      expect(models[0].id).toBe('anthropic/claude-3');
-      expect(models[0].name).toBe('Claude 3');
-      expect(models[0].supportsVision).toBe(true);
-      expect(models[0].contextWindow).toBe(100000);
+      const firstModel = models[0];
+      expect(firstModel).toBeDefined();
+      expect(firstModel!.id).toBe('anthropic/claude-3');
+      expect(firstModel!.name).toBe('Claude 3');
+      expect(firstModel!.supportsVision).toBe(true);
+      expect(firstModel!.contextWindow).toBe(100000);
     });
 
     it('should throw on HTTP error', async () => {

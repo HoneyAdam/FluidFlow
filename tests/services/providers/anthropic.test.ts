@@ -209,7 +209,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate(request, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       // System message should be skipped in messages array
       expect(callBody.messages).toHaveLength(3); // 2 history + 1 current prompt
       expect(callBody.messages[0]).toEqual({ role: 'user', content: 'Hello' });
@@ -234,7 +236,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate(request, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       const userMessage = callBody.messages[0];
       expect(userMessage.content).toEqual([
         {
@@ -268,16 +272,19 @@ describe('AnthropicProvider', () => {
 
       await provider.generate(request, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.output_format).toEqual({
         type: 'json_schema',
         schema: request.responseSchema,
       });
 
       // Should include beta header
-      expect(mockFetchWithTimeout.mock.calls[0][1].headers['anthropic-beta']).toBe(
-        'structured-outputs-2025-11-13'
-      );
+      const secondCall = mockFetchWithTimeout.mock.calls[0];
+      expect(secondCall).toBeDefined();
+      const headers = secondCall![1]?.headers as Record<string, string> | undefined;
+      expect(headers?.['anthropic-beta']).toBe('structured-outputs-2025-11-13');
     });
 
     it('should fallback to system instruction for unsupported schemas', async () => {
@@ -303,7 +310,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate(request, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.output_format).toBeUndefined();
       expect(callBody.system).toContain('Respond in JSON format');
     });
@@ -353,7 +362,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate({ prompt: 'Test' }, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.max_tokens).toBe(4096);
     });
 
@@ -370,7 +381,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate({ prompt: 'Test' }, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.temperature).toBe(0.7);
     });
 
@@ -387,7 +400,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generate({ prompt: 'Test', temperature: 0 }, 'claude-3-opus-20240229');
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.temperature).toBe(0);
     });
 
@@ -410,7 +425,10 @@ describe('AnthropicProvider', () => {
 
       await customProvider.generate({ prompt: 'Test' }, 'claude-3-opus-20240229');
 
-      expect(mockFetchWithTimeout.mock.calls[0][1].headers['X-Custom-Header']).toBe('custom-value');
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const headers = firstCall![1]?.headers as Record<string, string> | undefined;
+      expect(headers?.['X-Custom-Header']).toBe('custom-value');
     });
   });
 
@@ -452,7 +470,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream({ prompt: 'Test' }, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.stream).toBe(true);
     });
 
@@ -474,7 +494,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream(request, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.messages).toHaveLength(3);
       expect(callBody.messages[0]).toEqual({ role: 'user', content: 'First message' });
       expect(callBody.messages[1]).toEqual({ role: 'assistant', content: 'First response' });
@@ -498,7 +520,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream(request, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       // System message should be skipped
       expect(callBody.messages).toHaveLength(2); // 1 history + 1 current
       expect(callBody.messages[0]).toEqual({ role: 'user', content: 'Hello' });
@@ -519,7 +543,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream(request, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       const userMessage = callBody.messages[0];
       expect(userMessage.content).toEqual([
         {
@@ -550,11 +576,12 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream(request, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.output_format).toBeDefined();
-      expect(mockFetchWithTimeout.mock.calls[0][1].headers['anthropic-beta']).toBe(
-        'structured-outputs-2025-11-13'
-      );
+      const headers = firstCall![1]?.headers as Record<string, string> | undefined;
+      expect(headers?.['anthropic-beta']).toBe('structured-outputs-2025-11-13');
     });
 
     it('should include system instruction in streaming', async () => {
@@ -572,7 +599,9 @@ describe('AnthropicProvider', () => {
 
       await provider.generateStream(request, 'claude-3-opus-20240229', vi.fn());
 
-      const callBody = JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body);
+      const firstCall = mockFetchWithTimeout.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      const callBody = JSON.parse(firstCall![1]?.body ?? '{}');
       expect(callBody.system).toBe('Be helpful');
     });
   });
