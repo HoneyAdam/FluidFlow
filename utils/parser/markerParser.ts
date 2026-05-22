@@ -21,7 +21,7 @@ export function parseMarkerMeta(response: string): MetaInfo | undefined {
   const match = findFirstMatch(/<!--\s*META\s*-->([\s\S]*?)<!--\s*\/META\s*-->/, response);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const meta: MetaInfo = { format: 'marker', version: '1.0' };
 
   for (const line of content.split('\n')) {
@@ -45,7 +45,7 @@ export function parseMarkerPlan(response: string): PlanInfo | undefined {
   const match = findFirstMatch(/<!--\s*PLAN\s*-->([\s\S]*?)<!--\s*\/PLAN\s*-->/, response);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const plan: PlanInfo = { create: [], update: [], delete: [] };
 
   for (const line of content.split('\n')) {
@@ -69,7 +69,7 @@ export function parseMarkerManifest(response: string): ManifestEntry[] | undefin
   const match = findFirstMatch(/<!--\s*MANIFEST\s*-->([\s\S]*?)<!--\s*\/MANIFEST\s*-->/, response);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const entries: ManifestEntry[] = [];
 
   for (const line of content.split('\n')) {
@@ -79,14 +79,14 @@ export function parseMarkerManifest(response: string): ManifestEntry[] | undefin
 
     const cells = line.split('|').map(c => c.trim()).filter(Boolean);
     if (cells.length >= 4) {
-      const [file, action, linesStr, tokensStr, status] = cells;
+      const [file = '', action = '', linesStr = '', tokensStr = '', status = ''] = cells;
       entries.push({
         path: file,
         action: (['create', 'update', 'delete'].includes(action.toLowerCase())
           ? action.toLowerCase() : 'create') as FileAction,
         lines: parseInt(linesStr) || 0,
         tokens: parseInt(tokensStr.replace(/[~,]/g, '')) || 0,
-        status: (['included', 'pending', 'marked', 'skipped'].includes(status?.toLowerCase())
+        status: (['included', 'pending', 'marked', 'skipped'].includes(status.toLowerCase())
           ? status.toLowerCase() : 'included') as ManifestEntry['status'],
       });
     }
@@ -102,7 +102,7 @@ export function parseMarkerBatch(response: string): BatchInfo | undefined {
   const match = findFirstMatch(/<!--\s*BATCH\s*-->([\s\S]*?)<!--\s*\/BATCH\s*-->/, response);
   if (!match) return undefined;
 
-  const content = match[1].trim();
+  const content = (match[1] ?? '').trim();
   const batch: BatchInfo = {
     current: 1,
     total: 1,
@@ -133,7 +133,7 @@ export function parseMarkerBatch(response: string): BatchInfo | undefined {
  */
 export function parseMarkerExplanation(response: string): string | undefined {
   const match = findFirstMatch(/<!--\s*EXPLANATION\s*-->([\s\S]*?)<!--\s*\/EXPLANATION\s*-->/, response);
-  return match ? match[1].trim() : undefined;
+  return match ? (match[1] ?? '').trim() : undefined;
 }
 
 // ============================================================================
@@ -153,8 +153,8 @@ export function parseMarkerFiles(response: string, result: ParseResult): void {
   );
 
   for (const match of wellFormedMatches) {
-    const path = match[1].trim();
-    const content = match[2].replace(/^\n+/, '').replace(/\n+$/, '');
+    const path = (match[1] ?? '').trim();
+    const content = (match[2] ?? '').replace(/^\n+/, '').replace(/\n+$/, '');
 
     if (isIgnoredPath(path)) continue;
 
@@ -170,7 +170,7 @@ export function parseMarkerFiles(response: string, result: ParseResult): void {
   const openings: { path: string; index: number; endIndex: number }[] = [];
 
   for (const match of openMatches) {
-    const path = match[1].trim();
+    const path = (match[1] ?? '').trim();
     if (!processedPaths.has(path) && match.index !== undefined) {
       openings.push({
         path,
@@ -183,11 +183,11 @@ export function parseMarkerFiles(response: string, result: ParseResult): void {
   // Process unclosed files
   for (let i = 0; i < openings.length; i++) {
     const current = openings[i];
-    const isLast = i === openings.length - 1;
+    if (!current) continue;
     const next = openings[i + 1];
 
     let contentEnd: number;
-    if (isLast) {
+    if (!next) {
       // Last file - find any closing marker or end of response
       const remaining = response.slice(current.endIndex);
       const nextMarkerMatch = findFirstMatch(/<!--\s*(?:\/FILE:|BATCH|GENERATION_META)/, remaining);
@@ -219,7 +219,7 @@ export function parseMarkerFiles(response: string, result: ParseResult): void {
       processedPaths.add(current.path);
 
       // If not the last file, it was implicitly closed - mark as recovered
-      if (!isLast) {
+      if (next) {
         result.recoveredFiles = result.recoveredFiles || [];
         result.recoveredFiles.push(current.path);
         result.warnings.push(`File "${current.path}" had missing closing marker - recovered`);
