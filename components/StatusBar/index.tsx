@@ -124,7 +124,7 @@ export const StatusBar = memo(function StatusBar({
     // Handle different model ID formats
     if (modelId.includes('/')) {
       const parts = modelId.split('/');
-      const name = parts[parts.length - 1];
+      const name = parts[parts.length - 1] ?? '';
       // Shorten common model names
       if (name.includes('gemini-3.1-pro')) return 'Gemini 3.1 Pro';
       if (name.includes('gemini-3.1-flash-lite')) return 'Gemini 3.1 Flash Lite';
