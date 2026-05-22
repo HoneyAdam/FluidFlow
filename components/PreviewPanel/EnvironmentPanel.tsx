@@ -63,8 +63,10 @@ function parseEnvFile(content: string): EnvVariable[] {
 
     const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/i);
     if (match) {
-      const [, key, rawValue] = match;
-      // Remove quotes if present
+      const keyMatch = match;
+      if (!keyMatch) continue;
+      const key = keyMatch[1] ?? '';
+      const rawValue = keyMatch[2] ?? '';
       let value = rawValue;
       if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
         value = value.slice(1, -1);
