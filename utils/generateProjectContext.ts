@@ -39,7 +39,7 @@ function analyzeFile(path: string, content: string): FileAnalysis {
 
   // Extract imports
   const importMatches = content.matchAll(/import\s+(?:{[^}]+}|\w+)\s+from\s+['"]([^'"]+)['"]/g);
-  const imports = [...importMatches].map(m => m[1]);
+  const imports = [...importMatches].map(m => m[1] ?? '');
 
   // Extract dependencies (external packages)
   const dependencies = imports.filter(i => !i.startsWith('.') && !i.startsWith('@/'));
@@ -59,6 +59,7 @@ function generateFolderTree(files: FileSystem): string {
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
+      if (part === undefined) continue;
       const isLast = i === parts.length - 1;
       currentPath = currentPath ? `${currentPath}/${part}` : part;
 

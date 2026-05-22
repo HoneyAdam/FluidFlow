@@ -175,13 +175,13 @@ export function buildPromptParts(
   const brandAtt = attachments.find((a) => a.type === 'brand');
 
   if (sketchAtt) {
-    const base64Data = sketchAtt.preview.split(',')[1];
+    const base64Data = sketchAtt.preview.split(',')[1] ?? '';
     promptParts.push('SKETCH/WIREFRAME: [attached image]');
     images.push({ data: base64Data, mimeType: sketchAtt.file.type });
   }
 
   if (brandAtt) {
-    const base64Data = brandAtt.preview.split(',')[1];
+    const base64Data = brandAtt.preview.split(',')[1] ?? '';
     promptParts.push('BRAND LOGO: [attached image]');
     images.push({ data: base64Data, mimeType: brandAtt.file.type });
   }
