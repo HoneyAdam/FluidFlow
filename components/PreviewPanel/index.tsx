@@ -655,7 +655,7 @@ export const PreviewPanel = memo(function PreviewPanel({
       if (currentActive === path || currentActive.startsWith(path + '/')) {
         const remainingFiles = Object.keys(newFiles);
         if (remainingFiles.length > 0) {
-          setActiveFile(remainingFiles[0]);
+          setActiveFile(remainingFiles[0] ?? '');
         }
       }
       return newFiles;

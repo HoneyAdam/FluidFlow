@@ -219,7 +219,7 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
             style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}
           >
             <Check size={10} />
-            {entry.metadata?.filesWritten !== null ? String((entry.metadata.filesWritten as string[]).length) : null}
+            {entry.metadata !== undefined && entry.metadata?.filesWritten !== null ? String((entry.metadata.filesWritten as string[]).length) : null}
           </span>
         )}
         {/* Tool call badge for tool-call entries */}
