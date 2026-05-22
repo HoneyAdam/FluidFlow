@@ -85,7 +85,7 @@ export function preValidateJson(jsonStr: string): JsonValidationResult {
   if (json.startsWith('```')) {
     const match = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
     if (match) {
-      json = match[1].trim();
+      json = (match[1] ?? '').trim();
     } else {
       return {
         valid: false,
@@ -150,7 +150,7 @@ export function preValidateJson(jsonStr: string): JsonValidationResult {
     } else if (error.includes('position')) {
       const posMatch = error.match(/position (\d+)/);
       if (posMatch) {
-        const pos = parseInt(posMatch[1]);
+        const pos = parseInt(posMatch[1] ?? '0');
         const context = fixedJson.slice(Math.max(0, pos - 20), pos + 20);
         suggestion = `Error near: "...${context}..."`;
       }
@@ -184,7 +184,7 @@ export function safeParseAIResponse<T = unknown>(response: string): T | null {
     // Try to extract JSON from markdown code blocks
     const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
     if (codeBlockMatch) {
-      cleaned = codeBlockMatch[1].trimStart();
+      cleaned = (codeBlockMatch[1] ?? cleaned).trimStart();
       cleaned = cleaned.replace(/^[\uFEFF\u200B-\u200D\u00A0]+/, '');
     }
 

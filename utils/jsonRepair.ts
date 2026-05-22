@@ -39,7 +39,7 @@ function* _iterateJsonChars(json: string): Generator<{ char: string; index: numb
   let escapeNext = false;
 
   for (let i = 0; i < json.length; i++) {
-    const char = json[i];
+    const char = json.charAt(i);
 
     if (escapeNext) {
       escapeNext = false;
@@ -73,7 +73,7 @@ export function isJsonBalanced(json: string): { balanced: boolean; inString: boo
   let escapeNext = false;
 
   for (let i = 0; i < json.length; i++) {
-    const char = json[i];
+    const char = json.charAt(i);
 
     if (escapeNext) {
       escapeNext = false;
@@ -161,7 +161,7 @@ export function repairJson(jsonStr: string, options: JsonRepairOptions = {}): Js
   let escapeNext = false;
 
   for (let i = 0; i < json.length; i++) {
-    const char = json[i];
+    const char = json.charAt(i);
 
     if (escapeNext) {
       escapeNext = false;

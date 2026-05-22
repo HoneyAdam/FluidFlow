@@ -16,5 +16,5 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 
 export function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, char => HTML_ENTITIES[char]);
+  return text.replace(/[&<>"']/g, char => HTML_ENTITIES[char] ?? char);
 }

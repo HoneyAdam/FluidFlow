@@ -53,7 +53,7 @@ export function parseSearchReplaceModeResponse(response: string): SearchReplaceM
     // Try to extract JSON from markdown code blocks
     const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
     if (codeBlockMatch) {
-      cleaned = codeBlockMatch[1].trim();
+      cleaned = (codeBlockMatch[1] ?? '').trim();
     }
 
     // Find JSON object

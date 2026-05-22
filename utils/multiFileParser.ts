@@ -64,7 +64,7 @@ export function parseMultiFileResponse(
 
     // First, try to extract JSON from markdown code blocks
     const codeBlockMatch = response.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    let jsonString = codeBlockMatch ? codeBlockMatch[1] : response;
+    let jsonString = codeBlockMatch ? (codeBlockMatch[1] ?? response) : response;
 
     // Trim leading whitespace/newlines
     jsonString = jsonString.trimStart();
@@ -246,8 +246,8 @@ function tryRegexRecovery(jsonToParse: string): Record<string, unknown> | null {
     const partialFiles: Record<string, string> = {};
     fileMatches.forEach(match => {
       const fileMatch = match.match(/"([^"]+\.(?:tsx?|jsx?|css|json))":\s*`([^`]*)`/);
-      if (fileMatch) {
-        partialFiles[fileMatch[1]] = fileMatch[2];
+      if (fileMatch && fileMatch[1]) {
+        partialFiles[fileMatch[1]] = fileMatch[2] ?? '';
       }
     });
     if (Object.keys(partialFiles).length > 0) {
@@ -266,6 +266,7 @@ function tryRegexRecovery(jsonToParse: string): Record<string, unknown> | null {
   if (matches && matches.length > 0) {
     const partialFiles: Record<string, string> = {};
     matches.forEach(([, filePath, fileContent]) => {
+      if (!filePath || !fileContent) return;
       const cleanedContent = fileContent
         .replace(/\\'/g, "'")
         .replace(/\\"/g, '"')
