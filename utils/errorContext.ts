@@ -47,9 +47,9 @@ export function parseStackTrace(errorMessage: string): { file?: string; line?: n
   if (pathMatch) {
     const lineMatch = errorMessage.match(/\((\d+):(\d+)\)/);
     return {
-      file: pathMatch[1],
-      line: lineMatch ? parseInt(lineMatch[1], 10) : undefined,
-      column: lineMatch ? parseInt(lineMatch[2], 10) : undefined
+      file: pathMatch[1] ?? '',
+      line: lineMatch ? parseInt(lineMatch[1] ?? '0', 10) : undefined,
+      column: lineMatch ? parseInt(lineMatch[2] ?? '0', 10) : undefined
     };
   }
 
@@ -107,7 +107,7 @@ export function getRelatedFiles(
   // Check for component name in error
   const componentMatch = errorMessage.match(/(?:Element type|'|")(\w+)(?:'|")|(?:cannot read|undefined)\s+(?:property\s+)?['"]?(\w+)['"]?/i);
   if (componentMatch) {
-    const componentName = componentMatch[1] || componentMatch[2];
+    const componentName = componentMatch[1] ?? componentMatch[2] ?? '';
     for (const [path, content] of Object.entries(files)) {
       if (path.toLowerCase().includes(componentName.toLowerCase()) ||
           content.includes(`export const ${componentName}`) ||
@@ -127,8 +127,9 @@ export function getRelatedFiles(
 
   // Parse stack trace for specific file
   const stackInfo = parseStackTrace(errorMessage);
-  if (stackInfo.file && files[stackInfo.file] && !related[stackInfo.file]) {
-    related[stackInfo.file] = files[stackInfo.file];
+  const stackFile = stackInfo.file;
+  if (stackFile && files[stackFile] && !related[stackFile]) {
+    related[stackFile] = files[stackFile];
   }
 
   return related;
