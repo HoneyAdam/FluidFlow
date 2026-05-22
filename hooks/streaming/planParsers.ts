@@ -45,12 +45,12 @@ export function parseJsonV2Plan(fullText: string): ParsedFilePlan | null {
 
   try {
     // Extract create/update/delete arrays from plan
-    const planContent = planMatch[1];
+    const planContent = planMatch[1] ?? '';
 
     const extractArray = (key: string): string[] => {
       const match = planContent.match(new RegExp(`"${key}"\\s*:\\s*\\[([^\\]]*)\\]`));
       if (!match) return [];
-      const items = match[1].match(/"([^"]+)"/g);
+      const items = (match[1] ?? '').match(/"([^"]+)"/g);
       return items ? items.map(s => s.replace(/"/g, '')) : [];
     };
 
@@ -67,9 +67,11 @@ export function parseJsonV2Plan(fullText: string): ParsedFilePlan | null {
     if (manifestMatch) {
       // Extract each manifest entry using matchAll
       const entryPattern = /\{\s*"path"\s*:\s*"([^"]+)"[^}]*"lines"\s*:\s*(\d+)/g;
-      const entries = [...manifestMatch[1].matchAll(entryPattern)];
+      const entries = [...(manifestMatch[1] ?? '').matchAll(entryPattern)];
       for (const entry of entries) {
-        sizes[entry[1]] = parseInt(entry[2], 10);
+        const path = entry[1];
+        const lineCount = entry[2];
+        if (path && lineCount) sizes[path] = parseInt(lineCount, 10);
       }
     }
 
@@ -77,9 +79,9 @@ export function parseJsonV2Plan(fullText: string): ParsedFilePlan | null {
     let completed: string[] = [];
     const batchMatch = fullText.match(/"batch"\s*:\s*\{([^}]*)\}/);
     if (batchMatch) {
-      const completedMatch = batchMatch[1].match(/"completed"\s*:\s*\[([^\]]*)\]/);
+      const completedMatch = (batchMatch[1] ?? '').match(/"completed"\s*:\s*\[([^\]]*)\]/);
       if (completedMatch) {
-        const items = completedMatch[1].match(/"([^"]+)"/g);
+        const items = (completedMatch[1] ?? '').match(/"([^"]+)"/g);
         completed = items ? items.map(s => s.replace(/"/g, '')) : [];
       }
     }
@@ -126,7 +128,7 @@ export function parseFilePlanFromStream(fullText: string): ParsedFilePlan | null
   if (!planLineMatch) return null;
 
   try {
-    let jsonStr = planLineMatch[1];
+    let jsonStr = planLineMatch[1] ?? '';
     // Find the balanced closing brace
     let braceCount = 0;
     let endIdx = 0;
@@ -171,7 +173,7 @@ export function parseFilePlanFromStream(fullText: string): ParsedFilePlan | null
     if (createMatch || updateMatch) {
       const extractFiles = (match: RegExpMatchArray | null) => {
         if (!match) return [];
-        return match[1].match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, '')) || [];
+        return (match[1] ?? '').match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, '')) || [];
       };
 
       const createFiles = extractFiles(createMatch);
@@ -210,6 +212,7 @@ export function parseSimpleCommentPlan(fullText: string): ParsedFilePlan | null 
   const files: string[] = [];
   for (const match of matches) {
     let filePath = match[1];
+    if (!filePath) continue;
     // Normalize path - add src/ prefix if not present
     if (!filePath.startsWith('src/')) {
       filePath = 'src/' + filePath;
