@@ -278,7 +278,7 @@ export function buildRegenerationPrompt(ctx: PromptContext): string {
 
 function extractComponentName(code: string): string | null {
   const match = code.match(/export\s+(?:default\s+)?(?:function|const)\s+(\w+)/);
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }
 
 function extractImports(code: string): string[] {
@@ -287,12 +287,12 @@ function extractImports(code: string): string[] {
 
 function extractJSX(code: string): string | null {
   const match = code.match(/return\s*\(\s*([\s\S]*?)\s*\);?\s*(?:}|$)/);
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }
 
 function extractProps(code: string): string | null {
   const match = code.match(/(?:interface|type)\s+\w*Props\s*[=]?\s*\{([^}]+)\}/);
-  return match ? match[1].trim() : null;
+  return match?.[1]?.trim() ?? null;
 }
 
 // ============================================================================

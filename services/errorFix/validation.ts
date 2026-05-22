@@ -42,6 +42,7 @@ export function validateSyntax(code: string): { valid: boolean; error?: string }
 
     for (let i = 0; i < code.length; i++) {
       const char = code[i];
+      if (!char) continue;
       const nextChar = code[i + 1] || '';
       const prevChar = i > 0 ? code[i - 1] : '';
 
@@ -79,8 +80,9 @@ export function validateSyntax(code: string): { valid: boolean; error?: string }
       if (inString) continue;
 
       // Brackets
-      if (brackets[char]) {
-        stack.push(brackets[char]);
+      const bracketValue = brackets[char];
+      if (bracketValue) {
+        stack.push(bracketValue);
       } else if (char === ')' || char === ']' || char === '}') {
         if (stack.length === 0) {
           return { valid: false, error: `Unexpected '${char}'` };
@@ -117,7 +119,7 @@ export function validateJSX(code: string): { valid: boolean; error?: string } {
 
   while ((match = tagPattern.exec(code)) !== null) {
     const isClosing = match[1] === '/';
-    const tagName = match[2];
+    const tagName = match[2] ?? '';
     const isSelfClosing = match[4] === '/';
 
     // Skip self-closing and void elements

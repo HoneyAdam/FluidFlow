@@ -626,13 +626,14 @@ export class FixEngine {
   private detectTargetFile(error: string, files: FileSystem): string {
     // Try to extract file from error
     const match = error.match(/(?:at\s+)?([^:\s]+\.tsx?):?\d*/);
-    if (match && files[match[1]]) return match[1];
+    if (match?.[1] && files[match[1] as string]) return match[1];
 
     // Check bare specifier
     const bare = error.match(/["']?(src\/[\w./-]+)["']?/i);
-    if (bare) {
+    if (bare?.[1]) {
+      const bareStr = bare[1] as string;
       for (const [path, content] of Object.entries(files)) {
-        if (content?.includes(bare[1])) return path;
+        if (content?.includes(bareStr)) return path;
       }
     }
 
@@ -641,7 +642,7 @@ export class FixEngine {
 
   private extractComponentName(code: string): string | null {
     const match = code.match(/export\s+(?:default\s+)?(?:function|const)\s+(\w+)/);
-    return match ? match[1] : null;
+    return match?.[1] ?? null;
   }
 
   private getLabel(strategy: FixStrategy): string {
