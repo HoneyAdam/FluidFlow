@@ -238,7 +238,7 @@ export const AIUsagePanel: React.FC = () => {
           <CollapsibleSection
             title="Overview"
             icon={<TrendingUp className="w-4 h-4" />}
-            expanded={expandedSections.overview}
+            expanded={expandedSections.overview ?? false}
             onToggle={() => toggleSection('overview')}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -282,7 +282,7 @@ export const AIUsagePanel: React.FC = () => {
             <CollapsibleSection
               title="Cost Trend (7 Days)"
               icon={<Calendar className="w-4 h-4" />}
-              expanded={expandedSections.timeline}
+              expanded={expandedSections.timeline ?? false}
               onToggle={() => toggleSection('timeline')}
             >
               <div className="h-40 flex items-end gap-2">
@@ -304,7 +304,7 @@ export const AIUsagePanel: React.FC = () => {
           <CollapsibleSection
             title="By Provider"
             icon={<Cpu className="w-4 h-4" />}
-            expanded={expandedSections.providers}
+            expanded={expandedSections.providers ?? false}
             onToggle={() => toggleSection('providers')}
             badge={Object.keys(stats?.byProvider || {}).length.toString()}
           >
@@ -329,7 +329,7 @@ export const AIUsagePanel: React.FC = () => {
           <CollapsibleSection
             title="By Model"
             icon={<Target className="w-4 h-4" />}
-            expanded={expandedSections.models}
+            expanded={expandedSections.models ?? false}
             onToggle={() => toggleSection('models')}
             badge={Object.keys(stats?.byModel || {}).length.toString()}
           >
@@ -353,7 +353,7 @@ export const AIUsagePanel: React.FC = () => {
           <CollapsibleSection
             title="By Category"
             icon={<Activity className="w-4 h-4" />}
-            expanded={expandedSections.categories}
+            expanded={expandedSections.categories ?? false}
             onToggle={() => toggleSection('categories')}
           >
             <div className="grid grid-cols-2 gap-3">
@@ -379,7 +379,7 @@ export const AIUsagePanel: React.FC = () => {
           <CollapsibleSection
             title="Recent Activity"
             icon={<Clock className="w-4 h-4" />}
-            expanded={expandedSections.recent}
+            expanded={expandedSections.recent ?? false}
             onToggle={() => toggleSection('recent')}
             badge={records.length.toString()}
           >
@@ -610,7 +610,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ label, color, requests, tok
     cyan: { border: 'var(--color-info-border)', text: 'var(--color-info)' },
     slate: { border: 'var(--theme-border-light)', text: 'var(--theme-text-muted)' },
   };
-  const colors = colorMap[color] || colorMap.slate;
+  const defaultColors = { border: 'var(--theme-border-light)', text: 'var(--theme-text-muted)' };
+  const colors = colorMap[color] ?? defaultColors;
 
   return (
     <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--theme-glass-200)', border: `1px solid ${colors.border}`, color: colors.text }}>

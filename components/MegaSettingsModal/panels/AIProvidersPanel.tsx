@@ -150,9 +150,10 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
     if (!provider || provider.models.length <= 1) return;
     const updatedModels = provider.models.filter(m => m.id !== modelId);
     const updates: Partial<ProviderConfig> = { models: updatedModels };
-    if (provider.defaultModel === modelId) {
-      updates.defaultModel = updatedModels[0].id;
-    }
+    const updatedModel = updatedModels[0];
+      if (provider.defaultModel === modelId && updatedModel) {
+        updates.defaultModel = updatedModel.id;
+      }
     updateProvider(selectedProviderId, updates);
   };
 
@@ -176,7 +177,7 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
           const mergedModels = [...provider.models, ...newModels];
           updateProvider(selectedProviderId, {
             models: mergedModels,
-            defaultModel: provider.defaultModel || mergedModels[0].id
+            defaultModel: provider.defaultModel || mergedModels[0]?.id
           });
         }
       }
@@ -225,7 +226,7 @@ export const AIProvidersPanel: React.FC<AIProvidersPanelProps> = ({ onProviderCh
 
           updateProvider(selectedProviderId, {
             models: mergedModels,
-            defaultModel: provider.defaultModel || mergedModels[0].id
+            defaultModel: provider.defaultModel || mergedModels[0]?.id
           });
         }
       }
