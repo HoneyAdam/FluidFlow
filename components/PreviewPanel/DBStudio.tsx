@@ -81,7 +81,9 @@ const TableNode: React.FC<{
 
   const updateColumn = (index: number, updates: Partial<Column>) => {
     const newColumns = [...table.columns];
-    newColumns[index] = { ...newColumns[index], ...updates };
+    const col = newColumns[index];
+    if (!col) return;
+    newColumns[index] = { ...col, ...updates } as Column;
     onUpdate({ ...table, columns: newColumns });
   };
 
@@ -94,7 +96,9 @@ const TableNode: React.FC<{
 
   const togglePrimaryKey = (index: number) => {
     const newColumns = [...table.columns];
-    newColumns[index] = { ...newColumns[index], isPrimaryKey: !newColumns[index].isPrimaryKey };
+    const col = newColumns[index];
+    if (!col) return;
+    newColumns[index] = { ...col, isPrimaryKey: !col.isPrimaryKey };
     onUpdate({ ...table, columns: newColumns });
   };
 
@@ -271,8 +275,8 @@ function relationsToEdges(relations: RelationsData): Edge[] {
 
 export const DBStudio: React.FC<DBStudioProps> = ({ files, setFiles }) => {
   const [tables, setTables] = useState<TableSchema[]>([]);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const { isCopied: copied, copy: copyText } = useCopyToClipboard();
@@ -314,8 +318,8 @@ export const DBStudio: React.FC<DBStudioProps> = ({ files, setFiles }) => {
 
         // Fallback: Create edges from SQL relationships
         const newEdges: Edge[] = relationships.map((rel, i) => {
-          const [fromTable, fromCol] = rel.from.split('.');
-          const [toTable, toCol] = rel.to.split('.');
+          const [fromTable = '', fromCol = ''] = rel.from.split('.');
+          const [toTable = '', toCol = ''] = rel.to.split('.');
           return {
             id: `edge-${i}`,
             source: fromTable,
@@ -575,8 +579,8 @@ Use appropriate SQL types: INT, BIGINT, SERIAL, VARCHAR(255), TEXT, BOOLEAN, DAT
 
       // Fallback to SQL relationships
       const newEdges: Edge[] = relationships.map((rel, i) => {
-        const [fromTable, fromCol] = rel.from.split('.');
-        const [toTable, toCol] = rel.to.split('.');
+        const [fromTable = '', fromCol = ''] = rel.from.split('.');
+        const [toTable = '', toCol = ''] = rel.to.split('.');
         return {
           id: `edge-${i}`,
           source: fromTable,
