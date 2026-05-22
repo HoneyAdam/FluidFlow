@@ -27,9 +27,10 @@ export function parseFallback(response: string, result: ParseResult): void {
   );
 
   for (const match of fileBlockMatches) {
-    const path = match[1].trim();
-    const content = match[2].trim();
+    const path = match[1]?.trim();
+    const content = match[2]?.trim();
 
+    if (!path || !content) continue;
     if (isIgnoredPath(path)) continue;
 
     const cleaned = cleanGeneratedCode(content, path);
@@ -47,9 +48,10 @@ export function parseFallback(response: string, result: ParseResult): void {
   );
 
   for (const match of fileInBlockMatches) {
-    const path = match[1].trim();
-    const content = match[2].trim();
+    const path = match[1]?.trim();
+    const content = match[2]?.trim();
 
+    if (!path || !content) continue;
     if (result.files[path]) continue; // Already extracted
     if (isIgnoredPath(path)) continue;
 
@@ -70,8 +72,8 @@ export function parseFallback(response: string, result: ParseResult): void {
     let fileIndex = 1;
 
     for (const match of codeBlockMatches) {
-      const content = match[1].trim();
-      if (content.length < 50) continue;
+      const content = match[1]?.trim();
+      if (!content || content.length < 50) continue;
 
       // Infer filename from content
       const hasReact = content.includes('import React') ||

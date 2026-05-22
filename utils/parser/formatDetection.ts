@@ -73,8 +73,9 @@ export function detectFormat(response: string): ResponseFormat {
 
   // Remove markdown code blocks
   const codeBlockMatch = findFirstMatch(RE_CODE_BLOCK, jsonStart);
-  if (codeBlockMatch) {
-    jsonStart = codeBlockMatch[1].trim();
+  const codeBlockContent = codeBlockMatch?.[1];
+  if (codeBlockContent) {
+    jsonStart = codeBlockContent.trim();
   }
 
   const firstChar = jsonStart.charAt(0);

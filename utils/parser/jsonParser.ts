@@ -25,8 +25,9 @@ export function prepareJsonString(response: string): string {
 
   // Remove markdown code blocks
   const codeBlockMatch = findFirstMatch(/```(?:json)?\s*\n?([\s\S]*?)\n?```/, json);
-  if (codeBlockMatch) {
-    json = codeBlockMatch[1].trim();
+  const codeBlockContent = codeBlockMatch?.[1];
+  if (codeBlockContent) {
+    json = codeBlockContent.trim();
   }
 
   // Remove PLAN comment if present at start
