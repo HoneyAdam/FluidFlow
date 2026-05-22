@@ -46,6 +46,9 @@ export function calculateFileProgressJson(
   }
 
   const match = matches[0];
+  if (!match) {
+    return { receivedChars: 0, progress: 0, status: 'pending' };
+  }
   const contentStart = (match.index ?? 0) + match[0].length;
 
   // Find content end (closing quote not preceded by backslash)
