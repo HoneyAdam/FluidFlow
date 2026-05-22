@@ -69,7 +69,10 @@ export function extractMarkerFileList(response: string): string[] {
   const filePattern = /<!--\s*FILE:([\w./-]+\.[a-zA-Z]+)\s*-->/g;
   const matches = [...response.matchAll(filePattern)];
   for (const match of matches) {
-    files.add(match[1].trim());
+    const fileName = match[1];
+    if (fileName) {
+      files.add(fileName.trim());
+    }
   }
 
   return Array.from(files).sort();
