@@ -202,16 +202,16 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
           </span>
         )}
         {/* Tool calling badge */}
-        {entry.metadata?.toolCallingEnabled && (
+        {entry.metadata?.toolCallingEnabled ? (
           <span
             className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
             style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}
           >
             <Wrench size={10} />
             TC
-            {entry.metadata?.toolCount && `(${entry.metadata.toolCount})`}
+            {entry.metadata?.toolCount !== null ? `(${String(entry.metadata.toolCount)})` : null}
           </span>
-        )}
+        ) : null}
         {/* Files written badge */}
         {(entry.metadata?.filesWritten as string[])?.length > 0 && (
           <span
@@ -219,11 +219,11 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
             style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}
           >
             <Check size={10} />
-            {(entry.metadata.filesWritten as string[]).length} file(s)
+            {entry.metadata?.filesWritten !== null ? String((entry.metadata.filesWritten as string[]).length) : null}
           </span>
         )}
         {/* Tool call badge for tool-call entries */}
-        {entry.type === 'tool-call' && entry.toolCallInfo?.filesWritten?.length > 0 && (
+        {entry.type === 'tool-call' && entry.toolCallInfo?.filesWritten ? (
           <span
             className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
             style={{ backgroundColor: 'var(--color-success-subtle)', color: 'var(--color-success)' }}
@@ -231,7 +231,7 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
             <Check size={10} />
             {entry.toolCallInfo.filesWritten.length} file(s)
           </span>
-        )}
+        ) : null}
         {/* Stream progress indicator */}
         {entry.type === 'stream' && entry.streamProgress && (
           <span
@@ -344,14 +344,14 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                 </div>
               )}
 
-              {entry.toolCallInfo.result && (
+              {entry.toolCallInfo.result ? (
                 <div>
                   <div className="text-xs mb-1 font-medium" style={{ color: 'var(--theme-text-muted)' }}>Result:</div>
                   <div className="rounded p-2 text-xs font-mono overflow-auto max-h-48" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
                     <JsonViewer data={entry.toolCallInfo.result} />
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {entry.toolCallInfo.filesWritten && entry.toolCallInfo.filesWritten.length > 0 && (
                 <div>
@@ -396,7 +396,7 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
           )}
 
           {/* Stream progress details */}
-          {entry.streamProgress && (
+          {entry.streamProgress !== undefined ? (
             <div className="space-y-2">
               <div className="text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>Stream Progress:</div>
               <div className="flex gap-4 text-xs">
@@ -413,7 +413,7 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                 </span>
               </div>
               {/* Progress bar */}
-              {!entry.streamProgress.isComplete && (
+              {entry.streamProgress.isComplete ? null : (
                 <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--theme-glass-200)' }}>
                   <div
                     className="h-full animate-pulse"
@@ -423,18 +423,18 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
               )}
 
               {/* Tool calling info */}
-              {entry.metadata?.toolCallingEnabled && (
+              {entry.metadata?.toolCallingEnabled ? (
                 <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-subtle)' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <Wrench size={12} style={{ color: 'var(--color-warning)' }} />
                     <span className="text-xs font-medium" style={{ color: 'var(--color-warning)' }}>Tool Calling</span>
-                    {entry.metadata.toolChoice && (
+                    {entry.metadata.toolChoice !== null ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}>
                         {String(entry.metadata.toolChoice)}
                       </span>
-                    )}
+                    ) : null}
                   </div>
-                  {(entry.metadata.tools as string[]) && (entry.metadata.tools as string[]).length > 0 && (
+                  {entry.metadata.tools !== null && (entry.metadata.tools as string[]).length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       <span className="text-[10px]" style={{ color: 'var(--theme-text-dim)' }}>Tools:</span>
                       {(entry.metadata.tools as string[]).map((tool: string, i: number) => (
@@ -443,8 +443,8 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                         </span>
                       ))}
                     </div>
-                  )}
-                  {(entry.metadata.filesWritten as string[]) && (entry.metadata.filesWritten as string[]).length > 0 && (
+                  ) : null}
+                  {entry.metadata.filesWritten !== null && (entry.metadata.filesWritten as string[]).length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Files Written:</span>
                       {(entry.metadata.filesWritten as string[]).map((file: string, i: number) => (
@@ -453,11 +453,11 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                         </span>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
 
           {entry.metadata && Object.keys(entry.metadata).length > 0 && (
             <div>
@@ -469,23 +469,23 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
           )}
 
           {/* Tool calling info for non-stream entries (request, response, etc.) */}
-          {entry.metadata?.toolCallingEnabled && entry.type !== 'stream' && (
+          {entry.metadata?.toolCallingEnabled && entry.type !== 'stream' ? (
             <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--theme-border-subtle)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <Wrench size={12} style={{ color: 'var(--color-warning)' }} />
                 <span className="text-xs font-medium" style={{ color: 'var(--color-warning)' }}>Tool Calling</span>
-                {entry.metadata.toolCount !== undefined && (
+                {entry.metadata.toolCount !== undefined ? (
                   <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--color-warning-subtle)', color: 'var(--color-warning)' }}>
                     {String(entry.metadata.toolCount)} tools
                   </span>
-                )}
-                {entry.metadata.toolChoice && (
+                ) : null}
+                {entry.metadata.toolChoice !== null ? (
                   <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--theme-glass-200)', color: 'var(--theme-text-secondary)' }}>
                     {String(entry.metadata.toolChoice)}
                   </span>
-                )}
+                ) : null}
               </div>
-              {(entry.metadata.filesWritten as string[]) && (entry.metadata.filesWritten as string[]).length > 0 && (
+              {entry.metadata.filesWritten !== null && (entry.metadata.filesWritten as string[]).length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Files Written:</span>
                   {(entry.metadata.filesWritten as string[]).map((file: string, i: number) => (
@@ -494,9 +494,9 @@ const LogEntryCard: React.FC<LogEntryCardProps> = ({ entry, isExpanded, onToggle
                     </span>
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>
