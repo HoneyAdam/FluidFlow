@@ -141,9 +141,11 @@ export class GeminiProvider implements AIProvider {
 
       for (const fc of functionCalls) {
         if ('functionCall' in fc) {
+          const functionCall = fc.functionCall;
+          if (!functionCall) continue;
           try {
-            const args = parseToolArguments(JSON.stringify(fc.functionCall.args || {}));
-            const result = await request.toolExecutor(fc.functionCall.name, args);
+            const args = parseToolArguments(JSON.stringify(functionCall.args || {}));
+            const result = await request.toolExecutor(functionCall.name ?? 'unknown', args);
 
             if (result.success && result.filesWritten) {
               filesWritten.push(...result.filesWritten);
@@ -153,7 +155,7 @@ export class GeminiProvider implements AIProvider {
               role: 'user',
               parts: [{
                 functionResponse: {
-                  name: fc.functionCall.name,
+                  name: functionCall.name ?? 'unknown',
                   response: (result.success
                     ? (result.result || { success: true })
                     : { error: result.error || 'Unknown error' }) as Record<string, unknown>
@@ -161,12 +163,12 @@ export class GeminiProvider implements AIProvider {
               }]
             });
           } catch (error) {
-            console.error('[GeminiProvider] Tool execution threw:', fc.functionCall.name, error);
+            console.error('[GeminiProvider] Tool execution threw:', functionCall.name, error);
             results.push({
               role: 'user',
               parts: [{
                 functionResponse: {
-                  name: fc.functionCall.name,
+                  name: functionCall.name ?? 'unknown',
                   response: { error: error instanceof Error ? error.message : String(error) }
                 }
               }]
