@@ -299,7 +299,7 @@ export class ZAIProvider implements AIProvider {
         const content = delta?.content || '';
 
         // Accumulate tool calls using unified handler
-        toolCallHandler.accumulate(chunk);
+        toolCallHandler.accumulate(chunk as unknown as Parameters<typeof toolCallHandler.accumulate>[0]);
 
         if (content) {
           fullText += content;
