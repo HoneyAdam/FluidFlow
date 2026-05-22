@@ -183,11 +183,14 @@ export async function decrypt(encryptedValue: string): Promise<string> {
     }
 
     const [saltB64, ivB64, ciphertextB64] = parts;
+    const saltB64Str = saltB64 ?? '';
+    const ivB64Str = ivB64 ?? '';
+    const ciphertextB64Str = ciphertextB64 ?? '';
 
     // Decode from base64 using Array.from (safer for binary data)
-    const salt = new Uint8Array(Array.from(atob(saltB64), c => c.charCodeAt(0)));
-    const iv = new Uint8Array(Array.from(atob(ivB64), c => c.charCodeAt(0)));
-    const ciphertext = new Uint8Array(Array.from(atob(ciphertextB64), c => c.charCodeAt(0)));
+    const salt = new Uint8Array(Array.from(atob(saltB64Str), c => c.charCodeAt(0)));
+    const iv = new Uint8Array(Array.from(atob(ivB64Str), c => c.charCodeAt(0)));
+    const ciphertext = new Uint8Array(Array.from(atob(ciphertextB64Str), c => c.charCodeAt(0)));
 
     const key = await deriveKey(secret, salt);
     const decoder = new TextDecoder();
