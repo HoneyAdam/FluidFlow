@@ -187,7 +187,8 @@ export function getModelCapabilities(modelId: string): ModelCapabilities {
  * Get provider defaults
  */
 export function getProviderDefaults(providerType: string): ProviderDefaults {
-  return PROVIDER_DEFAULTS[providerType] || PROVIDER_DEFAULTS.custom;
+  const defaults = PROVIDER_DEFAULTS[providerType];
+  return defaults ?? PROVIDER_DEFAULTS['custom']!;
 }
 
 /**
@@ -196,7 +197,7 @@ export function getProviderDefaults(providerType: string): ProviderDefaults {
 export function modelSupports(modelId: string, capability: keyof ModelCapabilities): boolean {
   const caps = getModelCapabilities(modelId);
   const value = caps[capability];
-  return typeof value === 'boolean' ? value : value > 0;
+  return typeof value === 'boolean' ? value : (value ?? 0) > 0;
 }
 
 /**
