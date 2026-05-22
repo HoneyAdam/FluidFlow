@@ -278,23 +278,23 @@ export function fixCommonSyntaxErrors(code: string): string {
   const dedupedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? '';
     const trimmed = line.trim();
 
     if (trimmed.startsWith('import ') && trimmed.includes('from')) {
       const sourceMatch = trimmed.match(/from\s+['"]([^'"]+)['"]/);
-      if (sourceMatch) {
+      if (sourceMatch?.[1]) {
         const source = sourceMatch[1];
         const existing = importsBySource.get(source);
 
         const namedMatch = trimmed.match(/\{\s*([^}]+)\s*\}/);
         const namedImports = new Set<string>();
         if (namedMatch) {
-          namedMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(n => namedImports.add(n));
+          (namedMatch[1] ?? '').split(',').map(s => s.trim()).filter(Boolean).forEach(n => namedImports.add(n));
         }
 
         const defaultMatch = trimmed.match(/import\s+(\w+)\s*(?:,|\s+from)/);
-        const defaultImport = (defaultMatch && !trimmed.startsWith('import {')) ? defaultMatch[1] : null;
+        const defaultImport = (defaultMatch?.[1] && !trimmed.startsWith('import {')) ? defaultMatch[1] : null;
 
         if (existing) {
           namedImports.forEach(n => existing.named.add(n));
@@ -332,11 +332,11 @@ export function fixCommonSyntaxErrors(code: string): string {
     const lines2 = fixed.split('\n');
     let inTemplate = false;
     for (let i = 0; i < lines2.length; i++) {
-      const count = (lines2[i].match(/`/g) || []).length;
+      const count = ((lines2[i] ?? '').match(/`/g) || []).length;
       if (count % 2 !== 0) {
         inTemplate = !inTemplate;
         if (inTemplate && i === lines2.length - 1) {
-          lines2[i] += '`';
+          lines2[i] = (lines2[i] ?? '') + '`';
           inTemplate = false;
         }
       }
@@ -415,10 +415,10 @@ function fixBracketBalance(code: string): string {
       }
     }
 
-    if (pairs[char] && char !== '<') {
+    if (char && pairs[char] && char !== '<') {
       stack.push({ char, line: lineNum });
-    } else if (closers[char] && char !== '>') {
-      if (stack.length > 0 && stack[stack.length - 1].char === closers[char]) {
+    } else if (char && closers[char] && char !== '>') {
+      if (stack.length > 0 && stack[stack.length - 1]?.char === closers[char]) {
         stack.pop();
       }
     }
