@@ -108,6 +108,7 @@ export const GeneratingOverlay = memo(function GeneratingOverlay({
   if (!isGenerating) return null;
 
   const current = promotions[currentIndex];
+  if (!current) return null;
   const IconComponent = current.icon ? ICONS[current.icon] || Sparkles : Sparkles;
 
   // Type-based styling using CSS variables
