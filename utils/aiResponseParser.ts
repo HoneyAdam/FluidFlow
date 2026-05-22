@@ -176,27 +176,36 @@ export function extractFileList(response: string): string[] {
   if (format.startsWith('marker')) {
     // From PLAN block
     const planMatch = findFirstMatch(/<!--\s*PLAN\s*-->([\s\S]*?)<!--\s*\/PLAN\s*-->/, response);
-    if (planMatch) {
-      const createMatch = findFirstMatch(/create:\s*([^\n]+)/, planMatch[1]);
-      const updateMatch = findFirstMatch(/update:\s*([^\n]+)/, planMatch[1]);
-      if (createMatch) {
-        createMatch[1].split(',').forEach(f => files.add(f.trim()));
+    const planContent = planMatch?.[1];
+    if (planContent) {
+      const createMatch = findFirstMatch(/create:\s*([^\n]+)/, planContent);
+      const updateMatch = findFirstMatch(/update:\s*([^\n]+)/, planContent);
+      const createContent = createMatch?.[1];
+      const updateContent = updateMatch?.[1];
+      if (createContent) {
+        createContent.split(',').forEach(f => files.add(f.trim()));
       }
-      if (updateMatch) {
-        updateMatch[1].split(',').forEach(f => files.add(f.trim()));
+      if (updateContent) {
+        updateContent.split(',').forEach(f => files.add(f.trim()));
       }
     }
 
     // From FILE markers
     const fileMatches = findAllMatches(/<!--\s*FILE:([\w./-]+\.[a-zA-Z]+)\s*-->/g, response);
     for (const match of fileMatches) {
-      files.add(match[1].trim());
+      const fileName = match[1];
+      if (fileName) {
+        files.add(fileName.trim());
+      }
     }
   } else {
     // JSON format - extract from keys
     const fileMatches = findAllMatches(/"([\w./-]+\.(?:tsx?|jsx?|css|json|md|ts|js))"\s*:/g, response);
     for (const match of fileMatches) {
-      files.add(match[1]);
+      const fileName = match[1];
+      if (fileName) {
+        files.add(fileName);
+      }
     }
   }
 
