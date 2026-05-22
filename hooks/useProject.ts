@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { projectApi, gitApi, autoSave, checkServerHealth, ProjectMeta, GitStatus, ProjectContext } from '@/services/projectApi';
+import { projectApi, gitApi, autoSave, checkServerHealth, ProjectMeta, GitStatus, ProjectContext, HistoryEntry } from '@/services/projectApi';
 import type { FileSystem } from '@/types';
 import { useProjectCrud, ProjectCrudState } from './useProjectCrud';
 import { useProjectGit, ProjectGitState } from './useProjectGit';
@@ -51,7 +51,7 @@ export interface ProjectState {
 export interface UseProjectReturn extends ProjectState {
   // Project operations
   createProject: (name?: string, description?: string, initialFiles?: FileSystem) => Promise<ProjectMeta | null>;
-  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context: ProjectContext | null }>;
+  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context?: { history: HistoryEntry[]; currentIndex: number; activeFile?: string; activeTab?: string } | null }>;
   closeProject: () => void;
   deleteProject: (id: string) => Promise<boolean>;
   duplicateProject: (id: string, newName?: string) => Promise<ProjectMeta | null>;

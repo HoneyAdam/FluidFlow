@@ -59,7 +59,7 @@ export interface AppContextValue {
 
   // Project operations
   createProject: (name: string, description?: string, initialFiles?: FileSystem) => Promise<ProjectMeta | null>;
-  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context?: AppUIContext }>;
+  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context?: { history?: HistoryEntry[]; currentIndex?: number; activeFile?: string; activeTab?: string } | null }>;
   deleteProject: (id: string) => Promise<boolean>;
   duplicateProject: (id: string, newName?: string) => Promise<ProjectMeta | null>;
   refreshProjects: () => Promise<void>;

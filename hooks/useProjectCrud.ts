@@ -6,7 +6,7 @@
  */
 
 import { useCallback } from 'react';
-import { projectApi, ProjectMeta, ProjectContext } from '@/services/projectApi';
+import { projectApi, ProjectMeta, ProjectContext, HistoryEntry } from '@/services/projectApi';
 import { deleteProjectContext } from '@/services/projectContext';
 import type { FileSystem } from '@/types';
 
@@ -53,7 +53,7 @@ export interface UseProjectCrudReturn {
   /** Create a new project */
   createProject: (name?: string, description?: string, initialFiles?: FileSystem) => Promise<ProjectMeta | null>;
   /** Open an existing project */
-  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context: ProjectContext | null }>;
+  openProject: (id: string) => Promise<{ success: boolean; files: FileSystem; context?: { history: HistoryEntry[]; currentIndex: number; activeFile?: string; activeTab?: string } | null }>;
   /** Close the current project */
   closeProject: () => void;
   /** Delete a project */
