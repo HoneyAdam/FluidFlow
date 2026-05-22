@@ -230,7 +230,7 @@ export class ToolCallHandler {
 
     return {
       role: 'assistant',
-      content: null,
+      content: '',
       tool_calls: toolCalls.map((tc) => ({
         id: tc.id,
         type: 'function' as const,
