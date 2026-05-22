@@ -17,9 +17,9 @@ export function parseStackTrace(errorMessage: string): { file?: string; line?: n
   if (transpileMatch) {
     const lineMatch = errorMessage.match(/\((\d+):(\d+)\)/);
     return {
-      file: transpileMatch[1],
-      line: lineMatch ? parseInt(lineMatch[1], 10) : undefined,
-      column: lineMatch ? parseInt(lineMatch[2], 10) : undefined
+      file: transpileMatch[1] ?? '',
+      line: lineMatch ? parseInt(lineMatch[1] ?? '0', 10) : undefined,
+      column: lineMatch ? parseInt(lineMatch[2] ?? '0', 10) : undefined
     };
   }
 
@@ -27,9 +27,9 @@ export function parseStackTrace(errorMessage: string): { file?: string; line?: n
   const stackMatch = errorMessage.match(/at\s+(?:\w+\s+\()?([\w./]+\.tsx?):(\d+):(\d+)/);
   if (stackMatch) {
     return {
-      file: stackMatch[1],
-      line: parseInt(stackMatch[2], 10),
-      column: parseInt(stackMatch[3], 10)
+      file: stackMatch[1] ?? '',
+      line: parseInt(stackMatch[2] ?? '0', 10),
+      column: parseInt(stackMatch[3] ?? '0', 10)
     };
   }
 
@@ -37,7 +37,7 @@ export function parseStackTrace(errorMessage: string): { file?: string; line?: n
   const simpleMatch = errorMessage.match(/(?:Error in|at)\s+(src\/[\w./]+\.tsx?):?(\d+)?/i);
   if (simpleMatch) {
     return {
-      file: simpleMatch[1],
+      file: simpleMatch[1] ?? '',
       line: simpleMatch[2] ? parseInt(simpleMatch[2], 10) : undefined
     };
   }

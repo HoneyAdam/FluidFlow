@@ -35,7 +35,7 @@ function analyzeFile(path: string, content: string): FileAnalysis {
 
   // Extract exports
   const exportMatches = content.matchAll(/export\s+(?:default\s+)?(?:const|function|class|interface|type|enum)\s+(\w+)/g);
-  const exports = [...exportMatches].map(m => m[1]);
+  const exports = [...exportMatches].map(m => m[1] ?? '');
 
   // Extract imports
   const importMatches = content.matchAll(/import\s+(?:{[^}]+}|\w+)\s+from\s+['"]([^'"]+)['"]/g);
