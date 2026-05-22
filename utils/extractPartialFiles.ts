@@ -45,7 +45,7 @@ export function extractFilesFromTruncatedResponse(
 
     const planMatch = cleanResponse.match(/^(\/\/\s*PLAN:\s*)(\{)/m);
     if (planMatch && planMatch.index !== undefined) {
-      const jsonStart = planMatch.index + planMatch[1].length;
+      const jsonStart = planMatch.index + (planMatch[1] ?? '').length;
       let braceCount = 0;
       let planEnd = jsonStart;
 
@@ -107,7 +107,7 @@ export function extractFilesFromTruncatedResponse(
   ];
 
   const explanationMatch = safeResponse.match(/"explanation":\s*"([^"]+)"/);
-  if (explanationMatch) {
+  if (explanationMatch?.[1]) {
     result.summary = explanationMatch[1];
   }
 
@@ -117,6 +117,7 @@ export function extractFilesFromTruncatedResponse(
     while ((match = pattern.exec(safeResponse)) !== null) {
       const filePath = match[1];
       let content = match[2]; // Now correctly gets content, not extension
+      if (!filePath || content === undefined) continue;
 
       // Skip if content is just a file extension (indicates regex matched wrong part)
       if (/^(?:tsx?|jsx?|css|json|md|sql|ts|js)$/i.test(content)) {
@@ -304,7 +305,7 @@ function checkJSXCompleteness(content: string): boolean {
       // Opening tag
       let j = i + 1;
       let _tagName = '';
-      while (j < content.length && /[a-zA-Z]/.test(content[j])) {
+      while (j < content.length && /[a-zA-Z]/.test(content[j] ?? '')) {
         _tagName += content[j];
         j++;
       }
@@ -343,14 +344,14 @@ function checkAndFixJSCompleteness(content: string): { isComplete: boolean; fixe
   // Find last non-empty line (compatible alternative to findLastIndex)
   let lastNonEmptyLine = -1;
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim()) {
+    if ((lines[i] ?? '').trim()) {
       lastNonEmptyLine = i;
       break;
     }
   }
 
   if (lastNonEmptyLine > -1) {
-    const lastLine = lines[lastNonEmptyLine].trim();
+    const lastLine = (lines[lastNonEmptyLine] ?? '').trim();
     if (lastLine && !lastLine.endsWith(';') && !lastLine.endsWith('{') && !lastLine.endsWith('}') &&
         !lastLine.endsWith('</') && !lastLine.endsWith('/>') && !lastLine.includes('export') &&
         !lastLine.includes('import') && !lastLine.includes('return')) {
