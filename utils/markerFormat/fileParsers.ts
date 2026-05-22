@@ -56,8 +56,8 @@ export function parseMarkerFiles(response: string): Record<string, string> {
   // Use matchAll for regex matching
   const matches = [...response.matchAll(filePattern)];
   for (const match of matches) {
-    const filePath = match[1].trim();
-    let content = match[2];
+    const filePath = (match[1] ?? '').trim();
+    let content = match[2] ?? '';
 
     // Remove leading/trailing blank lines but preserve internal formatting
     content = content.replace(/^\n+/, '').replace(/\n+$/, '');
@@ -78,7 +78,7 @@ export function parseMarkerFiles(response: string): Record<string, string> {
 
   const openMatches = [...response.matchAll(openPattern)];
   for (const match of openMatches) {
-    const path = match[1].trim();
+    const path = (match[1] ?? '').trim();
     // Skip if already processed with proper closing tag
     if (!processedPaths.has(path) && match.index !== undefined) {
       openings.push({
@@ -92,6 +92,7 @@ export function parseMarkerFiles(response: string): Record<string, string> {
   // For each unclosed file, extract content until the next FILE marker or end
   for (let i = 0; i < openings.length; i++) {
     const current = openings[i];
+    if (!current) continue;
     const contentStart = current.endIndex;
 
     // Find the end: either the next FILE opening marker, or a matching close tag, or end of string
@@ -149,8 +150,8 @@ export function parseStreamingMarkerFiles(response: string): StreamingParseResul
 
   const completeMatches = [...response.matchAll(completePattern)];
   for (const match of completeMatches) {
-    const filePath = match[1].trim();
-    let content = match[2];
+    const filePath = (match[1] ?? '').trim();
+    let content = match[2] ?? '';
     content = content.replace(/^\n+/, '').replace(/\n+$/, '');
     complete[filePath] = cleanGeneratedCode(content, filePath);
     completedPaths.add(filePath);
@@ -162,7 +163,7 @@ export function parseStreamingMarkerFiles(response: string): StreamingParseResul
 
   const openMatches = [...response.matchAll(openPattern)];
   for (const match of openMatches) {
-    const path = match[1].trim();
+    const path = (match[1] ?? '').trim();
     // Skip if already processed with proper closing tag
     if (!completedPaths.has(path) && match.index !== undefined) {
       openings.push({
@@ -176,10 +177,11 @@ export function parseStreamingMarkerFiles(response: string): StreamingParseResul
   // Process unclosed files
   for (let i = 0; i < openings.length; i++) {
     const current = openings[i];
+    if (!current) continue;
     const contentStart = current.endIndex;
-    const isLast = i === openings.length - 1;
+    const nextOpening = openings[i + 1];
 
-    if (isLast) {
+    if (!nextOpening) {
       // Last unclosed file - this is truly streaming/incomplete
       let content = response.slice(contentStart);
       content = content.replace(/^\n+/, '');
@@ -195,7 +197,6 @@ export function parseStreamingMarkerFiles(response: string): StreamingParseResul
     } else {
       // Not the last file - it was implicitly closed when next file started
       // Treat this as complete (recovered from missing closing tag)
-      const nextOpening = openings[i + 1];
       let content = response.slice(contentStart, nextOpening.index);
       content = content.replace(/^\n+/, '').replace(/\n+$/, '');
 
