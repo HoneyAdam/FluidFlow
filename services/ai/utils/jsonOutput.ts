@@ -205,7 +205,7 @@ export function parseJsonResponse<T = unknown>(
   // 1. Remove markdown code blocks
   if (text.startsWith('```')) {
     const codeBlockMatch = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/);
-    if (codeBlockMatch) {
+    if (codeBlockMatch?.[1]) {
       text = codeBlockMatch[1];
       neededCleanup = true;
     } else {
@@ -222,13 +222,13 @@ export function parseJsonResponse<T = unknown>(
   if (!text.startsWith('{') && !text.startsWith('[')) {
     // Look for JSON object
     const objectMatch = text.match(/(\{[\s\S]*\})/);
-    if (objectMatch) {
+    if (objectMatch?.[1]) {
       text = objectMatch[1];
       neededCleanup = true;
     } else {
       // Look for JSON array
       const arrayMatch = text.match(/(\[[\s\S]*\])/);
-      if (arrayMatch) {
+      if (arrayMatch?.[1]) {
         text = arrayMatch[1];
         neededCleanup = true;
       }
