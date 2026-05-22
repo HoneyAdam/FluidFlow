@@ -290,16 +290,17 @@ export function calculateStats(records: UsageRecord[]): UsageStats {
     if (record.success) successCount++;
 
     // By Provider
-    if (!stats.byProvider[record.provider]) {
-      stats.byProvider[record.provider] = {
+    let providerStats = stats.byProvider[record.provider];
+    if (!providerStats) {
+      providerStats = {
         requests: 0,
         inputTokens: 0,
         outputTokens: 0,
         totalCost: 0,
         avgDuration: 0,
       };
+      stats.byProvider[record.provider] = providerStats;
     }
-    const providerStats = stats.byProvider[record.provider];
     providerStats.requests++;
     providerStats.inputTokens += record.inputTokens;
     providerStats.outputTokens += record.outputTokens;
@@ -309,8 +310,9 @@ export function calculateStats(records: UsageRecord[]): UsageStats {
       providerStats.requests;
 
     // By Model
-    if (!stats.byModel[record.model]) {
-      stats.byModel[record.model] = {
+    let modelStats = stats.byModel[record.model];
+    if (!modelStats) {
+      modelStats = {
         requests: 0,
         inputTokens: 0,
         outputTokens: 0,
@@ -318,8 +320,8 @@ export function calculateStats(records: UsageRecord[]): UsageStats {
         avgDuration: 0,
         provider: record.provider,
       };
+      stats.byModel[record.model] = modelStats;
     }
-    const modelStats = stats.byModel[record.model];
     modelStats.requests++;
     modelStats.inputTokens += record.inputTokens;
     modelStats.outputTokens += record.outputTokens;
@@ -329,31 +331,33 @@ export function calculateStats(records: UsageRecord[]): UsageStats {
       modelStats.requests;
 
     // By Category
-    if (!stats.byCategory[record.category]) {
-      stats.byCategory[record.category] = {
+    let catStats = stats.byCategory[record.category];
+    if (!catStats) {
+      catStats = {
         requests: 0,
         inputTokens: 0,
         outputTokens: 0,
         totalCost: 0,
       };
+      stats.byCategory[record.category] = catStats;
     }
-    const catStats = stats.byCategory[record.category];
     catStats.requests++;
     catStats.inputTokens += record.inputTokens;
     catStats.outputTokens += record.outputTokens;
     catStats.totalCost += record.totalCost;
 
     // By Day
-    const dayKey = new Date(record.timestamp).toISOString().split('T')[0];
-    if (!stats.byDay[dayKey]) {
-      stats.byDay[dayKey] = {
+    const dayKey = new Date(record.timestamp).toISOString().split('T')[0] ?? '';
+    let dayStats = stats.byDay[dayKey];
+    if (!dayStats) {
+      dayStats = {
         requests: 0,
         inputTokens: 0,
         outputTokens: 0,
         totalCost: 0,
       };
+      stats.byDay[dayKey] = dayStats;
     }
-    const dayStats = stats.byDay[dayKey];
     dayStats.requests++;
     dayStats.inputTokens += record.inputTokens;
     dayStats.outputTokens += record.outputTokens;
