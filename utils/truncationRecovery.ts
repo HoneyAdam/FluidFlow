@@ -188,7 +188,7 @@ export function emergencyCodeBlockExtraction(
     if (!detectedPath) {
       // Check first line for file path comment: // src/components/Header.tsx
       const firstLineMatch = codeContent.match(/^\/\/\s*(src\/[\w./-]+\.[a-zA-Z]+)/);
-      if (firstLineMatch) {
+      if (firstLineMatch?.[1]) {
         detectedPath = firstLineMatch[1];
       }
     }
@@ -197,7 +197,7 @@ export function emergencyCodeBlockExtraction(
       // Look for file path pattern in surrounding context (100 chars before code block)
       const contextBefore = fullText.slice(Math.max(0, matchPosition - 100), matchPosition);
       const contextMatch = contextBefore.match(/(src\/[\w./-]+\.[a-zA-Z]+)\s*$/);
-      if (contextMatch) {
+      if (contextMatch?.[1]) {
         detectedPath = contextMatch[1];
       }
     }
@@ -229,7 +229,9 @@ export function emergencyCodeBlockExtraction(
 
     for (let i = 0; i < filePathMatches.length; i++) {
       const match = filePathMatches[i];
+      if (!match) continue;
       let filePath = match[1];
+      if (!filePath) continue;
 
       // Normalize path - add src/ prefix if not present
       if (!filePath.startsWith('src/')) {
@@ -287,7 +289,7 @@ export function emergencyCodeBlockExtraction(
 function guessFilePathFromContent(code: string, index: number): string {
   // Check for export default function ComponentName
   const componentMatch = code.match(/export\s+(?:default\s+)?function\s+(\w+)/);
-  if (componentMatch) {
+  if (componentMatch?.[1]) {
     const name = componentMatch[1];
     // PascalCase = component
     if (/^[A-Z]/.test(name)) {
@@ -363,10 +365,13 @@ function identifyTruncatedFiles(
     })
     .map(([path]) => path);
 
+  const lastCreate = filePlan.create[filePlan.create.length - 1];
   const filesToRegenerate =
     truncatedFiles.length > 0
       ? truncatedFiles
-      : [filePlan.create[filePlan.create.length - 1]];
+      : lastCreate
+      ? [lastCreate]
+      : [];
 
   const goodFiles = Object.fromEntries(
     Object.entries(completeFiles).filter(
