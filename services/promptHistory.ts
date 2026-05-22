@@ -89,7 +89,10 @@ export function updatePromptHistory(id: string, updates: Partial<PromptHistoryIt
 
   if (index === -1) return false;
 
-  history[index] = { ...history[index], ...updates };
+  const current = history[index];
+  if (!current) return false;
+
+  history[index] = { ...current, ...updates };
   savePromptHistory(history);
   return true;
 }
