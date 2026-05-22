@@ -84,7 +84,7 @@ function extractImports(code: string): string[] {
   let match;
 
   while ((match = importRegex.exec(code)) !== null) {
-    imports.push(match[1]);
+    imports.push(match[1] ?? '');
   }
 
   return imports;
@@ -98,7 +98,7 @@ function extractExports(code: string): string[] {
   const namedExportRegex = /export\s+(?:const|function|class|interface|type)\s+(\w+)/g;
   let match;
   while ((match = namedExportRegex.exec(code)) !== null) {
-    exports.push(match[1]);
+    exports.push(match[1] ?? '');
   }
 
   // Default exports
