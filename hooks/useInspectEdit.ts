@@ -16,6 +16,7 @@ import { buildInspectEditInstruction } from '../components/ControlPanel/prompts'
 import { calculateFileChanges, createTokenUsage } from '../utils/generationUtils';
 import { PROJECT_TOOLS } from '../services/ai/utils/toolExecutor';
 import { createProjectToolExecutor } from '../services/ai/utils/projectToolHandler';
+import { buildElementSelector } from '../services/inspector/elementSelector';
 
 export interface InspectContext {
   element: InspectedElement;
@@ -51,46 +52,6 @@ export function useInspectEdit(options: UseInspectEditOptions): UseInspectEditRe
     setMessages,
     reviewChange,
   } = options;
-
-  /**
-   * Build a specific selector for the target element
-   */
-  const buildElementSelector = useCallback(
-    (element: InspectedElement, scope: EditScope): string => {
-      // 1. FluidFlow ID (most specific for single element)
-      if (scope === 'element' && element.ffId) {
-        return `data-ff-id="${element.ffId}"`;
-      }
-      // 2. FluidFlow Group (for group editing)
-      if (scope === 'group' && element.ffGroup) {
-        return `data-ff-group="${element.ffGroup}"`;
-      }
-      // 3. HTML id attribute
-      if (element.id) {
-        return `#${element.id}`;
-      }
-      // 4. CSS classes (filter out generated/utility prefixes, take meaningful ones)
-      if (element.className) {
-        const classes = element.className
-          .split(' ')
-          .filter(
-            (c) => c && c.length > 2 && !c.startsWith('css-') && !c.match(/^[a-z]+-\d+$/)
-          )
-          .slice(0, 3);
-        if (classes.length > 0) {
-          return `<${element.tagName.toLowerCase()}>.${classes.join('.')}`;
-        }
-      }
-      // 5. Text content as identifier
-      if (element.textContent && element.textContent.trim().length > 0) {
-        const text = element.textContent.trim().slice(0, 40);
-        return `<${element.tagName.toLowerCase()}> with text "${text}"`;
-      }
-      // 6. Tag + component (last resort)
-      return `<${element.tagName.toLowerCase()}> in ${element.componentName || 'component'}`;
-    },
-    []
-  );
 
   /**
    * Handle inspect edit request - element-scoped editing
@@ -277,7 +238,6 @@ ${prompt}
       setIsGenerating,
       setMessages,
       reviewChange,
-      buildElementSelector,
     ]
   );
 
