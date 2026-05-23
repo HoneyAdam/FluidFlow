@@ -60,6 +60,45 @@ export {
 export * from './generation';
 
 // ============================================================================
+// Export Service
+// ============================================================================
+export {
+  downloadAsZip,
+  buildZipBlob,
+  collectExportFiles,
+  fixImportPaths,
+  generateEnvExample,
+  pushToNewGithubRepo,
+  DEFAULT_GITIGNORE,
+  type GitHubPushResult,
+  type GitHubFileEntry,
+} from './export';
+
+// ============================================================================
+// Git Services
+// ============================================================================
+export {
+  generateCommitMessage,
+  buildChangedFilesContext,
+  buildFallbackMessage,
+  cleanCommitMessage,
+  shouldAutoCommit,
+  COMMIT_SYSTEM_INSTRUCTION,
+  MAX_FILES_FOR_AUTO_COMMIT,
+} from './git/commitMessage';
+
+// ============================================================================
+// Preview AI Prompts
+// ============================================================================
+export {
+  ACCESSIBILITY_AUDIT_SYSTEM_INSTRUCTION,
+  RESPONSIVENESS_SYSTEM_INSTRUCTION,
+  DB_SCHEMA_SYSTEM_INSTRUCTION,
+  parseAccessibilityReport,
+  type AccessibilityReport,
+} from './prompts/previewPrompts';
+
+// ============================================================================
 // Project Services
 // ============================================================================
 export {

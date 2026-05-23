@@ -52,3 +52,9 @@ export {
   clearLastAIResponse,
 } from './streamingProcessor';
 export type { LastAIResponseData } from './streamingProcessor';
+export {
+  mergeFiles,
+  findChangedFiles,
+  findDeletedFiles,
+  countTotalLines,
+} from './fileMerge';
