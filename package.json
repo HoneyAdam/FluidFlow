@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.5.0",
-    "@monaco-editor/react": "^4.7.0",
+    "@monaco-editor/react": "4.8.0-rc.3",
     "@tailwindcss/vite": "^4.3.0",
     "@webcontainer/api": "^1.6.4",
     "@xyflow/react": "^12.10.2",
@@ -85,6 +85,7 @@
     "vitest": "^4.1.7"
   },
   "overrides": {
-    "dompurify": "^3.4.5"
+    "dompurify": "^3.4.5",
+    "monaco-editor>dompurify": "^3.4.5"
   }
 }
