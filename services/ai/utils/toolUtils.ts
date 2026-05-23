@@ -53,7 +53,12 @@ export function parseToolArguments(rawArguments: string): Record<string, unknown
   // Try fixing common issues
   const fixes = [
     // Add closing brace if missing
-    () => trimmed.endsWith('}') ? null : JSON.parse(trimmed + '}'),
+    () => {
+      if (!trimmed.endsWith('}')) {
+        return JSON.parse(trimmed + '}');
+      }
+      throw new Error('ends with }');
+    },
     // Remove trailing comma before closing brace
     () => JSON.parse(trimmed.replace(/,(\s*[}\]])/g, '$1')),
     // Try fixing escaped quotes inside strings

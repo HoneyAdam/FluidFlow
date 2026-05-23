@@ -1,0 +1,20 @@
+(node:60572) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: ENOENT: no such file or directory, open 'D:\Codebox\PROJECTS\FluidFlow\coverage\.tmp\coverage-10.json'[39m
+[90m [2m❯[22m open node:internal/fs/promises:[2m637:25[22m[39m
+[90m [2m❯[22m Object.readFile node:internal/fs/promises:[2m1269:14[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/coverage.DM_a_rWm.js:[2m763:23[22m[39m
+[90m [2m❯[22m V8CoverageProvider.readCoverageFiles node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/coverage.DM_a_rWm.js:[2m762:5[22m[39m
+[90m [2m❯[22m V8CoverageProvider.generateCoverage node_modules/.pnpm/@vitest+coverage-v8@4.1.7_vitest@4.1.7/node_modules/@vitest/coverage-v8/dist/provider.js:[2m32:3[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m13588:23[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m13601:11[22m[39m
+[90m [2m❯[22m node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m13463:19[22m[39m
+[90m [2m❯[22m startVitest node_modules/.pnpm/vitest@4.1.7_@types+node@25_555868b569a5a42b901927412c600115/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m14538:8[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ errno: -4058, code: 'ENOENT', syscall: 'open', path: 'D:\Codebox\PROJECTS\FluidFlow\coverage\.tmp\coverage-10.json' }[39m
+
+
+

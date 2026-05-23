@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CerebrasProvider } from '../../../../services/ai/providers/cerebras';
+import { OpenAIProvider } from '../../../../services/ai/providers/openai';
 import type { ProviderConfig } from '../../../../services/ai/types';
 
 vi.mock('../../../../services/ai/utils/fetchWithTimeout', () => ({
@@ -30,47 +30,35 @@ vi.mock('../../../../services/ai/utils/toolUtils', () => ({
 }));
 
 const config: ProviderConfig = {
-  id: 'test-cerebras', type: 'cerebras', name: 'Cerebras Test',
-  apiKey: 'test-key', baseUrl: 'https://api.cerebras.ai/v1',
-  models: [{ id: 'llama-3.3-70b', name: 'Llama 3.3 70B' }],
-  defaultModel: 'llama-3.3-70b',
+  id: 'test-openai', type: 'openai', name: 'OpenAI Test',
+  apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1',
+  models: [{ id: 'gpt-4', name: 'GPT-4' }],
+  defaultModel: 'gpt-4',
 };
 
-describe('CerebrasProvider', () => {
-  let provider: CerebrasProvider;
+describe('OpenAIProvider', () => {
+  let provider: OpenAIProvider;
 
   beforeEach(() => {
-    provider = new CerebrasProvider(config);
+    provider = new OpenAIProvider(config);
     vi.clearAllMocks();
   });
 
   it('has correct config', () => {
     expect(provider.config).toBe(config);
+    expect(provider.config.type).toBe('openai');
   });
 
   it('returns correct API endpoint', () => {
-    expect((provider as any).getApiEndpoint()).toBe('https://api.cerebras.ai/v1/chat/completions');
+    expect((provider as any).getApiEndpoint()).toBe('https://api.openai.com/v1/chat/completions');
   });
 
   it('returns correct models endpoint', () => {
-    expect((provider as any).getModelsEndpoint()).toBe('https://api.cerebras.ai/v1/models');
+    expect((provider as any).getModelsEndpoint()).toBe('https://api.openai.com/v1/models');
   });
 
   it('returns correct auth header', () => {
-    expect((provider as any).getAuthHeader()).toBe('Bearer test-key');
-  });
-
-  it('returns default max tokens of 8192', () => {
-    expect((provider as any).getDefaultMaxTokens()).toBe(8192);
-  });
-
-  it('maps models with description', () => {
-    const mapped = (provider as any).mapModel({ id: 'test-model' });
-    expect(mapped.id).toBe('test-model');
-    expect(mapped.name).toBe('test-model');
-    expect(mapped.description).toContain('Cerebras');
-    expect(mapped.supportsVision).toBe(false);
-    expect(mapped.supportsStreaming).toBe(true);
+    expect((provider as any).getAuthHeader()).toBe('Bearer sk-test');
   });
 
   describe('testConnection', () => {
@@ -83,23 +71,60 @@ describe('CerebrasProvider', () => {
 
     it('returns error on failure', async () => {
       const { fetchWithTimeout } = await import('../../../../services/ai/utils/fetchWithTimeout');
-      (fetchWithTimeout as any).mockRejectedValue(new Error('Connection refused'));
+      (fetchWithTimeout as any).mockRejectedValue(new Error('Connection failed'));
       const result = await provider.testConnection();
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Connection refused');
+    });
+  });
+
+  describe('generate', () => {
+    it('generates response successfully', async () => {
+      const { fetchWithTimeout } = await import('../../../../services/ai/utils/fetchWithTimeout');
+      (fetchWithTimeout as any).mockResolvedValue({
+        ok: true, status: 200,
+        json: () => Promise.resolve({
+          choices: [{ message: { content: 'Hello!' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 10, completion_tokens: 5 },
+        }),
+      });
+      const result = await provider.generate({ prompt: 'Hi' }, 'gpt-4');
+      expect(result.text).toBe('Hello!');
+      expect(result.finishReason).toBe('stop');
+    });
+
+    it('uses JSON schema when responseFormat is json with schema', async () => {
+      const { fetchWithTimeout } = await import('../../../../services/ai/utils/fetchWithTimeout');
+      (fetchWithTimeout as any).mockResolvedValue({
+        ok: true, status: 200,
+        json: () => Promise.resolve({
+          choices: [{ message: { content: '{"key":"val"}' }, finish_reason: 'stop' }],
+          usage: {},
+        }),
+      });
+      const result = await provider.generate({
+        prompt: 'Generate JSON',
+        responseFormat: 'json',
+        responseSchema: { type: 'object', properties: { key: { type: 'string' } } },
+      }, 'gpt-4');
+      expect(result.text).toBe('{"key":"val"}');
     });
   });
 
   describe('listModels', () => {
-    it('lists models successfully', async () => {
+    it('lists models from API', async () => {
       const { fetchWithTimeout } = await import('../../../../services/ai/utils/fetchWithTimeout');
       (fetchWithTimeout as any).mockResolvedValue({
         ok: true, status: 200,
-        json: () => Promise.resolve({ data: [{ id: 'llama-3.3-70b' }] }),
+        json: () => Promise.resolve({
+          data: [
+            { id: 'gpt-4', name: 'GPT-4' },
+            { id: 'gpt-5-mini', name: 'GPT-5 Mini' },
+          ],
+        }),
       });
       const models = await provider.listModels!();
-      expect(models).toHaveLength(1);
-      expect(models[0].id).toBe('llama-3.3-70b');
+      expect(models).toHaveLength(2);
+      expect(models[0].id).toBe('gpt-4');
     });
   });
 });

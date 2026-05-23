@@ -49,6 +49,7 @@ export function createDebouncedAction<T extends (...args: unknown[]) => unknown>
  */
 export class LockManager {
   private lock: Promise<void> = Promise.resolve();
+  private _locked = false;
 
   /**
    * Execute a function with lock protection
@@ -60,11 +61,13 @@ export class LockManager {
     this.lock = new Promise((resolve) => {
       releaseLock = resolve;
     });
+    this._locked = true;
 
     try {
       await previousLock;
       return await fn();
     } finally {
+      this._locked = false;
       releaseLock();
     }
   }
@@ -73,7 +76,6 @@ export class LockManager {
    * Check if the lock is currently held
    */
   isLocked(): boolean {
-    // Promise.race with a resolved promise checks if lock is pending
-    return Promise.race([this.lock, Promise.resolve()]) === this.lock;
+    return this._locked;
   }
 }

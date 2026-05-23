@@ -194,12 +194,12 @@ function detectProviderType(provider: ProviderMetadata): ProviderType {
   if (id.includes('openai') || name.includes('openai')) return 'openai';
   if (id.includes('anthropic') || name.includes('anthropic') || name.includes('claude')) return 'anthropic';
   if (id.includes('google') || id.includes('gemini')) return 'gemini';
+  if (id.includes('ollama')) return 'ollama';
+  if (id.includes('lmstudio') || id.includes('lm-studio')) return 'lmstudio';
   if (id.includes('mistral')) return 'openrouter';
   if (id.includes('llama') || id.includes('meta')) return 'openrouter';
   if (id.includes('qwen') || id.includes('alibaba')) return 'openrouter';
   if (id.includes('deepseek')) return 'openrouter';
-  if (id.includes('ollama')) return 'ollama';
-  if (id.includes('lmstudio') || id.includes('lm-studio')) return 'lmstudio';
 
   return 'custom'; // Default to custom instead of openrouter to avoid wrong endpoint mapping
 }
@@ -313,9 +313,13 @@ export function detectToolCallingSupport(modelId: string, providerType: Provider
     return false;
   }
 
-  // Mini models may have limitations
-  if (lower.includes('nano') || lower.includes('mini') && lower.includes('gpt')) {
-    // GPT mini does support tool calling
+  // Nano models (e.g. gpt-nano) may have limitations
+  if (lower.includes('nano')) {
+    return false;
+  }
+
+  // GPT-mini does support tool calling
+  if (lower.includes('gpt') && lower.includes('mini')) {
     return providerType === 'openai';
   }
 
