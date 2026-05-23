@@ -8,6 +8,8 @@
  * - useContinuationHandler: Multi-batch generation continuation
  * - useTruncationRecovery: Recovery from truncated responses
  * - useGenerationSuccess: Success handling and diff modal
+ *
+ * Uses services/generation/* for business logic.
  */
 
 import { useCallback, useRef } from 'react';
@@ -26,6 +28,10 @@ import { buildSystemInstruction, buildPromptParts, markFilesAsShared } from '../
 import { activityLogger } from '../services/activityLogger';
 import { PROJECT_TOOLS } from '../services/ai/utils/toolExecutor';
 import { createProjectToolExecutor } from '../services/ai/utils/projectToolHandler';
+import { createErrorMessage, type AIHistoryEntry } from '../services/generation';
+
+// Re-export AIHistoryEntry for backward compatibility
+export type { AIHistoryEntry } from '../services/generation';
 
 export interface CodeGenerationOptions {
   prompt: string;
@@ -38,25 +44,6 @@ export interface CodeGenerationOptions {
 export interface CodeGenerationResult {
   success: boolean;
   continuationStarted?: boolean;
-  error?: string;
-}
-
-export interface AIHistoryEntry {
-  timestamp: number;
-  prompt: string;
-  model: string;
-  provider: string;
-  hasSketch: boolean;
-  hasBrand: boolean;
-  isUpdate: boolean;
-  rawResponse: string;
-  responseChars: number;
-  responseChunks: number;
-  durationMs: number;
-  success: boolean;
-  truncated?: boolean;
-  filesGenerated?: string[];
-  explanation?: string;
   error?: string;
 }
 
@@ -542,13 +529,10 @@ export function useCodeGeneration(options: UseCodeGenerationOptions): UseCodeGen
 
         setStreamingStatus('❌ ' + errorMsg);
 
-        const errorMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          timestamp: Date.now(),
-          error: errorMsg + ' (Check browser console for raw response)',
-          snapshotFiles: { ...files },
-        };
+        const errorMessage = createErrorMessage(
+          errorMsg + ' (Check browser console for raw response)',
+          files
+        );
         setMessages((prev) => [...prev, errorMessage]);
 
         return { success: false, continuationStarted: false, error: errorMsg };

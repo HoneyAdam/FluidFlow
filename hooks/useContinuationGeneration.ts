@@ -3,6 +3,8 @@
  *
  * Handles multi-batch generation, continuation, truncation recovery,
  * and missing file requests. Extracted from ControlPanel to reduce complexity.
+ *
+ * Delegates to services/generation/* for business logic.
  */
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -12,73 +14,20 @@ import { FILE_GENERATION_SCHEMA, supportsAdditionalProperties } from '../service
 import { FilePlan, ContinuationState, TruncatedContent } from './useGenerationState';
 import { calculateFileChanges, createTokenUsage, getActiveProvider } from '../utils/generationUtils';
 import { getFluidFlowConfig } from '../services/fluidflowConfig';
-
-// ============ Internal Helpers ============
-
-/**
- * Validate generated files, filtering out empty/malformed entries.
- * Returns valid files and a list of invalid file paths.
- */
-function validateGeneratedFiles(
-  files: FileSystem
-): { validFiles: FileSystem; invalidFiles: string[] } {
-  const validFiles: FileSystem = {};
-  const invalidFiles: string[] = [];
-
-  for (const [path, content] of Object.entries(files)) {
-    if (!path || path.includes('/.') || !path.match(/\.[a-z]+$/i)) {
-      console.warn('[Continuation] Invalid file path:', path);
-      invalidFiles.push(path);
-      continue;
-    }
-
-    const contentStr = typeof content === 'string' ? content : '';
-    if (
-      contentStr.length < 20 ||
-      /^(tsx|jsx|ts|js|css|json|md);?$/.test(contentStr.trim())
-    ) {
-      console.warn('[Continuation] Empty or malformed file content:', path, '- content:', contentStr.slice(0, 50));
-      invalidFiles.push(path);
-      continue;
-    }
-
-    validFiles[path] = contentStr;
-  }
-
-  return { validFiles, invalidFiles };
-}
-
-/**
- * Create a ChatMessage for generation completion or error.
- */
-function createCompletionMessage(
-  opts: {
-    explanation: string;
-    files?: FileSystem;
-    currentFiles: FileSystem;
-    model?: string;
-    provider?: string;
-    startTime: number;
-    tokenUsage?: ChatMessage['tokenUsage'];
-    error?: string;
-  }
-): ChatMessage {
-  const fileChanges = opts.files ? calculateFileChanges(opts.currentFiles, opts.files) : undefined;
-  return {
-    id: crypto.randomUUID(),
-    role: 'assistant',
-    timestamp: Date.now(),
-    explanation: opts.explanation,
-    ...(opts.error && { error: opts.error }),
-    ...(opts.files && { files: opts.files }),
-    ...(fileChanges && { fileChanges }),
-    snapshotFiles: { ...opts.currentFiles },
-    ...(opts.model && { model: opts.model }),
-    ...(opts.provider && { provider: opts.provider }),
-    generationTime: Date.now() - opts.startTime,
-    ...(opts.tokenUsage && { tokenUsage: opts.tokenUsage }),
-  };
-}
+import {
+  validateGeneratedFiles,
+  createCompletionMessage,
+  buildMissingFilesPrompt,
+  buildContinuationPrompt,
+  buildTruncationRecoveryPrompt,
+  calculateRemainingFiles,
+  isGenerationComplete,
+  shouldRetry,
+  shouldForceComplete,
+  getRetryDelay,
+  incrementRetryState,
+  MAX_RETRY_ATTEMPTS,
+} from '../services/generation';
 
 // Types for the hook
 export interface ContinuationGenerationOptions {
@@ -170,34 +119,8 @@ export function useContinuationGeneration(
 
       const { manager, model: currentModel, providerType } = getActiveProvider(selectedModel);
 
-      // Very focused prompt - only ask for the missing files
-      const targetedPrompt = `Generate ONLY the following specific files. These files are missing from the project.
-
-## REQUIRED FILES (generate ALL of these):
-${missingFiles.map((f, i) => `${i + 1}. ${f}`).join('\n')}
-
-## CONTEXT
-These files should integrate with the existing project structure. Use the same patterns and styles.
-
-## EXISTING FILES FOR REFERENCE:
-${Object.keys(accumulatedFiles).slice(0, 5).map((f) => `- ${f}`).join('\n')}
-${Object.keys(accumulatedFiles).length > 5 ? `... and ${Object.keys(accumulatedFiles).length - 5} more files` : ''}
-
-## CRITICAL INSTRUCTIONS:
-1. Generate EXACTLY the ${missingFiles.length} files listed above
-2. Use relative imports (./component, ../utils)
-3. Return complete file contents - no truncation
-4. Use Tailwind CSS for styling
-5. Include data-ff-group and data-ff-id attributes on interactive elements
-
-Return ONLY a JSON object with the files:
-{
-  "files": {
-    "${missingFiles[0]}": "// complete file content...",
-    ${missingFiles.length > 1 ? `"${missingFiles[1]}": "// complete file content..."` : ''}
-  },
-  "explanation": "Generated ${missingFiles.length} missing files"
-}`;
+      // Build focused prompt using service
+      const targetedPrompt = buildMissingFilesPrompt({ missingFiles, accumulatedFiles });
 
       try {
         let fullText = '';
@@ -273,23 +196,12 @@ Return ONLY a JSON object with the files:
       const continuationStartTime = Date.now();
 
       try {
-        // Build continuation prompt (internal - user doesn't see this)
-        const continuationPrompt = `Continue generating the remaining files for the project.
-
-## GENERATION CONTEXT
-Already completed: ${completedFiles.length} files
-Remaining: ${remainingFiles.length} files
-
-### ALREADY COMPLETED FILES:
-${completedFiles.map((f) => `- ${f}`).join('\n')}
-
-### REMAINING FILES TO GENERATE:
-${remainingFiles.map((f) => `- ${f}`).join('\n')}
-
-### ORIGINAL REQUEST:
-${originalPrompt}
-
-Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
+        // Build continuation prompt using service
+        const continuationPrompt = buildContinuationPrompt({
+          completedFiles,
+          remainingFiles,
+          originalPrompt,
+        });
 
         let fullText = '';
         let chunkCount = 0;
@@ -350,30 +262,28 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
         // Check for truncation and auto-retry if needed
         if (parseResult.truncated) {
           const currentRetryAttempts = state.retryAttempts || 0;
-          const maxRetryAttempts = 3;
 
-          if (currentRetryAttempts < maxRetryAttempts) {
+          if (shouldRetry(currentRetryAttempts)) {
             console.log(
-              `[Continuation] Response truncated, auto-retry attempt ${currentRetryAttempts + 1}/${maxRetryAttempts}`
+              `[Continuation] Response truncated, auto-retry attempt ${currentRetryAttempts + 1}/${MAX_RETRY_ATTEMPTS}`
             );
             setStreamingStatus(
-              `🔄 Response truncated, retrying (${currentRetryAttempts + 1}/${maxRetryAttempts})...`
+              `🔄 Response truncated, retrying (${currentRetryAttempts + 1}/${MAX_RETRY_ATTEMPTS})...`
             );
 
             // Merge any partial files we got before retrying
             const partialAccumulatedFiles = { ...accumulatedFiles, ...parseResult.files };
 
-            const retryState: ContinuationState = {
+            const retryState: ContinuationState = incrementRetryState({
               ...state,
               accumulatedFiles: partialAccumulatedFiles,
-              retryAttempts: currentRetryAttempts + 1,
-            };
+            });
             setContinuationState(retryState);
 
-            // Wait before retrying (exponential backoff)
+            // Wait before retrying (exponential backoff via service)
             safeSetTimeout(() => {
               handleContinueGeneration(retryState, existingFiles);
-            }, 1000 * (currentRetryAttempts + 1));
+            }, getRetryDelay(currentRetryAttempts));
 
             return; // Exit this attempt
           } else {
@@ -389,27 +299,20 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
           ...new Set([...completedFiles, ...Object.keys(parseResult.files)]),
         ];
 
-        // Update remaining files - check against ALL accumulated files (not just current batch)
-        // This fixes the bug where continuation keeps running even when files were received in earlier batches
-        const allAccumulatedFileNames = Object.keys(newAccumulatedFiles).map((f) => f.split('/').pop());
-        const newRemainingFiles = remainingFiles.filter((f) => {
-          const fileName = f.split('/').pop();
-          // Check against ALL accumulated files, not just current batch
-          const exactMatch = newAccumulatedFiles[f];
-          const nameMatch = allAccumulatedFileNames.includes(fileName);
-          return !exactMatch && !nameMatch;
-        });
+        // Update remaining files using service (checks against ALL accumulated files)
+        const newRemainingFiles = calculateRemainingFiles(remainingFiles, newAccumulatedFiles);
 
         // If we generated ANY new files, consider progress made
         const madeProgress = Object.keys(parseResult.files).length > 0;
 
-        // Check if generation is complete - multiple completion signals
-        const noRemainingFiles = newRemainingFiles.length === 0;
-        const aiMarkedComplete = parseResult.generationMeta?.isComplete === true;
-        const allPlannedFilesReceived = Object.keys(newAccumulatedFiles).length >= generationMeta.totalFilesPlanned;
-        // NEW: Also check if AI's GENERATION_META says remainingFiles is empty
-        const aiSaysNoRemaining = parseResult.generationMeta?.remainingFiles?.length === 0;
-        const isComplete = noRemainingFiles || aiMarkedComplete || allPlannedFilesReceived || aiSaysNoRemaining;
+        // Check if generation is complete using service
+        const complete = isGenerationComplete({
+          remainingFiles: newRemainingFiles,
+          totalAccumulated: Object.keys(newAccumulatedFiles).length,
+          totalPlanned: generationMeta.totalFilesPlanned,
+          aiMarkedComplete: parseResult.generationMeta?.isComplete,
+          aiSaysNoRemaining: parseResult.generationMeta?.remainingFiles?.length === 0,
+        });
 
         console.log('[Continuation] Batch complete:', {
           newFilesThisBatch: Object.keys(parseResult.files).length,
@@ -419,8 +322,7 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
           remaining: newRemainingFiles.length,
           remainingFiles: newRemainingFiles,
           aiGenerationMeta: parseResult.generationMeta,
-          completionSignals: { noRemainingFiles, aiMarkedComplete, allPlannedFilesReceived, aiSaysNoRemaining },
-          isComplete,
+          isComplete: complete,
           madeProgress,
         });
 
@@ -430,12 +332,11 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
         );
 
         // Safety: Force complete if we've done too many batches or no progress
-        const maxBatches = 5;
-        const shouldForceComplete = currentBatch >= maxBatches || !madeProgress;
+        const forceComplete = shouldForceComplete(currentBatch, madeProgress);
 
-        if (isComplete || shouldForceComplete) {
+        if (complete || forceComplete) {
           // All done! Show final result
-          if (shouldForceComplete && !isComplete) {
+          if (forceComplete && !complete) {
             console.log('[Continuation] Forcing completion - max batches reached or no progress');
           }
 
@@ -475,7 +376,7 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
             fileCount: Object.keys(finalFiles).length,
             validFiles: generatedFileList,
             invalidFiles,
-            forced: shouldForceComplete && !isComplete,
+            forced: forceComplete && !complete,
           });
 
           // Calculate file changes for display
@@ -559,29 +460,25 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
       } catch (error) {
         console.error('[Continuation] Error:', error);
 
-        // Auto-retry logic - retry up to 3 times before giving up
+        // Auto-retry logic using service
         const currentRetryAttempts = state.retryAttempts || 0;
-        const maxRetryAttempts = 3;
 
-        if (currentRetryAttempts < maxRetryAttempts && generationMeta.remainingFiles.length > 0) {
+        if (shouldRetry(currentRetryAttempts) && generationMeta.remainingFiles.length > 0) {
           console.log(
-            `[Continuation] Auto-retry attempt ${currentRetryAttempts + 1}/${maxRetryAttempts}`
+            `[Continuation] Auto-retry attempt ${currentRetryAttempts + 1}/${MAX_RETRY_ATTEMPTS}`
           );
           setStreamingStatus(
-            `🔄 Retrying batch (attempt ${currentRetryAttempts + 1}/${maxRetryAttempts})...`
+            `🔄 Retrying batch (attempt ${currentRetryAttempts + 1}/${MAX_RETRY_ATTEMPTS})...`
           );
 
-          // Create new state with incremented retry counter
-          const retryState: ContinuationState = {
-            ...state,
-            retryAttempts: currentRetryAttempts + 1,
-          };
+          // Create new state with incremented retry counter via service
+          const retryState: ContinuationState = incrementRetryState({ ...state });
           setContinuationState(retryState);
 
-          // Wait before retrying (exponential backoff)
+          // Wait before retrying (exponential backoff via service)
           safeSetTimeout(() => {
             handleContinueGeneration(retryState, existingFiles);
-          }, 1000 * (currentRetryAttempts + 1));
+          }, getRetryDelay(currentRetryAttempts));
 
           return;
         }
@@ -729,35 +626,23 @@ Generate the remaining files. Each file must be COMPLETE and FUNCTIONAL.`;
       const { rawResponse, prompt, systemInstruction, attempt } = truncatedContent;
 
       // Limit retry attempts to prevent infinite loops
-      if (attempt >= 3) {
+      if (!shouldRetry(attempt)) {
         setStreamingStatus('❌ Maximum retry attempts reached. Please try a shorter prompt.');
         setTruncatedContent(null);
         return;
       }
 
-      setStreamingStatus(`🔄 Retrying generation (attempt ${attempt + 1}/3)...`);
+      setStreamingStatus(`🔄 Retrying generation (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})...`);
       setIsGenerating(true);
 
       try {
-        // Extract what was being generated when truncated
-        const incompleteResponse = rawResponse;
-
-        // Create a continuation prompt
-        const continuationPrompt = `Continue generating from where you left off. Your previous response was truncated:
-
-**Previous incomplete response (first 2000 chars):**
-${incompleteResponse.slice(0, 2000)}
-
-**Last 500 chars of incomplete response:**
-${incompleteResponse.slice(-500)}
-
-Please continue from exactly where you stopped and complete the response. Make sure to:
-1. Complete any incomplete JSON structure
-2. Finish any cut-off file content
-3. Provide all remaining files
-4. Ensure the response is properly formatted JSON
-
-Original prompt: ${prompt}`;
+        // Create a continuation prompt using service
+        const continuationPrompt = buildTruncationRecoveryPrompt({
+          rawResponse,
+          originalPrompt: prompt,
+          previewStart: 2000,
+          previewEnd: 500,
+        });
 
         const { manager, model: currentModel } = getActiveProvider(selectedModel);
 
@@ -779,7 +664,7 @@ Original prompt: ${prompt}`;
         );
 
         // Combine original response with continuation
-        const combinedResponse = incompleteResponse + fullText;
+        const combinedResponse = rawResponse + fullText;
 
         setStreamingStatus('✨ Parsing combined response...');
 

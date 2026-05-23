@@ -3,13 +3,20 @@
  *
  * Handles streaming AI responses for tool calling mode.
  * File operations are handled via tool calls, not text parsing.
+ *
+ * Delegates response storage to services/generation/streamingProcessor.
  */
 
 import { useCallback, useRef } from 'react';
 import { debugLog } from './useDebugStore';
 import { getProviderManager, GenerationRequest, GenerationResponse } from '../services/ai';
+import {
+  setLastAIResponse,
+  getLastAIResponse,
+  type LastAIResponseData,
+} from '../services/generation/streamingProcessor';
 
-// Re-export types
+// Re-export types for backward compatibility
 export type {
   StreamingFormat,
   StreamingCallbacks,
@@ -17,34 +24,16 @@ export type {
   UseStreamingResponseReturn,
 } from './streaming';
 
+// Re-export LastAIResponseData and accessors from service for backward compatibility
+export type { LastAIResponseData };
+export { setLastAIResponse, getLastAIResponse };
+
 import {
   type StreamingCallbacks,
   type StreamingResult,
   type UseStreamingResponseReturn,
   type StreamingFormat,
 } from './streaming';
-
-/**
- * Module-level store for the last AI response data.
- * Used for error recovery when streaming fails mid-response.
- */
-export interface LastAIResponseData {
-  raw: string;
-  timestamp: number;
-  chars: number;
-  filesDetected: string[];
-  format: string;
-}
-
-let _lastAIResponse: LastAIResponseData | null = null;
-
-export function setLastAIResponse(data: LastAIResponseData): void {
-  _lastAIResponse = data;
-}
-
-export function getLastAIResponse(): LastAIResponseData | null {
-  return _lastAIResponse;
-}
 
 /**
  * Hook for handling streaming AI responses
@@ -130,7 +119,7 @@ export function useStreamingResponse(callbacks: StreamingCallbacks): UseStreamin
         console.debug('[Debug] Final stream update failed:', e);
       }
 
-      // Save raw response for debugging
+      // Save raw response for debugging (delegated to service)
       setLastAIResponse({
         raw: fullText,
         timestamp: Date.now(),
