@@ -48,16 +48,13 @@ Return ONLY this JSON object. No markdown fence, no prose, no trailing commas.
 
 Each issue's "message" must name WHERE it occurs (component name or selector) and WHAT to do, e.g. "Header.tsx menu button has only a <Menu /> icon and no aria-label — add aria-label=\\"Open menu\\".".`;
 
+import type { AccessibilityReport } from '../../types';
+
 /**
- * Accessibility report structure
+ * Re-export AccessibilityReport from types for convenience.
+ * The report type is canonical in types/index.ts.
  */
-export interface AccessibilityReport {
-  score: number;
-  issues: Array<{
-    type: 'error' | 'warning';
-    message: string;
-  }>;
-}
+export type { AccessibilityReport };
 
 /**
  * Normalize raw AI response into an AccessibilityReport.
