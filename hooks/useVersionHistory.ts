@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { FileSystem } from '../types';
+import { calculateChangedFiles, buildAutoLabel, trimHistory, MAX_HISTORY_SIZE } from '../services/versioning/historyUtils';
 
 // History entry with metadata
 export interface HistoryEntry {
@@ -41,22 +42,6 @@ export interface UseVersionHistoryReturn {
   // Export/restore for backend persistence
   exportHistory: () => { history: HistoryEntry[]; currentIndex: number };
   restoreHistory: (history: HistoryEntry[], currentIndex: number) => void;
-}
-
-const MAX_HISTORY_SIZE = 50;
-
-// Calculate changed files between two file systems
-function calculateChangedFiles(oldFiles: FileSystem, newFiles: FileSystem): string[] {
-  const changed: string[] = [];
-  const allKeys = new Set([...Object.keys(oldFiles), ...Object.keys(newFiles)]);
-
-  allKeys.forEach(key => {
-    if (oldFiles[key] !== newFiles[key]) {
-      changed.push(key);
-    }
-  });
-
-  return changed;
 }
 
 export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryReturn {
@@ -111,9 +96,7 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
         if (changedFiles.length === 0) {
           return prevState;
         }
-        const autoLabel = changedFiles.length > 0
-          ? `Modified ${changedFiles.length} file${changedFiles.length > 1 ? 's' : ''}`
-          : 'Changes';
+        const autoLabel = buildAutoLabel(changedFiles.length);
 
         const newEntry: HistoryEntry = {
           files: pendingFiles,
@@ -123,11 +106,7 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
           changedFiles
         };
 
-        const newPast = [...prevState.past, prevState.present];
-        // Limit history size
-        if (newPast.length > MAX_HISTORY_SIZE) {
-          newPast.shift();
-        }
+        const newPast = trimHistory([...prevState.past, prevState.present]);
 
         return {
           past: newPast,
@@ -341,9 +320,7 @@ export function useVersionHistory(initialFiles: FileSystem): UseVersionHistoryRe
       // FIX-10: Use key-based diff instead of JSON.stringify
       const changedFiles = calculateChangedFiles(state.present.files, pendingFiles);
       if (changedFiles.length > 0) {
-        const autoLabel = changedFiles.length > 0
-          ? `Modified ${changedFiles.length} file${changedFiles.length > 1 ? 's' : ''}`
-          : 'Changes';
+        const autoLabel = buildAutoLabel(changedFiles.length);
 
         const newEntry: HistoryEntry = {
           files: pendingFiles,
