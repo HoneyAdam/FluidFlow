@@ -12,6 +12,10 @@
  * - services/errorFix/     - Error analysis and auto-fix
  * - services/fluidflow/    - .fluidflow config management
  * - services/generation/   - Code generation business logic
+ * - services/git/          - Git commit message generation
+ * - services/inspector/    - Element selector for inspect/edit
+ * - services/prompts/      - AI prompt templates
+ * - services/versioning/   - Version history utilities
  *
  * @module services
  */
@@ -264,6 +268,23 @@ export {
 // Batch Generation
 // ============================================================================
 export { BatchGenerator, type BatchGenerationOptions, type BatchResult } from './batchGeneration';
+
+// ============================================================================
+// Versioning Services
+// ============================================================================
+export {
+  MAX_HISTORY_SIZE,
+  calculateChangedFiles,
+  buildAutoLabel,
+  trimHistory,
+} from './versioning/historyUtils';
+
+// ============================================================================
+// Inspector Services
+// ============================================================================
+export {
+  buildElementSelector,
+} from './inspector/elementSelector';
 
 // ============================================================================
 // Utility Services
